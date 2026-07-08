@@ -2,67 +2,123 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700&display=swap');
-
-// PrimeNG
+/* PrimeNG (fonts are loaded via <link> in index.html — no render-blocking @import here) */
 @import 'primeng/resources/themes/lara-light-blue/theme.css';
 @import 'primeng/resources/primeng.css';
 @import 'primeicons/primeicons.css';
 
+/* ============================ Design tokens ============================ */
 :root {
-  --bg-page: #f1f5f9;
+  --bg-page: #f6f7fb;
   --bg-surface: #ffffff;
-  --border: #e2e8f0;
+  --bg-subtle: #f8fafc;
+  --border: #e8ebf1;
+  --border-strong: #d8deea;
   --text: #0f172a;
   --text-muted: #64748b;
+  --brand: #4f46e5;
+  --brand-600: #4338ca;
+  --radius: 0.875rem;
+
+  /* Re-point PrimeNG (Lara) accents to the indigo brand */
+  --primary-color: #4f46e5;
+  --primary-color-text: #ffffff;
+  --highlight-bg: #eef2ff;
+  --highlight-text-color: #4338ca;
+  --focus-ring: 0 0 0 0.2rem rgba(99, 102, 241, 0.35);
 }
 
-html,
-body {
+* { -webkit-tap-highlight-color: transparent; }
+
+html, body {
   height: 100%;
   margin: 0;
-  font-family: 'Cairo', 'Tajawal', system-ui, sans-serif;
+  font-family: 'Cairo', system-ui, -apple-system, 'Segoe UI', sans-serif;
   background: var(--bg-page);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-// Card helper
+/* Slimmer, quieter scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; background-clip: padding-box; }
+
+/* ============================ Primitives ============================ */
 .lf-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 0.9rem;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
-// Status badge base
-.lf-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.15rem 0.6rem;
-  border-radius: 9999px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  white-space: nowrap;
+.lf-label { display: block; font-size: 0.8rem; font-weight: 600; color: #475569; margin-bottom: 0.3rem; }
+.lf-input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
+.lf-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14); }
+.lf-input::placeholder { color: #94a3b8; }
+
+/* Status badges */
+.lf-badge {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.18rem 0.6rem; border-radius: 9999px;
+  font-size: 0.76rem; font-weight: 700; line-height: 1.4; white-space: nowrap;
+}
+.lf-badge::before { content: ''; width: 0.42rem; height: 0.42rem; border-radius: 9999px; background: currentColor; opacity: 0.9; }
 .lf-badge-green  { background: #dcfce7; color: #15803d; }
 .lf-badge-red    { background: #fee2e2; color: #b91c1c; }
-.lf-badge-yellow { background: #fef9c3; color: #a16207; }
-.lf-badge-blue   { background: #dbeafe; color: #1d4ed8; }
-.lf-badge-gray   { background: #e2e8f0; color: #475569; }
+.lf-badge-yellow { background: #fef3c7; color: #b45309; }
+.lf-badge-blue   { background: #e0e7ff; color: #4338ca; }
+.lf-badge-gray   { background: #eef1f6; color: #475569; }
 .lf-badge-purple { background: #ede9fe; color: #6d28d9; }
 
-// PrimeNG table polish
+/* ============================ PrimeNG overrides ============================ */
+.p-button { font-family: inherit; font-weight: 600; border-radius: 0.6rem; }
+.p-button.p-button-primary, .p-button:not([class*='p-button-']) { background: var(--brand); border-color: var(--brand); }
+.p-button.p-button-primary:hover, .p-button:not([class*='p-button-']):hover { background: var(--brand-600); border-color: var(--brand-600); }
+.p-button + .p-button { margin-inline-start: 0.35rem; }
+
 .p-datatable .p-datatable-thead > tr > th {
-  background: #f8fafc;
+  background: var(--bg-subtle);
   color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.82rem;
+  font-weight: 700;
+  font-size: 0.76rem;
+  letter-spacing: 0.01em;
+  border-color: var(--border);
+  padding: 0.7rem 0.9rem;
 }
 .p-datatable .p-datatable-tbody > tr > td {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  border-color: var(--border);
+  padding: 0.7rem 0.9rem;
 }
+.p-datatable .p-datatable-tbody > tr:hover { background: #fafbff; }
+.p-datatable .p-datatable-tbody > tr { transition: background 0.12s; }
 
-.p-button + .p-button {
-  margin-inline-start: 0.4rem;
+.p-dialog { border-radius: var(--radius); overflow: hidden; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.16); }
+.p-dialog .p-dialog-header { padding: 1.1rem 1.35rem; border-bottom: 1px solid var(--border); }
+.p-dialog .p-dialog-content { padding: 1.35rem; }
+.p-dialog .p-dialog-footer { padding: 0.9rem 1.35rem; border-top: 1px solid var(--border); }
+
+.p-dropdown, .p-multiselect { border-radius: 0.6rem; border-color: var(--border-strong); }
+.p-dropdown:not(.p-disabled).p-focus, .p-multiselect:not(.p-disabled).p-focus {
+  border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
+}
+.p-paginator { background: transparent; border: none; padding: 0.75rem; }
+
+.p-toast .p-toast-message { border-radius: 0.7rem; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.14); }
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -19,12 +19,12 @@ import {
   FeatureDto,
   PlanDto,
 } from '../../core/models/platform.models';
-import { confirmAction, errMsg, toastError, toastSuccess } from '../../shared/ui/notify';
-import Swal from 'sweetalert2';
+import { NotifyService, errMsg } from '../../shared/ui/notify.service';
 
 @Component({
   selector: 'app-plans',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -44,14 +44,14 @@ import Swal from 'sweetalert2';
     </app-page-header>
 
     <div class="lf-card overflow-hidden">
-      <p-table [value]="rows()" [loading]="loading()" styleClass="p-datatable-sm">
+      <p-table [value]="rows()" [loading]="loading()" styleClass="p-datatable-sm" [scrollable]="true">
         <ng-template pTemplate="header">
           <tr>
             <th>الاسم</th>
             <th>السعر</th>
-            <th>الدورة</th>
-            <th>الحدود</th>
-            <th>الميزات</th>
+            <th class="hidden sm:table-cell">الدورة</th>
+            <th class="hidden lg:table-cell">الحدود</th>
+            <th class="hidden md:table-cell">الميزات</th>
             <th>الحالة</th>
             <th class="text-center">الإجراءات</th>
           </tr>
@@ -60,16 +60,14 @@ import Swal from 'sweetalert2';
           <tr>
             <td>
               <div class="font-semibold text-slate-800">{{ p.name }}</div>
-              <div class="text-xs text-slate-400">{{ p.description }}</div>
+              <div class="text-xs text-slate-400 truncate max-w-[220px]">{{ p.description }}</div>
             </td>
-            <td class="whitespace-nowrap font-semibold">{{ p.price | number }} {{ p.currency }}</td>
-            <td>{{ cycleLabel(p.billingCycle) }}</td>
-            <td class="text-xs text-slate-500">
+            <td class="whitespace-nowrap font-semibold tabular-nums">{{ p.price | number }} {{ p.currency }}</td>
+            <td class="hidden sm:table-cell">{{ cycleLabel(p.billingCycle) }}</td>
+            <td class="text-xs text-slate-500 hidden lg:table-cell">
               أعضاء: {{ lim(p.maxMembers) }} · مدربين: {{ lim(p.maxCoaches) }} · فروع: {{ lim(p.maxBranches) }}
             </td>
-            <td>
-              <span class="lf-badge lf-badge-blue">{{ p.features.length }} ميزة</span>
-            </td>
+            <td class="hidden md:table-cell"><span class="lf-badge lf-badge-blue">{{ p.features.length }} ميزة</span></td>
             <td><app-status-badge [badge]="activeBadge(p.isActive)"></app-status-badge></td>
             <td class="text-center whitespace-nowrap">
               <button pButton pTooltip="تعديل" icon="pi pi-pencil" class="p-button-sm p-button-text" (click)="openEdit(p)"></button>
@@ -78,100 +76,89 @@ import Swal from 'sweetalert2';
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
-          <tr><td colspan="7" class="text-center text-slate-400 py-8">لا توجد باقات</td></tr>
+          <tr><td colspan="7" class="text-center text-slate-400 py-10"><i class="pi pi-box text-2xl block mb-2 opacity-40"></i>لا توجد باقات</td></tr>
         </ng-template>
       </p-table>
     </div>
 
     <p-dialog [header]="editingId ? 'تعديل باقة' : 'باقة جديدة'" [(visible)]="showForm" [modal]="true"
-      [style]="{ width: '720px' }" [dismissableMask]="true">
-      <form [formGroup]="form" class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+      [style]="{ width: '720px', maxWidth: '95vw' }" [dismissableMask]="true" [draggable]="false">
+      <form [formGroup]="form" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="sm:col-span-2">
-          <label class="lbl">اسم الباقة *</label>
-          <input class="fld" formControlName="name" />
+          <label class="lf-label">اسم الباقة *</label>
+          <input class="lf-input" formControlName="name" />
         </div>
         <div>
-          <label class="lbl">الترتيب</label>
-          <input class="fld" type="number" formControlName="displayOrder" dir="ltr" />
+          <label class="lf-label">الترتيب</label>
+          <input class="lf-input" type="number" formControlName="displayOrder" dir="ltr" />
         </div>
         <div class="sm:col-span-3">
-          <label class="lbl">الوصف</label>
-          <input class="fld" formControlName="description" />
+          <label class="lf-label">الوصف</label>
+          <input class="lf-input" formControlName="description" />
         </div>
 
         <div>
-          <label class="lbl">السعر *</label>
-          <input class="fld" type="number" formControlName="price" dir="ltr" />
+          <label class="lf-label">السعر *</label>
+          <input class="lf-input" type="number" formControlName="price" dir="ltr" />
         </div>
         <div>
-          <label class="lbl">العملة *</label>
-          <input class="fld" formControlName="currency" dir="ltr" placeholder="EGP" />
+          <label class="lf-label">العملة *</label>
+          <input class="lf-input" formControlName="currency" dir="ltr" placeholder="EGP" />
         </div>
         <div>
-          <label class="lbl">دورة الفوترة *</label>
+          <label class="lf-label">دورة الفوترة *</label>
           <p-dropdown [options]="cycleOptions" formControlName="billingCycle" optionLabel="label" optionValue="value" styleClass="w-full"></p-dropdown>
         </div>
 
         <div>
-          <label class="lbl">المدة (أيام) *</label>
-          <input class="fld" type="number" formControlName="durationInDays" dir="ltr" />
+          <label class="lf-label">المدة (أيام) *</label>
+          <input class="lf-input" type="number" formControlName="durationInDays" dir="ltr" />
         </div>
 
         <div class="sm:col-span-3 text-xs text-slate-400 -mb-2">اترك الحقل فارغاً = غير محدود</div>
         <div>
-          <label class="lbl">حد الأعضاء</label>
-          <input class="fld" type="number" formControlName="maxMembers" dir="ltr" placeholder="غير محدود" />
+          <label class="lf-label">حد الأعضاء</label>
+          <input class="lf-input" type="number" formControlName="maxMembers" dir="ltr" placeholder="∞" />
         </div>
         <div>
-          <label class="lbl">حد المدربين</label>
-          <input class="fld" type="number" formControlName="maxCoaches" dir="ltr" placeholder="غير محدود" />
+          <label class="lf-label">حد المدربين</label>
+          <input class="lf-input" type="number" formControlName="maxCoaches" dir="ltr" placeholder="∞" />
         </div>
         <div>
-          <label class="lbl">حد الفروع</label>
-          <input class="fld" type="number" formControlName="maxBranches" dir="ltr" placeholder="غير محدود" />
+          <label class="lf-label">حد الفروع</label>
+          <input class="lf-input" type="number" formControlName="maxBranches" dir="ltr" placeholder="∞" />
         </div>
         <div>
-          <label class="lbl">حد الموظفين</label>
-          <input class="fld" type="number" formControlName="maxEmployees" dir="ltr" placeholder="غير محدود" />
+          <label class="lf-label">حد الموظفين</label>
+          <input class="lf-input" type="number" formControlName="maxEmployees" dir="ltr" placeholder="∞" />
         </div>
         <div>
-          <label class="lbl">التخزين (MB)</label>
-          <input class="fld" type="number" formControlName="maxStorageMB" dir="ltr" placeholder="غير محدود" />
+          <label class="lf-label">التخزين (MB)</label>
+          <input class="lf-input" type="number" formControlName="maxStorageMB" dir="ltr" placeholder="∞" />
         </div>
-        <div class="flex items-center gap-2 pt-6">
+        <div class="flex items-center gap-2 pt-7">
           <p-inputSwitch formControlName="isActive"></p-inputSwitch>
           <span class="text-sm text-slate-600">مفعّلة</span>
         </div>
 
         <div class="sm:col-span-3">
-          <label class="lbl">الميزات</label>
-          <p-multiSelect
-            [options]="features()"
-            formControlName="featureCodes"
-            optionLabel="name"
-            optionValue="code"
-            placeholder="اختر الميزات"
-            styleClass="w-full"
-            [filter]="true"
-          ></p-multiSelect>
+          <label class="lf-label">الميزات</label>
+          <p-multiSelect [options]="features()" formControlName="featureCodes" optionLabel="name" optionValue="code"
+            placeholder="اختر الميزات" styleClass="w-full" [filter]="true"></p-multiSelect>
         </div>
       </form>
       <ng-template pTemplate="footer">
-        <button pButton label="إلغاء" class="p-button-text" (click)="showForm = false"></button>
+        <button pButton label="إلغاء" class="p-button-text p-button-secondary" (click)="showForm = false"></button>
         <button pButton label="حفظ" icon="pi pi-check" [disabled]="form.invalid || saving()" (click)="save()"></button>
       </ng-template>
     </p-dialog>
   `,
-  styles: [`
-    .lbl { display:block; font-size:.8rem; font-weight:600; color:#475569; margin-bottom:.25rem; }
-    .fld { width:100%; padding:.5rem .65rem; border:1px solid #cbd5e1; border-radius:.5rem; outline:none; }
-    .fld:focus { border-color:#3b82f6; box-shadow:0 0 0 3px #dbeafe; }
-  `],
 })
 export class PlansComponent implements OnInit {
   private service = inject(PlansService);
   private featuresService = inject(FeaturesService);
   private fb = inject(FormBuilder);
+  private notify = inject(NotifyService);
 
   rows = signal<PlanDto[]>([]);
   features = signal<FeatureDto[]>([]);
@@ -231,7 +218,7 @@ export class PlansComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        toastError(errMsg(err));
+        this.notify.error(errMsg(err));
         this.loading.set(false);
       },
     });
@@ -267,7 +254,6 @@ export class PlansComponent implements OnInit {
       maxStorageMB: p.maxStorageMB,
       isActive: p.isActive,
       displayOrder: p.displayOrder,
-      // Match feature codes to the seeded catalog (falls back to raw values).
       featureCodes: this.mapFeaturesToCodes(p.features),
     });
     this.showForm = true;
@@ -302,41 +288,41 @@ export class PlansComponent implements OnInit {
       next: () => {
         this.saving.set(false);
         this.showForm = false;
-        toastSuccess('تم الحفظ');
+        this.notify.success('تم الحفظ');
         this.load();
       },
       error: (err) => {
         this.saving.set(false);
-        toastError(errMsg(err));
+        this.notify.error(errMsg(err));
       },
     });
   }
 
   async remove(p: PlanDto): Promise<void> {
-    const ok = await confirmAction('حذف الباقة', `حذف باقة "${p.name}"؟`, 'حذف', true);
+    const ok = await this.notify.confirm({
+      header: 'حذف الباقة',
+      message: `هل تريد حذف باقة "${p.name}"؟`,
+      acceptLabel: 'حذف',
+      danger: true,
+    });
     if (!ok) return;
     this.service.remove(p.id).subscribe({
       next: () => {
-        toastSuccess('تم الحذف');
+        this.notify.success('تم الحذف');
         this.load();
       },
-      error: (err) => {
-        // 409 → plan has active subscriptions; suggest deactivating instead.
+      error: async (err) => {
+        // 409 → plan has active subscriptions; offer to deactivate instead.
         if (err?.status === 409) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'لا يمكن الحذف',
-            text: errMsg(err) + ' — يمكنك تعطيل الباقة بدلاً من حذفها.',
-            showCancelButton: true,
-            confirmButtonText: 'تعطيل الباقة',
-            cancelButtonText: 'إغلاق',
-            confirmButtonColor: '#d97706',
-            reverseButtons: true,
-          }).then((res) => {
-            if (res.isConfirmed) this.deactivate(p);
+          const deactivate = await this.notify.confirm({
+            header: 'لا يمكن الحذف',
+            message: `${errMsg(err)} — يمكنك تعطيل الباقة بدلاً من حذفها.`,
+            acceptLabel: 'تعطيل الباقة',
+            rejectLabel: 'إغلاق',
           });
+          if (deactivate) this.deactivate(p);
         } else {
-          toastError(errMsg(err));
+          this.notify.error(errMsg(err));
         }
       },
     });
@@ -362,10 +348,10 @@ export class PlansComponent implements OnInit {
     };
     this.service.update(p.id, cmd).subscribe({
       next: () => {
-        toastSuccess('تم تعطيل الباقة');
+        this.notify.success('تم تعطيل الباقة');
         this.load();
       },
-      error: (err) => toastError(errMsg(err)),
+      error: (err) => this.notify.error(errMsg(err)),
     });
   }
 

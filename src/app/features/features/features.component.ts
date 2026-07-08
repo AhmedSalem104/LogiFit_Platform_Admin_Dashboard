@@ -1,15 +1,16 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
 import { FeaturesService } from './features.service';
 import { BadgeInfo, FeatureDto } from '../../core/models/platform.models';
-import { errMsg, toastError } from '../../shared/ui/notify';
+import { NotifyService, errMsg } from '../../shared/ui/notify.service';
 
 @Component({
   selector: 'app-features',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, TableModule, PageHeaderComponent, StatusBadgeComponent],
   template: `
     <app-page-header
@@ -19,25 +20,25 @@ import { errMsg, toastError } from '../../shared/ui/notify';
     ></app-page-header>
 
     <div class="lf-card overflow-hidden">
-      <p-table [value]="rows()" [loading]="loading()" styleClass="p-datatable-sm">
+      <p-table [value]="rows()" [loading]="loading()" styleClass="p-datatable-sm" [scrollable]="true">
         <ng-template pTemplate="header">
           <tr>
             <th>الكود</th>
             <th>الاسم</th>
-            <th>الوصف</th>
+            <th class="hidden sm:table-cell">الوصف</th>
             <th>الحالة</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-f>
           <tr>
-            <td><code class="text-primary-700 bg-primary-50 px-1.5 py-0.5 rounded text-sm" dir="ltr">{{ f.code }}</code></td>
+            <td><code class="text-primary-700 bg-primary-50 px-2 py-0.5 rounded-md text-[13px] font-semibold" dir="ltr">{{ f.code }}</code></td>
             <td class="font-semibold text-slate-800">{{ f.name }}</td>
-            <td class="text-slate-500 text-sm">{{ f.description || '—' }}</td>
+            <td class="text-slate-500 text-sm hidden sm:table-cell">{{ f.description || '—' }}</td>
             <td><app-status-badge [badge]="activeBadge(f.isActive)"></app-status-badge></td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
-          <tr><td colspan="4" class="text-center text-slate-400 py-8">لا توجد ميزات</td></tr>
+          <tr><td colspan="4" class="text-center text-slate-400 py-10"><i class="pi pi-inbox text-2xl block mb-2 opacity-40"></i>لا توجد ميزات</td></tr>
         </ng-template>
       </p-table>
     </div>
@@ -45,6 +46,7 @@ import { errMsg, toastError } from '../../shared/ui/notify';
 })
 export class FeaturesComponent implements OnInit {
   private service = inject(FeaturesService);
+  private notify = inject(NotifyService);
 
   rows = signal<FeatureDto[]>([]);
   loading = signal(false);
@@ -57,7 +59,7 @@ export class FeaturesComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        toastError(errMsg(err));
+        this.notify.error(errMsg(err));
         this.loading.set(false);
       },
     });

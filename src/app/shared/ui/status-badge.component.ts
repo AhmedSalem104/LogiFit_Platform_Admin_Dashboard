@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BadgeInfo } from '../../core/models/platform.models';
 
@@ -6,6 +6,7 @@ import { BadgeInfo } from '../../core/models/platform.models';
 @Component({
   selector: 'app-status-badge',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
     <span class="lf-badge" [ngClass]="'lf-badge-' + (badge?.color || 'gray')">

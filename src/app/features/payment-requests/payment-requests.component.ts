@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -14,12 +14,12 @@ import {
   PaymentRequestDto,
   PaymentRequestStatus,
 } from '../../core/models/platform.models';
-import { errMsg, toastError, toastSuccess } from '../../shared/ui/notify';
-import Swal from 'sweetalert2';
+import { NotifyService, errMsg } from '../../shared/ui/notify.service';
 
 @Component({
   selector: 'app-payment-requests',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -41,19 +41,20 @@ import Swal from 'sweetalert2';
         optionValue="value"
         placeholder="كل الحالات"
         [showClear]="true"
-        styleClass="w-48"
+        styleClass="w-full sm:w-48"
       ></p-dropdown>
     </app-page-header>
 
     <div class="lf-card overflow-hidden">
-      <p-table [value]="rows()" [loading]="loading()" [paginator]="rows().length > 10" [rows]="10" styleClass="p-datatable-sm">
+      <p-table [value]="rows()" [loading]="loading()" [paginator]="rows().length > 10" [rows]="10"
+        styleClass="p-datatable-sm" [scrollable]="true">
         <ng-template pTemplate="header">
           <tr>
             <th>الجيم</th>
-            <th>الباقة</th>
+            <th class="hidden sm:table-cell">الباقة</th>
             <th>المبلغ</th>
-            <th>رقم العملية</th>
-            <th>تاريخ الدفع</th>
+            <th class="hidden md:table-cell">رقم العملية</th>
+            <th class="hidden lg:table-cell">تاريخ الدفع</th>
             <th>الإيصال</th>
             <th>الحالة</th>
             <th class="text-center">مراجعة</th>
@@ -62,10 +63,10 @@ import Swal from 'sweetalert2';
         <ng-template pTemplate="body" let-r>
           <tr>
             <td class="font-semibold text-slate-800">{{ r.tenantName }}</td>
-            <td>{{ r.planName }}</td>
-            <td class="whitespace-nowrap font-semibold">{{ r.amount | number }} {{ r.currency }}</td>
-            <td dir="ltr" class="text-left">{{ r.transactionNumber || '—' }}</td>
-            <td dir="ltr" class="text-left">{{ r.paymentDate | date: 'yyyy-MM-dd' }}</td>
+            <td class="hidden sm:table-cell">{{ r.planName }}</td>
+            <td class="whitespace-nowrap font-semibold tabular-nums">{{ r.amount | number }} {{ r.currency }}</td>
+            <td dir="ltr" class="text-left hidden md:table-cell">{{ r.transactionNumber || '—' }}</td>
+            <td dir="ltr" class="text-left hidden lg:table-cell">{{ r.paymentDate | date: 'yyyy-MM-dd' }}</td>
             <td>
               @if (r.proofFileUrl) {
                 <button pButton icon="pi pi-image" label="معاينة" class="p-button-sm p-button-text" (click)="preview(r)"></button>
@@ -77,7 +78,7 @@ import Swal from 'sweetalert2';
                 <button pButton pTooltip="موافقة" icon="pi pi-check" class="p-button-sm p-button-success p-button-text"
                   [disabled]="busyId() === r.id" (click)="approve(r)"></button>
                 <button pButton pTooltip="رفض" icon="pi pi-times" class="p-button-sm p-button-danger p-button-text"
-                  [disabled]="busyId() === r.id" (click)="reject(r)"></button>
+                  [disabled]="busyId() === r.id" (click)="openReject(r)"></button>
               } @else {
                 <span class="text-xs text-slate-400">تمت المراجعة</span>
               }
@@ -85,40 +86,54 @@ import Swal from 'sweetalert2';
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
-          <tr><td colspan="8" class="text-center text-slate-400 py-8">لا توجد طلبات دفع</td></tr>
+          <tr><td colspan="8" class="text-center text-slate-400 py-10"><i class="pi pi-inbox text-2xl block mb-2 opacity-40"></i>لا توجد طلبات دفع</td></tr>
         </ng-template>
       </p-table>
     </div>
 
     <!-- Proof preview -->
-    <p-dialog header="معاينة الإيصال" [(visible)]="showPreview" [modal]="true" [style]="{ width: '560px' }" [dismissableMask]="true">
+    <p-dialog header="معاينة الإيصال" [(visible)]="showPreview" [modal]="true" [style]="{ width: '560px', maxWidth: '94vw' }"
+      [dismissableMask]="true" [draggable]="false">
       @if (selected(); as r) {
         <div class="space-y-3">
           <div class="grid grid-cols-2 gap-2 text-sm">
-            <div><span class="text-slate-400">الجيم:</span> <b>{{ r.tenantName }}</b></div>
-            <div><span class="text-slate-400">الباقة:</span> <b>{{ r.planName }}</b></div>
-            <div><span class="text-slate-400">المبلغ:</span> <b>{{ r.amount | number }} {{ r.currency }}</b></div>
-            <div><span class="text-slate-400">رقم العملية:</span> <b dir="ltr">{{ r.transactionNumber || '—' }}</b></div>
+            <div class="bg-slate-50 rounded-lg px-3 py-2"><span class="text-slate-400 block text-xs">الجيم</span><b>{{ r.tenantName }}</b></div>
+            <div class="bg-slate-50 rounded-lg px-3 py-2"><span class="text-slate-400 block text-xs">الباقة</span><b>{{ r.planName }}</b></div>
+            <div class="bg-slate-50 rounded-lg px-3 py-2"><span class="text-slate-400 block text-xs">المبلغ</span><b>{{ r.amount | number }} {{ r.currency }}</b></div>
+            <div class="bg-slate-50 rounded-lg px-3 py-2"><span class="text-slate-400 block text-xs">رقم العملية</span><b dir="ltr">{{ r.transactionNumber || '—' }}</b></div>
           </div>
           <a [href]="r.proofFileUrl" target="_blank" rel="noopener">
-            <img [src]="r.proofFileUrl" alt="إثبات الدفع" class="w-full rounded-lg border border-slate-200" />
+            <img [src]="r.proofFileUrl" alt="إثبات الدفع" loading="lazy" decoding="async"
+              class="w-full rounded-lg border border-slate-200 max-h-[60vh] object-contain bg-slate-50" />
           </a>
           @if (r.notes) { <p class="text-sm text-slate-500">ملاحظات: {{ r.notes }}</p> }
         </div>
       }
       <ng-template pTemplate="footer">
         @if (selected()?.status === PRS.Pending) {
-          <button pButton label="رفض" icon="pi pi-times" class="p-button-danger p-button-text" (click)="reject(selected()!)"></button>
+          <button pButton label="رفض" icon="pi pi-times" class="p-button-danger p-button-text" (click)="openReject(selected()!)"></button>
           <button pButton label="موافقة" icon="pi pi-check" class="p-button-success" (click)="approve(selected()!)"></button>
         } @else {
           <button pButton label="إغلاق" class="p-button-text" (click)="showPreview = false"></button>
         }
       </ng-template>
     </p-dialog>
+
+    <!-- Reject reason -->
+    <p-dialog header="رفض الدفعة" [(visible)]="showReject" [modal]="true" [style]="{ width: '440px', maxWidth: '94vw' }" [draggable]="false">
+      <label class="lf-label">سبب الرفض *</label>
+      <textarea class="lf-input" rows="3" [(ngModel)]="rejectReason" placeholder="مثال: الصورة غير واضحة / المبلغ غير صحيح"></textarea>
+      @if (rejectError()) { <p class="text-xs text-red-500 mt-1">يجب إدخال سبب الرفض</p> }
+      <ng-template pTemplate="footer">
+        <button pButton label="إلغاء" class="p-button-text p-button-secondary" (click)="showReject = false"></button>
+        <button pButton label="رفض" icon="pi pi-times" class="p-button-danger" [disabled]="busyId() === rejectTarget()?.id" (click)="confirmReject()"></button>
+      </ng-template>
+    </p-dialog>
   `,
 })
 export class PaymentRequestsComponent implements OnInit {
   private service = inject(PaymentRequestsService);
+  private notify = inject(NotifyService);
 
   readonly PRS = PaymentRequestStatus;
   rows = signal<PaymentRequestDto[]>([]);
@@ -126,6 +141,12 @@ export class PaymentRequestsComponent implements OnInit {
   busyId = signal<string | null>(null);
   selected = signal<PaymentRequestDto | null>(null);
   showPreview = false;
+
+  // Reject dialog state
+  showReject = false;
+  rejectReason = '';
+  rejectError = signal(false);
+  rejectTarget = signal<PaymentRequestDto | null>(null);
 
   // Default filter to Pending — the operator's main queue.
   statusFilter: PaymentRequestStatus | null = PaymentRequestStatus.Pending;
@@ -154,7 +175,7 @@ export class PaymentRequestsComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        toastError(errMsg(err));
+        this.notify.error(errMsg(err));
         this.loading.set(false);
       },
     });
@@ -166,59 +187,55 @@ export class PaymentRequestsComponent implements OnInit {
   }
 
   async approve(r: PaymentRequestDto): Promise<void> {
-    const res = await Swal.fire({
-      title: 'الموافقة على الدفعة',
-      html: `الموافقة ستفعّل اشتراك <b>${r.tenantName}</b> تلقائياً.`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'موافقة وتفعيل',
-      cancelButtonText: 'إلغاء',
-      confirmButtonColor: '#16a34a',
-      reverseButtons: true,
+    const ok = await this.notify.confirm({
+      header: 'الموافقة على الدفعة',
+      message: `الموافقة ستفعّل اشتراك "${r.tenantName}" تلقائياً. متابعة؟`,
+      acceptLabel: 'موافقة وتفعيل',
+      icon: 'pi pi-check-circle',
     });
-    if (!res.isConfirmed) return;
+    if (!ok) return;
 
     this.busyId.set(r.id);
     this.service.approve(r.id).subscribe({
       next: (updated) => {
         this.busyId.set(null);
         this.showPreview = false;
-        toastSuccess('تمت الموافقة وتفعيل الاشتراك');
+        this.notify.success('تمت الموافقة وتفعيل الاشتراك');
         this.applyUpdate(updated);
       },
       error: (err) => {
         this.busyId.set(null);
-        toastError(errMsg(err));
+        this.notify.error(errMsg(err));
       },
     });
   }
 
-  async reject(r: PaymentRequestDto): Promise<void> {
-    const res = await Swal.fire({
-      title: 'رفض الدفعة',
-      input: 'textarea',
-      inputLabel: 'سبب الرفض',
-      inputPlaceholder: 'مثال: الصورة غير واضحة / المبلغ غير صحيح',
-      inputValidator: (v) => (!v?.trim() ? 'يجب إدخال سبب الرفض' : undefined),
-      showCancelButton: true,
-      confirmButtonText: 'رفض',
-      cancelButtonText: 'إلغاء',
-      confirmButtonColor: '#dc2626',
-      reverseButtons: true,
-    });
-    if (!res.isConfirmed) return;
+  openReject(r: PaymentRequestDto): void {
+    this.rejectTarget.set(r);
+    this.rejectReason = '';
+    this.rejectError.set(false);
+    this.showReject = true;
+  }
 
+  confirmReject(): void {
+    const r = this.rejectTarget();
+    if (!r) return;
+    if (!this.rejectReason.trim()) {
+      this.rejectError.set(true);
+      return;
+    }
     this.busyId.set(r.id);
-    this.service.reject(r.id, { rejectReason: res.value }).subscribe({
+    this.service.reject(r.id, { rejectReason: this.rejectReason.trim() }).subscribe({
       next: (updated) => {
         this.busyId.set(null);
+        this.showReject = false;
         this.showPreview = false;
-        toastSuccess('تم رفض الطلب');
+        this.notify.success('تم رفض الطلب');
         this.applyUpdate(updated);
       },
       error: (err) => {
         this.busyId.set(null);
-        toastError(errMsg(err));
+        this.notify.error(errMsg(err));
       },
     });
   }
