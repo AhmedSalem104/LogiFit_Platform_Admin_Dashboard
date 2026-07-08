@@ -1,0 +1,245 @@
+// ============================================================================
+// Platform API models — mirrors PLATFORM_FRONTEND_GUIDE.md
+// All JSON is camelCase, dates are UTC ISO-8601 strings.
+// ============================================================================
+
+// ---------------------------------- Enums ----------------------------------
+
+export enum TenantStatus {
+  Active = 1,
+  Suspended = 2,
+  Trial = 3,
+  PastDue = 4,
+  Cancelled = 5,
+  PendingApproval = 6,
+  Archived = 7,
+  Deleted = 8,
+}
+
+export enum TenantSubscriptionStatus {
+  PendingPayment = 1,
+  Trial = 2,
+  Active = 3,
+  PastDue = 4,
+  Suspended = 5,
+  Cancelled = 6,
+  Expired = 7,
+}
+
+export enum PaymentRequestStatus {
+  Pending = 1,
+  Approved = 2,
+  Rejected = 3,
+  Cancelled = 4,
+  Expired = 5,
+}
+
+export enum SubscriptionInvoiceStatus {
+  Unpaid = 1,
+  PendingReview = 2,
+  Paid = 3,
+  Cancelled = 4,
+  Overdue = 5,
+}
+
+export enum BillingCycle {
+  Monthly = 1,
+  Quarterly = 2,
+  Annual = 3,
+}
+
+// ------------------------------- Badge helpers ------------------------------
+
+export type BadgeColor = 'green' | 'red' | 'yellow' | 'blue' | 'gray' | 'purple';
+
+export interface BadgeInfo {
+  label: string;
+  color: BadgeColor;
+}
+
+export const TENANT_STATUS_BADGE: Record<TenantStatus, BadgeInfo> = {
+  [TenantStatus.Active]: { label: 'نشط', color: 'green' },
+  [TenantStatus.Suspended]: { label: 'موقوف', color: 'red' },
+  [TenantStatus.Trial]: { label: 'تجريبي', color: 'blue' },
+  [TenantStatus.PastDue]: { label: 'متأخر السداد', color: 'yellow' },
+  [TenantStatus.Cancelled]: { label: 'ملغى', color: 'gray' },
+  [TenantStatus.PendingApproval]: { label: 'بانتظار الموافقة', color: 'yellow' },
+  [TenantStatus.Archived]: { label: 'مؤرشف', color: 'gray' },
+  [TenantStatus.Deleted]: { label: 'محذوف', color: 'gray' },
+};
+
+export const SUBSCRIPTION_STATUS_BADGE: Record<TenantSubscriptionStatus, BadgeInfo> = {
+  [TenantSubscriptionStatus.PendingPayment]: { label: 'بانتظار الدفع', color: 'yellow' },
+  [TenantSubscriptionStatus.Trial]: { label: 'تجريبي', color: 'blue' },
+  [TenantSubscriptionStatus.Active]: { label: 'نشط', color: 'green' },
+  [TenantSubscriptionStatus.PastDue]: { label: 'متأخر السداد', color: 'yellow' },
+  [TenantSubscriptionStatus.Suspended]: { label: 'موقوف', color: 'red' },
+  [TenantSubscriptionStatus.Cancelled]: { label: 'ملغى', color: 'gray' },
+  [TenantSubscriptionStatus.Expired]: { label: 'منتهٍ', color: 'red' },
+};
+
+export const PAYMENT_REQUEST_STATUS_BADGE: Record<PaymentRequestStatus, BadgeInfo> = {
+  [PaymentRequestStatus.Pending]: { label: 'قيد المراجعة', color: 'yellow' },
+  [PaymentRequestStatus.Approved]: { label: 'مقبول', color: 'green' },
+  [PaymentRequestStatus.Rejected]: { label: 'مرفوض', color: 'red' },
+  [PaymentRequestStatus.Cancelled]: { label: 'ملغى', color: 'gray' },
+  [PaymentRequestStatus.Expired]: { label: 'منتهٍ', color: 'gray' },
+};
+
+export const BILLING_CYCLE_LABEL: Record<BillingCycle, string> = {
+  [BillingCycle.Monthly]: 'شهري',
+  [BillingCycle.Quarterly]: 'ربع سنوي',
+  [BillingCycle.Annual]: 'سنوي',
+};
+
+// --------------------------------- DTOs ------------------------------------
+
+export interface PlatformDashboardDto {
+  totalGyms: number;
+  activeGyms: number;
+  trialGyms: number;
+  pendingApprovalGyms: number;
+  suspendedGyms: number;
+  totalMembers: number;
+}
+
+export interface PlatformTenantDto {
+  id: string;
+  name: string;
+  subdomain: string;
+  status: TenantStatus;
+  email: string;
+  phoneNumber: string;
+  membersCount: number;
+  createdAt: string;
+}
+
+export interface CreateTenantWithOwnerCommand {
+  name: string;
+  subdomain: string;
+  email: string;
+  phoneNumber: string;
+  ownerEmail: string;
+  ownerPhoneNumber: string;
+  ownerPassword: string;
+  ownerFullName: string;
+}
+
+export interface PlanDto {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  billingCycle: BillingCycle;
+  durationInDays: number;
+  maxMembers: number | null;
+  maxCoaches: number | null;
+  maxBranches: number | null;
+  maxEmployees: number | null;
+  maxStorageMB: number | null;
+  isActive: boolean;
+  displayOrder: number;
+  features: string[];
+}
+
+export interface SavePlanCommand {
+  id?: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  billingCycle: BillingCycle;
+  durationInDays: number;
+  maxMembers: number | null;
+  maxCoaches: number | null;
+  maxBranches: number | null;
+  maxEmployees: number | null;
+  maxStorageMB: number | null;
+  isActive: boolean;
+  displayOrder: number;
+  featureCodes: string[];
+}
+
+export interface FeatureDto {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+}
+
+export interface PaymentMethodDto {
+  id: string;
+  name: string;
+  type: string;
+  accountName: string | null;
+  accountNumber: string | null;
+  iban: string | null;
+  walletNumber: string | null;
+  instructions: string | null;
+  qrImageUrl: string | null;
+  isActive: boolean;
+  displayOrder: number;
+}
+
+export interface SavePaymentMethodCommand {
+  id?: string;
+  name: string;
+  type: string;
+  accountName: string | null;
+  accountNumber: string | null;
+  iban: string | null;
+  walletNumber: string | null;
+  instructions: string | null;
+  qrImageUrl: string | null;
+  isActive: boolean;
+  displayOrder: number;
+}
+
+export interface PaymentRequestDto {
+  id: string;
+  tenantId: string;
+  tenantName: string;
+  planId: string;
+  planName: string;
+  tenantSubscriptionId: string;
+  amount: number;
+  currency: string;
+  paymentMethodId: string;
+  transactionNumber: string;
+  paymentDate: string;
+  proofFileUrl: string;
+  notes: string | null;
+  status: PaymentRequestStatus;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  rejectReason: string | null;
+  createdAt: string;
+}
+
+export interface RejectPaymentRequestCommand {
+  rejectReason: string;
+}
+
+export interface PlatformSubscriptionDto {
+  id: string;
+  tenantId: string;
+  tenantName: string;
+  planId: string;
+  planName: string;
+  status: TenantSubscriptionStatus;
+  startDate: string;
+  endDate: string;
+  trialEndsAt: string | null;
+  amount: number;
+  currency: string;
+  autoRenew: boolean;
+}
+
+// Standard API error envelope
+export interface ApiError {
+  statusCode: number;
+  message: string;
+  errors?: Record<string, string[]>;
+}

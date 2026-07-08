@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700&display=swap');
+
+// PrimeNG
+@import 'primeng/resources/themes/lara-light-blue/theme.css';
+@import 'primeng/resources/primeng.css';
+@import 'primeicons/primeicons.css';
+
+:root {
+  --bg-page: #f1f5f9;
+  --bg-surface: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #64748b;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Cairo', 'Tajawal', system-ui, sans-serif;
+  background: var(--bg-page);
+  color: var(--text);
+}
+
+// Card helper
+.lf-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+// Status badge base
+.lf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.lf-badge-green  { background: #dcfce7; color: #15803d; }
+.lf-badge-red    { background: #fee2e2; color: #b91c1c; }
+.lf-badge-yellow { background: #fef9c3; color: #a16207; }
+.lf-badge-blue   { background: #dbeafe; color: #1d4ed8; }
+.lf-badge-gray   { background: #e2e8f0; color: #475569; }
+.lf-badge-purple { background: #ede9fe; color: #6d28d9; }
+
+// PrimeNG table polish
+.p-datatable .p-datatable-thead > tr > th {
+  background: #f8fafc;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+.p-datatable .p-datatable-tbody > tr > td {
+  font-size: 0.9rem;
+}
+
+.p-button + .p-button {
+  margin-inline-start: 0.4rem;
+}
