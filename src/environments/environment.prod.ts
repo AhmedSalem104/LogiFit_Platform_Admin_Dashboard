@@ -7,7 +7,7 @@ export const environment = {
   // The browser therefore never makes a cross-origin request → NO CORS is required.
   // (Do NOT put an absolute URL here unless the backend adds this domain to CORS
   //  AllowedOrigins — otherwise the browser blocks it with a CORS preflight error.)
-  apiUrl: '/api/platform',
+  apiUrl: 'https://logicfit-platform.runasp.net/api/platform',
   tokenKey: 'logifit_platform_token',
   refreshTokenKey: 'logifit_platform_refresh_token',
   userKey: 'logifit_platform_user',
