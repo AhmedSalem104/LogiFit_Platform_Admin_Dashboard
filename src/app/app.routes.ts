@@ -61,6 +61,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/payment-requests/payment-requests.component').then((m) => m.PaymentRequestsComponent),
       },
+      {
+        path: 'backups',
+        canActivate: [permissionGuard('ManagePlatformBackups')],
+        loadComponent: () => import('./features/backups/backups.component').then((m) => m.BackupsComponent),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
