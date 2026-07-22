@@ -16,4 +16,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'الميزات', icon: 'pi pi-star', route: '/features', permissions: ['ManagePlans'] },
   { label: 'طرق الدفع', icon: 'pi pi-credit-card', route: '/payment-methods', permissions: ['ManagePaymentRequests'] },
   { label: 'طلبات الدفع', icon: 'pi pi-inbox', route: '/payment-requests', permissions: ['ManagePaymentRequests'] },
+  { label: 'النسخ الاحتياطي', icon: 'pi pi-database', route: '/backups', permissions: ['ManagePlatformBackups'] },
 ];

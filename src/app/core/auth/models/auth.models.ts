@@ -9,7 +9,8 @@ export type Permission =
   | 'ManageTenants'
   | 'ManagePlans'
   | 'ManagePaymentRequests'
-  | 'ManagePlatformReports';
+  | 'ManagePlatformReports'
+  | 'ManagePlatformBackups';
 
 export const Permissions = {
   ManagePlatform: 'ManagePlatform',
@@ -17,6 +18,7 @@ export const Permissions = {
   ManagePlans: 'ManagePlans',
   ManagePaymentRequests: 'ManagePaymentRequests',
   ManagePlatformReports: 'ManagePlatformReports',
+  ManagePlatformBackups: 'ManagePlatformBackups',
 } as const;
 
 export interface LoginRequest {
