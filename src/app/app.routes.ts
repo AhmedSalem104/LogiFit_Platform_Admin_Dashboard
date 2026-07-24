@@ -49,6 +49,9 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/features/features.component').then((m) => m.FeaturesComponent),
       },
+      { path: 'feature-overrides', canActivate: [permissionGuard('ManagePlans')], loadComponent: () => import('./features/feature-overrides/feature-overrides.component').then(m => m.FeatureOverridesComponent) },
+      { path: 'quota-definitions', canActivate: [permissionGuard('ManagePlans')], loadComponent: () => import('./features/quota-definitions/quota-definitions.component').then(m => m.QuotaDefinitionsComponent) },
+      { path: 'feature-dependencies', canActivate: [permissionGuard('ManagePlans')], loadComponent: () => import('./features/feature-dependencies/feature-dependencies.component').then(m => m.FeatureDependenciesComponent) },
       {
         path: 'payment-methods',
         canActivate: [permissionGuard('ManagePaymentRequests')],

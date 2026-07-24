@@ -24,6 +24,7 @@ export enum TenantSubscriptionStatus {
   Suspended = 5,
   Cancelled = 6,
   Expired = 7,
+  GracePeriod = 8,
 }
 
 export enum PaymentRequestStatus {
@@ -32,6 +33,13 @@ export enum PaymentRequestStatus {
   Rejected = 3,
   Cancelled = 4,
   Expired = 5,
+}
+
+export enum PaymentRequestOperation {
+  NewSubscription = 1,
+  Renew = 2,
+  Upgrade = 3,
+  Extend = 4,
 }
 
 export enum SubscriptionInvoiceStatus {
@@ -44,7 +52,7 @@ export enum SubscriptionInvoiceStatus {
 
 export enum BillingCycle {
   Monthly = 1,
-  Quarterly = 2,
+  SemiAnnual = 2,
   Annual = 3,
 }
 
@@ -68,7 +76,7 @@ export const TENANT_STATUS_BADGE: Record<TenantStatus, BadgeInfo> = {
   [TenantStatus.Deleted]: { label: 'محذوف', color: 'gray' },
 };
 
-export const SUBSCRIPTION_STATUS_BADGE: Record<TenantSubscriptionStatus, BadgeInfo> = {
+export const SUBSCRIPTION_STATUS_BADGE: Partial<Record<TenantSubscriptionStatus, BadgeInfo>> = {
   [TenantSubscriptionStatus.PendingPayment]: { label: 'بانتظار الدفع', color: 'yellow' },
   [TenantSubscriptionStatus.Trial]: { label: 'تجريبي', color: 'blue' },
   [TenantSubscriptionStatus.Active]: { label: 'نشط', color: 'green' },
@@ -88,7 +96,7 @@ export const PAYMENT_REQUEST_STATUS_BADGE: Record<PaymentRequestStatus, BadgeInf
 
 export const BILLING_CYCLE_LABEL: Record<BillingCycle, string> = {
   [BillingCycle.Monthly]: 'شهري',
-  [BillingCycle.Quarterly]: 'ربع سنوي',
+  [BillingCycle.SemiAnnual]: '6 أشهر',
   [BillingCycle.Annual]: 'سنوي',
 };
 
@@ -167,6 +175,12 @@ export interface FeatureDto {
   name: string;
   description: string;
   isActive: boolean;
+  nameAr?: string;
+  nameEn?: string;
+  module?: string;
+  isFree?: boolean;
+  supportsQuota?: boolean;
+  status?: number;
 }
 
 export interface PaymentMethodDto {
@@ -212,6 +226,7 @@ export interface PaymentRequestDto {
   proofFileUrl: string;
   notes: string | null;
   status: PaymentRequestStatus;
+  operation: PaymentRequestOperation;
   reviewedBy: string | null;
   reviewedAt: string | null;
   rejectReason: string | null;

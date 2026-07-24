@@ -5,7 +5,7 @@ import { TableModule } from 'primeng/table';
 import { DropdownModule } from 'primeng/dropdown';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
-import { SubscriptionsService } from './subscriptions.service';
+import { SubscriptionsService, TenantUsageDto } from './subscriptions.service';
 import {
   PlatformSubscriptionDto,
   SUBSCRIPTION_STATUS_BADGE,
@@ -57,6 +57,10 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
             <td class="hidden sm:table-cell text-center">
               <i class="pi" [ngClass]="s.autoRenew ? 'pi-check-circle text-green-500' : 'pi-times-circle text-slate-300'"></i>
             </td>
+            <td class="whitespace-nowrap">
+              <button class="p-button p-button-text p-button-sm" (click)="extend(s.id)" title="Extend">+30d</button>
+              <button class="p-button p-button-text p-button-sm" (click)="transition(s.id, TenantSubscriptionStatus.Suspended)" title="Suspend">Suspend</button>
+            </td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
@@ -71,8 +75,10 @@ export class SubscriptionsComponent implements OnInit {
   private notify = inject(NotifyService);
 
   rows = signal<PlatformSubscriptionDto[]>([]);
+  usageRows = signal<TenantUsageDto[]>([]);
   loading = signal(false);
   statusFilter: TenantSubscriptionStatus | null = null;
+  readonly TenantSubscriptionStatus = TenantSubscriptionStatus;
 
   statusOptions = [
     { label: 'بانتظار الدفع', value: TenantSubscriptionStatus.PendingPayment },
@@ -96,11 +102,28 @@ export class SubscriptionsComponent implements OnInit {
     return status === TenantSubscriptionStatus.PastDue || status === TenantSubscriptionStatus.Expired;
   }
 
+  usageFor(tenantId: string): TenantUsageDto | undefined {
+    return this.usageRows().find(x => x.tenantId === tenantId);
+  }
+
+  extend(id: string): void {
+    if (!id) return;
+    const input = window.prompt('عدد أيام التمديد', '30');
+    const days = Number(input);
+    if (!Number.isInteger(days) || days <= 0 || days > 3660) return;
+    this.service.extend(id, days).subscribe({ next: () => this.load(), error: err => this.notify.error(errMsg(err)) });
+  }
+
+  transition(id: string, status: TenantSubscriptionStatus): void {
+    this.service.transition(id, status).subscribe({ next: () => this.load(), error: err => this.notify.error(errMsg(err)) });
+  }
+
   load(): void {
     this.loading.set(true);
     this.service.list(this.statusFilter ?? undefined).subscribe({
       next: (data) => {
         this.rows.set(data);
+        this.service.usage().subscribe({ next: usage => this.usageRows.set(usage) });
         this.loading.set(false);
       },
       error: (err) => {

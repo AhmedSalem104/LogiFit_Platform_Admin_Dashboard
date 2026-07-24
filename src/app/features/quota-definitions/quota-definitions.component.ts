@@ -1,0 +1,6 @@
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FeaturesService } from '../features/features.service';
+
+@Component({selector:'app-quota-definitions',standalone:true,imports:[CommonModule],template:`<div class="p-6"><h1 class="text-2xl font-bold">Quota Management</h1><p class="text-slate-500">تعريف حدود استخدام الميزات.</p><div class="lf-card mt-5 overflow-auto"><table class="w-full text-sm"><thead><tr><th class="p-3 text-start">Feature</th><th class="p-3 text-start">Resource</th><th class="p-3 text-start">Unit</th><th class="p-3 text-start">Default Limit</th><th class="p-3 text-start">Status</th></tr></thead><tbody><tr *ngFor="let q of rows()" class="border-t"><td class="p-3">{{q.featureCode}}</td><td class="p-3">{{q.resourceKey}}</td><td class="p-3">{{q.unit}}</td><td class="p-3">{{q.defaultLimit ?? 'Unlimited'}}</td><td class="p-3">{{q.isActive ? 'Active' : 'Disabled'}}</td></tr></tbody></table></div></div>`})
+export class QuotaDefinitionsComponent implements OnInit { private service=inject(FeaturesService); rows=signal<any[]>([]); ngOnInit(){this.service.quotaDefinitions().subscribe(x=>this.rows.set(x));} }

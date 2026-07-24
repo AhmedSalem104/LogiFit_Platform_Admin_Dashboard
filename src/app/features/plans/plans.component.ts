@@ -143,9 +143,10 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
 
         <div class="sm:col-span-3">
           <label class="lf-label">الميزات</label>
-          <p-multiSelect [options]="features()" formControlName="featureCodes" optionLabel="name" optionValue="code"
+          <p-multiSelect [options]="features()" formControlName="featureCodes" optionLabel="name" optionValue="code" placeholder="Features" styleClass="w-full" [filter]="true"></p-multiSelect>
+          <textarea class="lf-input mt-2" formControlName="featureLimitsJson" dir="ltr" placeholder='{"members.manage":500}'></textarea><!--
             placeholder="اختر الميزات" styleClass="w-full" [filter]="true"></p-multiSelect>
-        </div>
+        --></div>
       </form>
       <ng-template pTemplate="footer">
         <button pButton label="إلغاء" class="p-button-text p-button-secondary" (click)="showForm = false"></button>
@@ -169,7 +170,7 @@ export class PlansComponent implements OnInit {
 
   cycleOptions = [
     { label: 'شهري', value: BillingCycle.Monthly },
-    { label: 'ربع سنوي', value: BillingCycle.Quarterly },
+    { label: '6 أشهر', value: BillingCycle.SemiAnnual },
     { label: 'سنوي', value: BillingCycle.Annual },
   ];
 
@@ -188,6 +189,7 @@ export class PlansComponent implements OnInit {
     isActive: [true],
     displayOrder: [1],
     featureCodes: [[] as string[]],
+    featureLimitsJson: ['{}'],
   });
 
   ngOnInit(): void {
@@ -282,6 +284,7 @@ export class PlansComponent implements OnInit {
       isActive: v.isActive,
       displayOrder: Number(v.displayOrder) || 0,
       featureCodes: v.featureCodes,
+      featureLimits: (() => { try { return JSON.parse(v.featureLimitsJson || '{}'); } catch { return {}; } })(),
     };
     const req = this.editingId ? this.service.update(this.editingId, cmd) : this.service.create(cmd);
     req.subscribe({
