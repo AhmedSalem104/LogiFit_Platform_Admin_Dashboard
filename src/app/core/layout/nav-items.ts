@@ -14,6 +14,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'سجل التدقيق', icon: 'pi pi-history', route: '/audit-logs', permissions: ['ManagePlatformReports'] },
   { label: 'الفواتير', icon: 'pi pi-file', route: '/invoices', permissions: ['ManagePlatformReports'] },
   { label: 'مشرفو المنصة', icon: 'pi pi-users', route: '/administrators', permissions: ['ManagePlatformReports'] },
+  { label: 'الأدوار والصلاحيات', icon: 'pi pi-shield', route: '/roles', permissions: ['ManagePlatformReports'] },
   { label: 'تجاوزات الميزات', icon: 'pi pi-sliders-h', route: '/feature-overrides', permissions: ['ManagePlans'] },
   { label: 'تعريفات الحدود', icon: 'pi pi-chart-line', route: '/quota-definitions', permissions: ['ManagePlans'] },
   { label: 'اعتماديات الميزات', icon: 'pi pi-share-alt', route: '/feature-dependencies', permissions: ['ManagePlans'] },
