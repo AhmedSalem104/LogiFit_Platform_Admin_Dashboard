@@ -71,6 +71,7 @@ export const routes: Routes = [
       },
       { path: 'audit-logs', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/audit-logs/audit-logs.component').then((m) => m.AuditLogsComponent) },
       { path: 'invoices', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/invoices/invoices.component').then((m) => m.InvoicesComponent) },
+      { path: 'administrators', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/administrators/administrators.component').then((m) => m.AdministratorsComponent) },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

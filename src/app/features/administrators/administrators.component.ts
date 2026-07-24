@@ -1,0 +1,10 @@
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { NotifyService, errMsg } from '../../shared/ui/notify.service';
+import { environment } from '../../../environments/environment';
+@Component({selector:'app-administrators',standalone:true,changeDetection:ChangeDetectionStrategy.OnPush,imports:[CommonModule,TableModule,ButtonModule,PageHeaderComponent],template:`<div class="lf-page"><app-page-header title="مشرفو المنصة" subtitle="إدارة حسابات فريق إدارة المنصة" icon="pi pi-users"></app-page-header><div class="lf-table-shell"><p-table [value]="rows()" [loading]="loading()"><ng-template pTemplate="header"><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>إجراء</th></tr></ng-template><ng-template pTemplate="body" let-row><tr><td>{{row.fullName||'—'}}</td><td>{{row.email}}</td><td>{{row.role}}</td><td><span class="lf-badge" [class.lf-badge-green]="row.isActive" [class.lf-badge-red]="!row.isActive">{{row.isActive?'نشط':'موقوف'}}</span></td><td><button pButton [label]="row.isActive?'تعطيل':'تفعيل'" [severity]="row.isActive?'danger':'success'" [text]="true" (click)="toggle(row)"></button></td></tr></ng-template><ng-template pTemplate="emptymessage"><tr><td colspan="5" class="text-center py-8">لا يوجد مشرفون</td></tr></ng-template></p-table></div></div>`})
+export class AdministratorsComponent { private http=inject(HttpClient); private notify=inject(NotifyService); rows=signal<any[]>([]); loading=signal(false); ngOnInit(){this.load();} load(){this.loading.set(true);this.http.get<any[]>(`${environment.apiUrl}/administrators`).subscribe({next:r=>{this.rows.set(r);this.loading.set(false)},error:e=>{this.notify.error(errMsg(e));this.loading.set(false)}})} toggle(row:any){this.http.patch(`${environment.apiUrl}/administrators/${row.id}/status`,!row.isActive).subscribe({next:()=>this.load(),error:e=>this.notify.error(errMsg(e))});} }
