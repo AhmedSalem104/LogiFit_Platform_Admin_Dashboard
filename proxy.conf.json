@@ -1,7 +1,7 @@
 {
   "/api": {
-    "target": "https://logicfit-platform.runasp.net",
-    "secure": true,
+    "target": "http://localhost:5026",
+    "secure": false,
     "changeOrigin": true
   }
 }
