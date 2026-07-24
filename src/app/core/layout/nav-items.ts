@@ -17,7 +17,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'طرق الدفع', icon: 'pi pi-credit-card', route: '/payment-methods', permissions: ['ManagePaymentRequests'] },
   { label: 'طلبات الدفع', icon: 'pi pi-inbox', route: '/payment-requests', permissions: ['ManagePaymentRequests'] },
   { label: 'النسخ الاحتياطي', icon: 'pi pi-database', route: '/backups', permissions: ['ManagePlatformBackups'] },
-  { label: 'Feature Overrides', icon: 'pi pi-sliders-h', route: '/feature-overrides', permissions: ['ManagePlans'] },
-  { label: 'Quota Definitions', icon: 'pi pi-chart-line', route: '/quota-definitions', permissions: ['ManagePlans'] },
-  { label: 'Feature Dependencies', icon: 'pi pi-share-alt', route: '/feature-dependencies', permissions: ['ManagePlans'] },
+  { label: 'تجاوزات الميزات', icon: 'pi pi-sliders-h', route: '/feature-overrides', permissions: ['ManagePlans'] },
+  { label: 'تعريفات الحدود', icon: 'pi pi-chart-line', route: '/quota-definitions', permissions: ['ManagePlans'] },
+  { label: 'اعتماديات الميزات', icon: 'pi pi-share-alt', route: '/feature-dependencies', permissions: ['ManagePlans'] },
 ];

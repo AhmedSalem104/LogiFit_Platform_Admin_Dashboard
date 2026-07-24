@@ -84,6 +84,16 @@ html, body {
 
 /* ============================ PrimeNG overrides ============================ */
 .p-button { font-family: inherit; font-weight: 600; border-radius: 0.6rem; }
+.p-button {
+  min-height: 2.65rem;
+  padding-inline: 1rem;
+  box-shadow: 0 1px 2px rgba(15,23,42,.05);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.p-button:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79,70,229,.18); }
+.p-button.p-button-outlined { background: #fff; border-width: 1px; }
+.p-button.p-button-text { box-shadow: none; }
+.p-button.p-button-danger:not(.p-button-text) { box-shadow: 0 5px 14px rgba(220,38,38,.16); }
 .p-button.p-button-primary, .p-button:not([class*='p-button-']) { background: var(--brand); border-color: var(--brand); }
 .p-button.p-button-primary:hover, .p-button:not([class*='p-button-']):hover { background: var(--brand-600); border-color: var(--brand-600); }
 .p-button + .p-button { margin-inline-start: 0.35rem; }
@@ -117,6 +127,15 @@ html, body {
 .p-paginator { background: transparent; border: none; padding: 0.75rem; }
 
 .p-toast .p-toast-message { border-radius: 0.7rem; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.14); }
+
+/* Consistent dashboard surfaces and dense information layout */
+.lf-page { display: flex; flex-direction: column; gap: 1.25rem; }
+.lf-toolbar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.lf-section-title { font-size: 1.15rem; font-weight: 800; color: #0f172a; letter-spacing: -.01em; }
+.lf-section-subtitle { color: #64748b; font-size: .82rem; margin-top: .2rem; }
+.lf-stat { position: relative; overflow: hidden; padding: 1.1rem; }
+.lf-stat::after { content: ''; position: absolute; width: 7rem; height: 7rem; border-radius: 50%; background: rgba(99,102,241,.08); inset-inline-end: -2.5rem; top: -3rem; }
+.lf-table-shell { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; box-shadow: 0 2px 8px rgba(15,23,42,.035); }
 
 /* Reduced motion respect */
 @media (prefers-reduced-motion: reduce) {
