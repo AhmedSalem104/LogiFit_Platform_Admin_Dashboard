@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://logicfit-platform.runasp.net/api/:path*"
+      "destination": "https://logicfit-saas.runasp.net/api/:path*"
     },
     {
       "source": "/(.*)",
