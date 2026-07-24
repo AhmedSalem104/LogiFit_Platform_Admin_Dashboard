@@ -69,6 +69,7 @@ export const routes: Routes = [
         canActivate: [permissionGuard('ManagePlatformBackups')],
         loadComponent: () => import('./features/backups/backups.component').then((m) => m.BackupsComponent),
       },
+      { path: 'audit-logs', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/audit-logs/audit-logs.component').then((m) => m.AuditLogsComponent) },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
