@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -6,61 +6,47 @@ import { AuthService } from '../../core/auth/services/auth.service';
 import { errMsg } from '../../shared/ui/notify.service';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  selector: 'app-login', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <main class="min-h-screen grid lg:grid-cols-2 bg-slate-50">
-      <section class="hidden lg:flex relative overflow-hidden flex-col justify-between p-12 text-white bg-[radial-gradient(circle_at_15%_15%,rgba(96,165,250,.38),transparent_28%),radial-gradient(circle_at_80%_85%,rgba(129,140,248,.35),transparent_32%),linear-gradient(145deg,#0f172a,#172554_56%,#1d4ed8)]">
-        <div class="absolute inset-0 opacity-[.16] [background-image:linear-gradient(rgba(255,255,255,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.35)_1px,transparent_1px)] [background-size:36px_36px]"></div>
-        <div class="relative flex items-center gap-3"><div class="grid h-12 w-12 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/20 font-extrabold text-xl backdrop-blur">LF</div><div><p class="font-extrabold text-lg leading-none">LogicFit</p><p class="mt-1 text-xs text-blue-100">منصة الإدارة المركزية</p></div></div>
-        <div class="relative max-w-lg">
-          <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-blue-50"><i class="pi pi-shield"></i> دخول آمن ومخصص للإدارة</span>
-          <h1 class="mt-6 text-4xl font-extrabold leading-tight">كل ما تحتاجه لإدارة المنصة، في لوحة واحدة.</h1>
-          <p class="mt-5 max-w-md text-base leading-8 text-blue-100">تابع المنشآت والاشتراكات والمدفوعات والنسخ الاحتياطية والعمليات الحساسة بوضوح كامل.</p>
-          <div class="mt-9 grid grid-cols-3 gap-3 text-center"><div class="rounded-xl border border-white/10 bg-white/[.08] px-3 py-4"><i class="pi pi-building"></i><p class="mt-2 text-xs text-blue-100">المنشآت</p></div><div class="rounded-xl border border-white/10 bg-white/[.08] px-3 py-4"><i class="pi pi-wallet"></i><p class="mt-2 text-xs text-blue-100">المدفوعات</p></div><div class="rounded-xl border border-white/10 bg-white/[.08] px-3 py-4"><i class="pi pi-chart-line"></i><p class="mt-2 text-xs text-blue-100">المتابعة</p></div></div>
-        </div>
-        <p class="relative text-xs text-blue-100/70">© {{ currentYear }} LogicFit. جميع الحقوق محفوظة.</p>
-      </section>
-
-      <section class="flex items-center justify-center p-5 sm:p-8">
-        <div class="w-full max-w-md">
-          <div class="mb-7 text-center lg:hidden"><div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xl font-extrabold text-white shadow-lg shadow-blue-600/25">LF</div><h1 class="mt-4 text-xl font-extrabold text-slate-900">LogicFit</h1><p class="mt-1 text-sm text-slate-500">لوحة تحكم المنصة</p></div>
-          <div class="lf-login-card rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,.10)] sm:p-9">
-            <div class="mb-7"><span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><i class="pi pi-lock"></i></span><h2 class="mt-4 text-2xl font-extrabold text-slate-900">مرحبًا بعودتك</h2><p class="mt-1.5 text-sm leading-6 text-slate-500">سجّل الدخول للوصول إلى مساحة إدارة LogicFit.</p></div>
-            <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5" novalidate>
-              <div><label class="lf-label" for="email">البريد الإلكتروني</label><div class="relative"><i class="pi pi-envelope absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i><input id="email" type="email" formControlName="email" dir="ltr" class="lf-input pr-10 text-left" placeholder="owner@platform.local" autocomplete="username" /></div>@if (invalid('email')) { <p class="mt-1.5 text-xs font-medium text-rose-600">أدخل بريدًا إلكترونيًا صحيحًا.</p> }</div>
-              <div><label class="lf-label" for="password">كلمة المرور</label><div class="relative"><i class="pi pi-key absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i><input id="password" [type]="showPass() ? 'text' : 'password'" formControlName="password" dir="ltr" class="lf-input px-10 text-left" placeholder="••••••••" autocomplete="current-password" /><button type="button" (click)="showPass.set(!showPass())" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700" tabindex="-1" aria-label="إظهار أو إخفاء كلمة المرور"><i class="pi" [ngClass]="showPass() ? 'pi-eye-slash' : 'pi-eye'"></i></button></div>@if (invalid('password')) { <p class="mt-1.5 text-xs font-medium text-rose-600">كلمة المرور مطلوبة.</p> }</div>
-              @if (error()) { <div role="alert" class="flex items-start gap-2 rounded-xl border border-rose-100 bg-rose-50 px-3 py-3 text-sm text-rose-700"><i class="pi pi-exclamation-circle mt-0.5"></i><span class="whitespace-pre-line">{{ error() }}</span></div> }
-              <button type="submit" [disabled]="loading()" class="lf-login-submit"><i class="pi" [ngClass]="loading() ? 'pi-spin pi-spinner' : 'pi-sign-in'"></i>{{ loading() ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول' }}</button>
-            </form>
-          </div>
-          <p class="mt-5 text-center text-xs text-slate-400">هذه المساحة مخصصة لمديري المنصة المصرح لهم.</p>
-        </div>
+    <main class="login-shell" dir="rtl">
+      <section class="login-card" aria-labelledby="login-title">
+        <div class="login-brand"><span class="login-logo">LF</span><div><b>LogicFit</b><span>منصة الإدارة المركزية</span></div></div>
+        <div class="login-heading"><span class="login-lock"><i class="pi pi-shield"></i></span><h1 id="login-title">تسجيل الدخول</h1><p>مرحبًا بعودتك. سجّل الدخول لإدارة منصة LogicFit بأمان.</p></div>
+        <form [formGroup]="form" (ngSubmit)="submit()" class="login-form" novalidate>
+          <div class="field-group"><label for="email">البريد الإلكتروني</label><div class="field-wrap" [class.field-invalid]="invalid('email')" [class.field-valid]="valid('email')"><i class="pi pi-envelope field-icon"></i><input id="email" type="email" formControlName="email" dir="ltr" autocomplete="username" placeholder="owner@platform.local" aria-describedby="email-error"></div>@if (invalid('email')) {<p id="email-error" class="field-error" role="alert">أدخل بريدًا إلكترونيًا صحيحًا.</p>}</div>
+          <div class="field-group"><div class="field-label-row"><label for="password">كلمة المرور</label><button type="button" class="forgot-link" (click)="forgotPassword()">نسيت كلمة المرور؟</button></div><div class="field-wrap" [class.field-invalid]="invalid('password')"><i class="pi pi-key field-icon"></i><input id="password" [type]="showPass() ? 'text' : 'password'" formControlName="password" dir="ltr" autocomplete="current-password" placeholder="••••••••" (keyup)="detectCaps($event)" aria-describedby="password-error caps-warning"><button type="button" class="password-toggle" (click)="togglePass()" [attr.aria-label]="showPass() ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'"><i class="pi" [ngClass]="showPass() ? 'pi-eye-slash' : 'pi-eye'"></i></button></div>@if (capsLock()) {<p id="caps-warning" class="caps-warning"><i class="pi pi-info-circle"></i> Caps Lock مفعّل</p>}@if (invalid('password')) {<p id="password-error" class="field-error" role="alert">كلمة المرور مطلوبة.</p>}</div>
+          <div class="login-options"><label class="remember-option"><input type="checkbox" [checked]="rememberMe()" (change)="rememberMe.set($any($event.target).checked)"><span>تذكرني على هذا الجهاز</span></label></div>
+          @if (error()) {<div class="login-error" role="alert"><i class="pi pi-exclamation-circle"></i><span>{{ error() }}</span></div>}
+          <button type="submit" class="login-submit" [disabled]="loading() || form.invalid"><i class="pi" [ngClass]="loading() ? 'pi-spinner pi-spin' : 'pi-sign-in'"></i>{{ loading() ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول' }}</button>
+        </form>
+        <div class="login-footer"><span>هذه المساحة مخصصة لمديري المنصة المصرح لهم.</span><small>© {{ currentYear }} LogicFit</small></div>
       </section>
     </main>
   `,
+  styles: [`
+    :host { display:block; min-height:100vh; }
+    .login-shell { min-height:100vh; display:grid; place-items:center; padding:1.25rem; background:linear-gradient(145deg,#0f172a,#172554 56%,#1d4ed8); }
+    .login-card { width:min(100%,440px); padding:2rem; border:1px solid rgba(255,255,255,.7); border-radius:1.5rem; background:rgba(255,255,255,.98); box-shadow:0 28px 80px rgba(2,6,23,.32); animation:login-enter .5s cubic-bezier(.2,.8,.2,1) both; }
+    .login-brand { display:flex; align-items:center; justify-content:center; gap:.7rem; margin-bottom:1.8rem; }.login-logo { display:grid; place-items:center; width:2.8rem; height:2.8rem; border-radius:.9rem; color:#fff; background:linear-gradient(135deg,#2563eb,#4f46e5); font-weight:900; box-shadow:0 9px 20px rgba(37,99,235,.25); }.login-brand b,.login-brand span { display:block; }.login-brand b { color:#172033; font-size:1rem; }.login-brand span { margin-top:.15rem; color:#64748b; font-size:.7rem; }
+    .login-heading { text-align:center; }.login-lock { display:grid; place-items:center; width:2.7rem; height:2.7rem; margin:0 auto; border-radius:.85rem; color:#2563eb; background:#eff6ff; }.login-heading h1 { margin:1rem 0 .35rem; color:#0f172a; font-size:1.55rem; font-weight:900; }.login-heading p { margin:0 auto; max-width:20rem; color:#64748b; font-size:.82rem; line-height:1.8; }
+    .login-form { display:grid; gap:1.1rem; margin-top:1.7rem; }.field-group label { display:block; margin-bottom:.4rem; color:#334155; font-size:.8rem; font-weight:800; }.field-label-row { display:flex; align-items:center; justify-content:space-between; }.field-label-row label { margin-bottom:.4rem; }.forgot-link { color:#2563eb; border:0; background:transparent; font:700 .72rem inherit; cursor:pointer; }.forgot-link:hover { color:#1d4ed8; text-decoration:underline; }
+    .field-wrap { position:relative; display:flex; align-items:center; border:1px solid #d8deea; border-radius:.75rem; background:#fff; transition:border-color .18s,box-shadow .18s,background .18s; }.field-wrap:focus-within { border-color:#2563eb; box-shadow:0 0 0 4px rgba(37,99,235,.12); }.field-wrap.field-invalid { border-color:#e11d48; background:#fff8f8; }.field-wrap.field-invalid:focus-within { box-shadow:0 0 0 4px rgba(225,29,72,.1); }.field-wrap.field-valid { border-color:#10b981; }.field-wrap input { width:100%; min-height:2.85rem; padding:.55rem 2.55rem .55rem .8rem; border:0; outline:0; color:#0f172a; background:transparent; font:600 .88rem inherit; }.field-icon { position:absolute; right:.85rem; color:#94a3b8; font-size:.9rem; pointer-events:none; }.password-toggle { position:absolute; left:.75rem; display:grid; place-items:center; width:1.8rem; height:1.8rem; color:#64748b; border:0; border-radius:.5rem; background:transparent; cursor:pointer; }.password-toggle:hover { color:#1d4ed8; background:#eff6ff; }.field-error,.caps-warning { margin:.35rem 0 0; font-size:.72rem; font-weight:700; }.field-error { color:#e11d48; }.caps-warning { display:flex; align-items:center; gap:.3rem; color:#b45309; }.login-options { display:flex; justify-content:flex-start; }.remember-option { display:flex; align-items:center; gap:.45rem; color:#64748b; font-size:.75rem; cursor:pointer; }.remember-option input { width:1rem; height:1rem; accent-color:#2563eb; }
+    .login-error { display:flex; align-items:flex-start; gap:.5rem; padding:.75rem .85rem; border:1px solid #fecdd3; border-radius:.75rem; color:#be123c; background:#fff1f2; font-size:.78rem; line-height:1.7; }.login-submit { display:flex; align-items:center; justify-content:center; gap:.55rem; width:100%; min-height:3rem; margin-top:.2rem; color:#fff; border:0; border-radius:.8rem; background:linear-gradient(135deg,#2563eb,#4f46e5); box-shadow:0 11px 22px rgba(37,99,235,.24); font:800 .88rem inherit; cursor:pointer; transition:transform .18s,box-shadow .18s,opacity .18s; }.login-submit:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 15px 28px rgba(37,99,235,.3); }.login-submit:active:not(:disabled) { transform:translateY(0); }.login-submit:focus-visible,.forgot-link:focus-visible,.password-toggle:focus-visible { outline:3px solid rgba(37,99,235,.28); outline-offset:2px; }.login-submit:disabled { cursor:not-allowed; opacity:.58; box-shadow:none; }.login-footer { display:flex; flex-direction:column; gap:.3rem; margin-top:1.5rem; color:#94a3b8; text-align:center; font-size:.68rem; }.login-footer small { color:#cbd5e1; }
+    @keyframes login-enter { from { opacity:0; transform:translateY(14px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+    @media (max-width:480px) { .login-shell { align-items:start; padding:1rem; padding-top:max(1rem,env(safe-area-inset-top)); }.login-card { margin-top:4vh; padding:1.35rem; border-radius:1.25rem; }.login-brand { margin-bottom:1.35rem; }.login-heading h1 { font-size:1.35rem; } }
+    @media (prefers-reduced-motion:reduce) { .login-card { animation:none; } }
+  `],
 })
 export class LoginComponent {
-  private fb = inject(FormBuilder);
-  private auth = inject(AuthService);
-  private router = inject(Router);
-
-  readonly currentYear = new Date().getFullYear();
-  loading = signal(false);
-  error = signal<string>('');
-  showPass = signal(false);
+  private fb = inject(FormBuilder); private auth = inject(AuthService); private router = inject(Router);
+  readonly currentYear = new Date().getFullYear(); loading = signal(false); error = signal(''); showPass = signal(false); capsLock = signal(false); rememberMe = signal(localStorage.getItem('lf-remember-login') === '1');
   form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]], password: ['', [Validators.required]] });
-
   invalid(control: string): boolean { const field = this.form.get(control); return !!field && field.invalid && (field.touched || field.dirty); }
-
-  submit(): void {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.loading.set(true); this.error.set('');
-    this.auth.login(this.form.getRawValue()).subscribe({
-      next: () => { this.loading.set(false); this.router.navigate(['/dashboard']); },
-      error: error => { this.loading.set(false); this.error.set(errMsg(error)); },
-    });
-  }
+  valid(control: string): boolean { const field = this.form.get(control); return !!field && field.valid && (field.touched || field.dirty); }
+  @HostListener('window:keydown', ['$event']) onKeydown(event: KeyboardEvent): void { if (event.key === 'CapsLock') this.capsLock.set(event.getModifierState('CapsLock')); }
+  detectCaps(event: KeyboardEvent): void { this.capsLock.set(event.getModifierState('CapsLock')); }
+  togglePass(): void { this.showPass.update(value => !value); }
+  forgotPassword(): void { this.error.set('لإعادة ضبط كلمة المرور، يرجى التواصل مع مالك المنصة أو مسؤول النظام.'); }
+  submit(): void { if (this.form.invalid) { this.form.markAllAsTouched(); return; } this.loading.set(true); this.error.set(''); localStorage.setItem('lf-remember-login', this.rememberMe() ? '1' : '0'); this.auth.login(this.form.getRawValue()).subscribe({ next: () => { this.loading.set(false); this.router.navigate(['/dashboard']); }, error: error => { this.loading.set(false); this.error.set(errMsg(error)); } }); }
 }
