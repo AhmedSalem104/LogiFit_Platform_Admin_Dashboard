@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PagedResult } from '../../core/models/platform.models';
 
 export interface BackupRecord { fileName: string; sizeBytes: number; createdAt: string; status: string; }
 export interface BackupStatus {
@@ -18,7 +19,9 @@ export interface BackupStatus {
 export class BackupsService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/backups`;
-  list(): Observable<BackupRecord[]> { return this.http.get<BackupRecord[]>(this.base); }
+  list(page = 1, pageSize = 20): Observable<PagedResult<BackupRecord>> {
+    return this.http.get<PagedResult<BackupRecord>>(this.base, { params: { page, pageSize } });
+  }
   status(): Observable<BackupStatus> { return this.http.get<BackupStatus>(`${this.base}/status`); }
   create(): Observable<BackupRecord> { return this.http.post<BackupRecord>(this.base, {}); }
   download(fileName: string): Observable<Blob> {

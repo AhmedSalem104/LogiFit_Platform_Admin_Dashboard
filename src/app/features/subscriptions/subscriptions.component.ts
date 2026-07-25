@@ -5,6 +5,7 @@ import { TableModule } from 'primeng/table';
 import { DropdownModule } from 'primeng/dropdown';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
+import { ServerPaginatorComponent } from '../../shared/ui/server-paginator.component';
 import { SubscriptionsService, TenantUsageDto } from './subscriptions.service';
 import {
   PlatformSubscriptionDto,
@@ -17,13 +18,13 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
   selector: 'app-subscriptions',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, TableModule, DropdownModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, TableModule, DropdownModule, PageHeaderComponent, StatusBadgeComponent, ServerPaginatorComponent],
   template: `
     <app-page-header title="الاشتراكات" subtitle="اشتراكات الجيمات في الباقات" icon="pi pi-sync">
       <p-dropdown
         [options]="statusOptions"
         [(ngModel)]="statusFilter"
-        (onChange)="load()"
+        (onChange)="resetPage()"
         optionLabel="label"
         optionValue="value"
         placeholder="كل الحالات"
@@ -33,7 +34,7 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
     </app-page-header>
 
     <div class="lf-card overflow-hidden">
-      <p-table [value]="rows()" [loading]="loading()" [paginator]="rows().length > 12" [rows]="12"
+      <p-table [value]="rows()" [loading]="loading()"
         styleClass="p-datatable-sm" [scrollable]="true">
         <ng-template pTemplate="header">
           <tr>
@@ -67,6 +68,7 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
           <tr><td colspan="7" class="text-center text-slate-400 py-10"><i class="pi pi-inbox text-2xl block mb-2 opacity-40"></i>لا توجد اشتراكات</td></tr>
         </ng-template>
       </p-table>
+      <app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator>
     </div>
   `,
 })
@@ -75,6 +77,9 @@ export class SubscriptionsComponent implements OnInit {
   private notify = inject(NotifyService);
 
   rows = signal<PlatformSubscriptionDto[]>([]);
+  page = 1;
+  pageSize = 20;
+  totalCount = 0;
   usageRows = signal<TenantUsageDto[]>([]);
   loading = signal(false);
   statusFilter: TenantSubscriptionStatus | null = null;
@@ -120,9 +125,10 @@ export class SubscriptionsComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.service.list(this.statusFilter ?? undefined).subscribe({
+    this.service.list(this.statusFilter ?? undefined, this.page, this.pageSize).subscribe({
       next: (data) => {
-        this.rows.set(data);
+        this.rows.set(data.items);
+        this.totalCount = data.totalCount;
         this.service.usage().subscribe({ next: usage => this.usageRows.set(usage) });
         this.loading.set(false);
       },
@@ -131,5 +137,16 @@ export class SubscriptionsComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  resetPage(): void {
+    this.page = 1;
+    this.load();
+  }
+
+  onPageChange(event: { page: number; pageSize: number }): void {
+    this.page = event.page;
+    this.pageSize = event.pageSize;
+    this.load();
   }
 }

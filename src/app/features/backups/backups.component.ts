@@ -1,14 +1,16 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
+import { ServerPaginatorComponent } from '../../shared/ui/server-paginator.component';
 import { BackupsService, BackupRecord, BackupStatus } from './backups.service';
+import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assistant.service';
 
 @Component({
   selector: 'app-backups', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, TableModule, ButtonModule, PageHeaderComponent],
+  imports: [CommonModule, TableModule, ButtonModule, PageHeaderComponent, ServerPaginatorComponent],
   template: `
     <app-page-header title="مركز النسخ الاحتياطي" subtitle="حماية قاعدة بيانات المنصة واستعادة الأعمال بثقة." icon="pi pi-database"></app-page-header>
 
@@ -57,7 +59,7 @@ import { BackupsService, BackupRecord, BackupStatus } from './backups.service';
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div><h2 class="m-0 text-lg font-extrabold text-slate-900">سجل النسخ المكتملة</h2><p class="mb-0 mt-1 text-sm text-slate-500">يمكن تنزيل أي نسخة مكتملة عبر اتصال إداري موثق.</p></div>
-        <span class="inline-flex w-fit items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600"><i class="pi pi-folder"></i>{{ rows().length }} ملف</span>
+        <span class="inline-flex w-fit items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600"><i class="pi pi-folder"></i>{{ totalCount }} ملف</span>
       </div>
 
       <p-table [value]="rows()" [loading]="loading()" styleClass="p-datatable-sm">
@@ -73,12 +75,19 @@ import { BackupsService, BackupRecord, BackupStatus } from './backups.service';
         </ng-template>
         <ng-template pTemplate="emptymessage"><tr><td colspan="5" class="py-14 text-center"><i class="pi pi-inbox mb-3 block text-3xl text-slate-300"></i><p class="m-0 font-bold text-slate-600">لا توجد نسخ مكتملة حتى الآن</p><p class="mb-0 mt-1 text-sm text-slate-400">أنشئ أول نسخة يدوية بعد التأكد من جاهزية الخدمة.</p></td></tr></ng-template>
       </p-table>
+      <app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator>
     </section>
   `,
 })
 export class BackupsComponent implements OnInit {
+  @HostListener(`window:${ADMIN_ASSISTANT_COMMAND_EVENT}`, ['$event'])
+  onAssistantCommand(event: Event): void {
+    if ((event as CustomEvent<{ command?: string }>).detail?.command === 'create-backup') this.create();
+  }
+
   private service = inject(BackupsService); private notify = inject(NotifyService);
   rows = signal<BackupRecord[]>([]); loading = signal(false); creating = signal(false); refreshing = signal(false);
+  page = 1; pageSize = 20; totalCount = 0;
   downloadingFile = signal<string | null>(null); status = signal<BackupStatus | null>(null);
 
   ngOnInit(): void { this.loadStatus(); }
@@ -97,11 +106,13 @@ export class BackupsComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.service.list().subscribe({
-      next: rows => { this.rows.set(rows); this.loading.set(false); },
+    this.service.list(this.page, this.pageSize).subscribe({
+      next: response => { this.rows.set(response.items); this.totalCount = response.totalCount; this.loading.set(false); },
       error: error => { this.notify.error(errMsg(error)); this.loading.set(false); },
     });
   }
+
+  onPageChange(event: { page: number; pageSize: number }): void { this.page = event.page; this.pageSize = event.pageSize; this.load(); }
 
   create(): void {
     const status = this.status();

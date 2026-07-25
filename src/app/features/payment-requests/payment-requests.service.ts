@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   PaymentRequestDto,
   PaymentRequestStatus,
+  PagedResult,
   RejectPaymentRequestCommand,
 } from '../../core/models/platform.models';
 
@@ -13,10 +14,10 @@ export class PaymentRequestsService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/payment-requests`;
 
-  list(status?: PaymentRequestStatus): Observable<PaymentRequestDto[]> {
-    let params = new HttpParams();
+  list(status?: PaymentRequestStatus, page = 1, pageSize = 20): Observable<PagedResult<PaymentRequestDto>> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
     if (status != null) params = params.set('status', status);
-    return this.http.get<PaymentRequestDto[]>(this.base, { params });
+    return this.http.get<PagedResult<PaymentRequestDto>>(this.base, { params });
   }
 
   approve(id: string): Observable<PaymentRequestDto> {
