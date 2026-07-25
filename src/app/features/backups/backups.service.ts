@@ -21,4 +21,7 @@ export class BackupsService {
   list(): Observable<BackupRecord[]> { return this.http.get<BackupRecord[]>(this.base); }
   status(): Observable<BackupStatus> { return this.http.get<BackupStatus>(`${this.base}/status`); }
   create(): Observable<BackupRecord> { return this.http.post<BackupRecord>(this.base, {}); }
+  download(fileName: string): Observable<Blob> {
+    return this.http.get(`${this.base}/${encodeURIComponent(fileName)}/download`, { responseType: 'blob' });
+  }
 }
