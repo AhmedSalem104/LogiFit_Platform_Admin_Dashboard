@@ -1,7 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, catchError, map, tap, throwError } from 'rxjs';
+import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { StorageService } from '../../services/storage.service';
 import { AuthResponse, LoginRequest, Permission, UserInfo } from '../models/auth.models';
@@ -13,6 +13,7 @@ export class AuthService {
   private currentUser = signal<UserInfo | null>(null);
   private token = signal<string | null>(null);
   private permissionsSig = signal<Permission[]>([]);
+  private refreshInFlight$?: Observable<string>;
 
   readonly user = this.currentUser.asReadonly();
   readonly permissions = this.permissionsSig.asReadonly();
@@ -51,6 +52,41 @@ export class AuthService {
         return throwError(() => err);
       }),
     );
+  }
+
+  /**
+   * Returns the token that may safely be attached to a protected request.
+   *
+   * When an expired access token still has a refresh token, all concurrent
+   * startup requests share a single refresh operation instead of each sending
+   * an avoidable 401 request first.
+   */
+  getValidAccessToken(): Observable<string | null> {
+    const token = this.getToken();
+    if (!token || !this.isTokenExpired(token)) {
+      return of(token);
+    }
+
+    if (!this.getRefreshToken()) {
+      this.clearSession();
+      return of(null);
+    }
+
+    return this.refreshTokenOnce();
+  }
+
+  /** Shares one refresh request between all protected requests in flight. */
+  refreshTokenOnce(): Observable<string> {
+    if (!this.refreshInFlight$) {
+      this.refreshInFlight$ = this.refreshToken().pipe(
+        finalize(() => {
+          this.refreshInFlight$ = undefined;
+        }),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
+    }
+
+    return this.refreshInFlight$;
   }
 
   /** Invalidate all server-side sessions, then clear locally. */
@@ -133,14 +169,17 @@ export class AuthService {
   private checkTokenExpiration(): void {
     const token = this.token();
     if (!token) return;
+    if (this.isTokenExpired(token) && !this.getRefreshToken()) {
+      this.clearSession();
+    }
+  }
+
+  private isTokenExpired(token: string): boolean {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const expired = new Date(payload.exp * 1000) < new Date();
-      if (expired && !this.getRefreshToken()) {
-        this.clearSession();
-      }
+      return typeof payload.exp !== 'number' || payload.exp * 1000 <= Date.now();
     } catch {
-      if (!this.getRefreshToken()) this.clearSession();
+      return true;
     }
   }
 }
