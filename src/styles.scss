@@ -187,11 +187,14 @@ app-main-layout .lf-sidebar { inset: 0 0 0 auto; }
 }
 
 @media print {
-  body { background:#fff !important; }
+  html, body { width:100% !important; min-width:0 !important; background:#fff !important; }
   .lf-sidebar, .lf-topbar, .print-hide, app-admin-assistant { display:none !important; }
-  main { margin:0 !important; max-width:none !important; padding:0 !important; }
+  main, .lf-page { width:100% !important; max-width:none !important; margin:0 !important; padding:0 !important; }
+  .lf-page > *, .lf-table-shell, table { width:100% !important; max-width:none !important; }
+  .overflow-x-auto { overflow:visible !important; }
+  .p-datatable-wrapper { overflow:visible !important; }
   .lf-card { box-shadow:none !important; border-color:#cbd5e1 !important; break-inside:avoid; }
   .lf-page { gap:.75rem !important; }
   a { color:inherit !important; text-decoration:none !important; }
-  @page { size:A4; margin:14mm; }
+  @page { size:A4 landscape; margin:8mm; }
 }
