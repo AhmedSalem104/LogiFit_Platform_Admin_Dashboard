@@ -111,12 +111,21 @@ export class SubscriptionsComponent implements OnInit {
     return this.usageRows().find(x => x.tenantId === tenantId);
   }
 
-  extend(id: string): void {
+  async extend(id: string): Promise<void> {
     if (!id) return;
-    const input = window.prompt('عدد أيام التمديد', '30');
-    const days = Number(input);
-    if (!Number.isInteger(days) || days <= 0 || days > 3660) return;
-    this.service.extend(id, days).subscribe({ next: () => this.load(), error: err => this.notify.error(errMsg(err)) });
+    const days = await this.notify.numberPrompt({
+      title: 'تمديد الاشتراك',
+      label: 'أدخل عدد الأيام التي ستضاف إلى نهاية الاشتراك الحالية.',
+      initialValue: 30,
+      min: 1,
+      max: 3660,
+      confirmLabel: 'تمديد',
+    });
+    if (days === null) return;
+    this.service.extend(id, days).subscribe({
+      next: () => { this.notify.success(`تم تمديد الاشتراك لمدة ${days} يومًا.`); this.load(); },
+      error: err => this.notify.error(errMsg(err)),
+    });
   }
 
   transition(id: string, status: TenantSubscriptionStatus): void {
