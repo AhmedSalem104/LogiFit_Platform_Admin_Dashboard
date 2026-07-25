@@ -1,28 +1,28 @@
-import { Injectable, inject } from '@angular/core';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { Injectable } from '@angular/core';
+import Swal, { SweetAlertIcon } from 'sweetalert2';
 
 /**
- * App-wide feedback via PrimeNG (Toast + ConfirmDialog) — no third-party dialog lib.
- * The <p-toast> and <p-confirmDialog> hosts live once in AppComponent.
+ * The single feedback gateway for the platform dashboard.
+ *
+ * Browser alert/confirm/prompt must not be used in a platform page. SweetAlert2
+ * keeps success, failure, confirmation, and bounded input visually consistent,
+ * accessible, and appropriate for RTL users.
  */
 @Injectable({ providedIn: 'root' })
 export class NotifyService {
-  private messages = inject(MessageService);
-  private confirmation = inject(ConfirmationService);
-
-  success(detail: string, summary = 'تم'): void {
-    this.messages.add({ severity: 'success', summary, detail, life: 2600 });
+  success(detail: string, summary = 'تم الحفظ'): void {
+    this.toast('success', summary, detail, 2800);
   }
 
-  error(detail: string, summary = 'خطأ'): void {
-    this.messages.add({ severity: 'error', summary, detail, life: 4500 });
+  error(detail: string, summary = 'تعذر إتمام العملية'): void {
+    this.toast('error', summary, detail, 5000);
   }
 
   info(detail: string, summary = 'معلومة'): void {
-    this.messages.add({ severity: 'info', summary, detail, life: 3000 });
+    this.toast('info', summary, detail, 3600);
   }
 
-  /** Promise-based confirm dialog. Resolves true on accept, false on reject/cancel. */
+  /** Promise-based confirmation for destructive and administrative operations. */
   confirm(opts: {
     header: string;
     message: string;
@@ -31,18 +31,82 @@ export class NotifyService {
     danger?: boolean;
     icon?: string;
   }): Promise<boolean> {
-    return new Promise((resolve) => {
-      this.confirmation.confirm({
-        header: opts.header,
-        message: opts.message,
-        icon: opts.icon ?? (opts.danger ? 'pi pi-exclamation-triangle' : 'pi pi-question-circle'),
-        acceptLabel: opts.acceptLabel ?? 'تأكيد',
-        rejectLabel: opts.rejectLabel ?? 'إلغاء',
-        acceptButtonStyleClass: opts.danger ? 'p-button-danger' : 'p-button-primary',
-        rejectButtonStyleClass: 'p-button-text p-button-secondary',
-        accept: () => resolve(true),
-        reject: () => resolve(false),
-      });
+    return Swal.fire({
+      title: opts.header,
+      text: opts.message,
+      icon: opts.danger ? 'warning' : 'question',
+      showCancelButton: true,
+      confirmButtonText: opts.acceptLabel ?? 'تأكيد',
+      cancelButtonText: opts.rejectLabel ?? 'إلغاء',
+      reverseButtons: true,
+      focusCancel: !opts.danger,
+      customClass: {
+        popup: 'lf-swal-popup',
+        title: 'lf-swal-title',
+        htmlContainer: 'lf-swal-text',
+        actions: 'lf-swal-actions',
+        confirmButton: opts.danger ? 'lf-swal-confirm-danger' : 'lf-swal-confirm',
+        cancelButton: 'lf-swal-cancel',
+      },
+      buttonsStyling: false,
+    }).then(result => result.isConfirmed);
+  }
+
+  /** A safe numeric dialog for bounded administrative input. */
+  numberPrompt(opts: {
+    title: string;
+    label: string;
+    initialValue?: number;
+    min: number;
+    max: number;
+    confirmLabel?: string;
+  }): Promise<number | null> {
+    return Swal.fire({
+      title: opts.title,
+      text: opts.label,
+      icon: 'question',
+      input: 'number',
+      inputValue: String(opts.initialValue ?? opts.min),
+      inputAttributes: { min: String(opts.min), max: String(opts.max), step: '1', inputmode: 'numeric' },
+      inputValidator: (value) => {
+        const parsed = Number(value);
+        return Number.isInteger(parsed) && parsed >= opts.min && parsed <= opts.max
+          ? undefined
+          : `أدخل عدداً صحيحاً من ${opts.min} إلى ${opts.max}.`;
+      },
+      showCancelButton: true,
+      confirmButtonText: opts.confirmLabel ?? 'متابعة',
+      cancelButtonText: 'إلغاء',
+      reverseButtons: true,
+      customClass: {
+        popup: 'lf-swal-popup',
+        title: 'lf-swal-title',
+        htmlContainer: 'lf-swal-text',
+        input: 'lf-swal-input',
+        actions: 'lf-swal-actions',
+        confirmButton: 'lf-swal-confirm',
+        cancelButton: 'lf-swal-cancel',
+      },
+      buttonsStyling: false,
+    }).then(result => result.isConfirmed ? Number(result.value) : null);
+  }
+
+  private toast(icon: SweetAlertIcon, title: string, text: string, timer: number): void {
+    void Swal.fire({
+      toast: true,
+      position: 'top-start',
+      icon,
+      title,
+      text,
+      timer,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      showCloseButton: true,
+      customClass: {
+        popup: 'lf-swal-toast',
+        title: 'lf-swal-toast-title',
+        htmlContainer: 'lf-swal-toast-text',
+      },
     });
   }
 }
@@ -50,5 +114,5 @@ export class NotifyService {
 /** Extract a human message from an interceptor-normalized error. Pure — no deps. */
 export function errMsg(err: unknown): string {
   const e = err as { translatedMessage?: string; error?: { message?: string }; message?: string };
-  return e?.translatedMessage || e?.error?.message || e?.message || 'حدث خطأ غير متوقع';
+  return e?.translatedMessage || e?.error?.message || e?.message || 'حدث خطأ غير متوقع.';
 }

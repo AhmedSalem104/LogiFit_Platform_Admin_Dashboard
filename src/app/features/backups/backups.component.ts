@@ -114,10 +114,15 @@ export class BackupsComponent implements OnInit {
 
   onPageChange(event: { page: number; pageSize: number }): void { this.page = event.page; this.pageSize = event.pageSize; this.load(); }
 
-  create(): void {
+  async create(): Promise<void> {
     const status = this.status();
+    const confirmed = await this.notify.confirm({
+      header: 'إنشاء نسخة احتياطية',
+      message: 'سيتم إنشاء ملف BACPAC جديد يحوي بنية قاعدة البيانات وبياناتها الحالية. قد تستغرق العملية عدة دقائق.',
+      acceptLabel: 'إنشاء النسخة',
+    });
+    if (!confirmed) return;
     if (!status?.isReady) { this.notify.error(status?.unavailableReason ?? 'خدمة النسخ الاحتياطي غير جاهزة.'); return; }
-    if (!confirm('هل تريد إنشاء نسخة احتياطية كاملة لقاعدة البيانات الآن؟')) return;
     this.creating.set(true);
     this.service.create().subscribe({
       next: backup => { this.rows.update(rows => [backup, ...rows]); this.notify.success('تم إنشاء النسخة الاحتياطية بنجاح.'); this.creating.set(false); this.loadStatus(); },

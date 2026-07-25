@@ -2,8 +2,6 @@ import { ChangeDetectionStrategy, Component, HostListener, computed, inject, sig
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { ToastModule } from 'primeng/toast';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { AuthService } from '../auth/services/auth.service';
 import { NAV_ITEMS } from './nav-items';
 import { NotifyService } from '../../shared/ui/notify.service';
@@ -14,7 +12,7 @@ import { AdminAssistantService } from '../../shared/assistant/admin-assistant.se
   selector: 'app-main-layout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ToastModule, ConfirmDialogModule, AdminAssistantComponent],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, AdminAssistantComponent],
   template: `
     <div class="min-h-screen bg-[var(--bg-page)]">
       @if (mobileOpen()) { <div class="fixed inset-0 z-30 bg-slate-950/50 backdrop-blur-sm lg:hidden" (click)="mobileOpen.set(false)"></div> }
@@ -32,8 +30,6 @@ import { AdminAssistantService } from '../../shared/assistant/admin-assistant.se
         <main class="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8"><router-outlet></router-outlet></main>
       </div>
     </div>
-    <p-toast position="top-left" [breakpoints]="{ '640px': { width: '90vw' } }"></p-toast>
-    <p-confirmDialog [style]="{ width: '440px', maxWidth: '92vw' }" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
     <app-admin-assistant></app-admin-assistant>
   `,
   styles: [`
