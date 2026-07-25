@@ -75,6 +75,7 @@ export const routes: Routes = [
       { path: 'roles', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/roles/roles.component').then((m) => m.RolesComponent) },
       { path: 'operations', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/operations/operations.component').then((m) => m.OperationsComponent) },
       { path: 'reports', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/reports/reports.component').then((m) => m.ReportsComponent) },
+      { path: 'alerts', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/alerts/alerts.component').then((m) => m.AlertsComponent) },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
