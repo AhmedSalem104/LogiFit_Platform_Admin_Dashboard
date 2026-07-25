@@ -121,6 +121,8 @@ export class AuthService {
 
   hasPermission(permission: Permission): boolean {
     const owned = this.permissionsSig();
+    const user = this.currentUser();
+    if (user?.role === 'PlatformOwner' || user?.roles?.includes('PlatformOwner')) return true;
     // ManagePlatform is god-mode → grants everything.
     return owned.includes('ManagePlatform') || owned.includes(permission);
   }
