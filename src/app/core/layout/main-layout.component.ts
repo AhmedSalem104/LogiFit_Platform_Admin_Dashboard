@@ -7,12 +7,14 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { AuthService } from '../auth/services/auth.service';
 import { NAV_ITEMS } from './nav-items';
 import { NotifyService } from '../../shared/ui/notify.service';
+import { AdminAssistantComponent } from '../../shared/assistant/admin-assistant.component';
+import { AdminAssistantService } from '../../shared/assistant/admin-assistant.service';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ToastModule, ConfirmDialogModule],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ToastModule, ConfirmDialogModule, AdminAssistantComponent],
   template: `
     <div class="min-h-screen bg-[var(--bg-page)]">
       @if (mobileOpen()) { <div class="fixed inset-0 z-30 bg-slate-950/50 backdrop-blur-sm lg:hidden" (click)="mobileOpen.set(false)"></div> }
@@ -25,13 +27,14 @@ import { NotifyService } from '../../shared/ui/notify.service';
       <div class="transition-[margin] duration-300" [style.margin-inline-start.px]="contentMargin()">
         <header class="lf-topbar">
           <div class="flex items-center gap-2"><button class="lf-icon-btn lg:hidden" (click)="mobileOpen.set(true)" aria-label="فتح القائمة"><i class="pi pi-bars"></i></button><button class="lf-icon-btn hidden lg:grid" (click)="collapsed.set(!collapsed())" [attr.aria-label]="collapsed() ? 'توسيع القائمة' : 'طي القائمة'"><i class="pi" [ngClass]="collapsed() ? 'pi-angle-double-left' : 'pi-angle-double-right'"></i></button><div><span class="text-xs text-slate-400">لوحة التحكم</span><h2>{{ pageTitle() }}</h2></div></div>
-          <div class="flex items-center gap-3"><a routerLink="/alerts" class="lf-icon-btn relative" title="مركز التنبيهات"><i class="pi pi-bell"></i></a><div class="lf-user"><div class="hidden sm:block"><b>{{ user()?.fullName || 'مستخدم المنصة' }}</b><span>{{ roleLabel() }}</span></div><span class="lf-avatar">{{ initials() }}</span></div><button class="lf-icon-btn text-rose-500 hover:bg-rose-50" (click)="logout()" title="تسجيل الخروج"><i class="pi pi-sign-out"></i></button></div>
+          <div class="flex items-center gap-3"><button type="button" class="lf-icon-btn hidden sm:grid" (click)="assistant.openSearch()" title="المساعد الذكي (Ctrl+K)" aria-label="فتح المساعد الذكي"><i class="pi pi-sparkles"></i></button><a routerLink="/alerts" class="lf-icon-btn relative" title="مركز التنبيهات"><i class="pi pi-bell"></i></a><div class="lf-user"><div class="hidden sm:block"><b>{{ user()?.fullName || 'مستخدم المنصة' }}</b><span>{{ roleLabel() }}</span></div><span class="lf-avatar">{{ initials() }}</span></div><button class="lf-icon-btn text-rose-500 hover:bg-rose-50" (click)="logout()" title="تسجيل الخروج"><i class="pi pi-sign-out"></i></button></div>
         </header>
         <main class="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8"><router-outlet></router-outlet></main>
       </div>
     </div>
     <p-toast position="top-left" [breakpoints]="{ '640px': { width: '90vw' } }"></p-toast>
     <p-confirmDialog [style]="{ width: '440px', maxWidth: '92vw' }" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
+    <app-admin-assistant></app-admin-assistant>
   `,
   styles: [`
     :host { display:block; }
@@ -52,6 +55,7 @@ export class MainLayoutComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
   private notify = inject(NotifyService);
+  readonly assistant = inject(AdminAssistantService);
 
   collapsed = signal(false);
   mobileOpen = signal(false);

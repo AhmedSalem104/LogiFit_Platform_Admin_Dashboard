@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -10,6 +10,7 @@ import { InputSwitchModule } from 'primeng/inputswitch';
 import { TooltipModule } from 'primeng/tooltip';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
+import { ServerPaginatorComponent } from '../../shared/ui/server-paginator.component';
 import { PlansService } from './plans.service';
 import { FeaturesService } from '../features/features.service';
 import {
@@ -20,6 +21,7 @@ import {
   PlanDto,
 } from '../../core/models/platform.models';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
+import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assistant.service';
 
 @Component({
   selector: 'app-plans',
@@ -37,6 +39,7 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
     TooltipModule,
     PageHeaderComponent,
     StatusBadgeComponent,
+    ServerPaginatorComponent,
   ],
   template: `
     <app-page-header title="الباقات" subtitle="باقات الاشتراك وحدودها ومميزاتها" icon="pi pi-box">
@@ -79,6 +82,7 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
           <tr><td colspan="7" class="text-center text-slate-400 py-10"><i class="pi pi-box text-2xl block mb-2 opacity-40"></i>لا توجد باقات</td></tr>
         </ng-template>
       </p-table>
+      <app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator>
     </div>
 
     <p-dialog [header]="editingId ? 'تعديل باقة' : 'باقة جديدة'" [(visible)]="showForm" [modal]="true"
@@ -156,12 +160,20 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
   `,
 })
 export class PlansComponent implements OnInit {
+  @HostListener(`window:${ADMIN_ASSISTANT_COMMAND_EVENT}`, ['$event'])
+  onAssistantCommand(event: Event): void {
+    if ((event as CustomEvent<{ command?: string }>).detail?.command === 'create-plan') this.openCreate();
+  }
+
   private service = inject(PlansService);
   private featuresService = inject(FeaturesService);
   private fb = inject(FormBuilder);
   private notify = inject(NotifyService);
 
   rows = signal<PlanDto[]>([]);
+  page = 1;
+  pageSize = 20;
+  totalCount = 0;
   features = signal<FeatureDto[]>([]);
   loading = signal(false);
   saving = signal(false);
@@ -194,7 +206,7 @@ export class PlansComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
-    this.featuresService.list().subscribe({
+    this.featuresService.catalog().subscribe({
       next: (f) => this.features.set(f),
       error: () => this.features.set([]),
     });
@@ -214,9 +226,10 @@ export class PlansComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.service.list().subscribe({
+    this.service.list(false, this.page, this.pageSize).subscribe({
       next: (data) => {
-        this.rows.set(data);
+        this.rows.set(data.items);
+        this.totalCount = data.totalCount;
         this.loading.set(false);
       },
       error: (err) => {
@@ -224,6 +237,12 @@ export class PlansComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  onPageChange(event: { page: number; pageSize: number }): void {
+    this.page = event.page;
+    this.pageSize = event.pageSize;
+    this.load();
   }
 
   openCreate(): void {

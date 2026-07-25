@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   CreateTenantWithOwnerCommand,
+  PagedResult,
   PlatformTenantDto,
   TenantStatus,
 } from '../../core/models/platform.models';
@@ -13,10 +14,10 @@ export class TenantsService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/tenants`;
 
-  list(status?: TenantStatus): Observable<PlatformTenantDto[]> {
-    let params = new HttpParams();
+  list(status?: TenantStatus, page = 1, pageSize = 20): Observable<PagedResult<PlatformTenantDto>> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
     if (status != null) params = params.set('status', status);
-    return this.http.get<PlatformTenantDto[]>(this.base, { params });
+    return this.http.get<PagedResult<PlatformTenantDto>>(this.base, { params });
   }
 
   create(cmd: CreateTenantWithOwnerCommand): Observable<PlatformTenantDto> {
