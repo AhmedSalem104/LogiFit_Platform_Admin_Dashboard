@@ -1,20 +1,23 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
+import { DropdownModule } from 'primeng/dropdown';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
+import { ServerPaginatorComponent } from '../../shared/ui/server-paginator.component';
 import { FeaturesService } from './features.service';
 import { BadgeInfo, FeatureDto } from '../../core/models/platform.models';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
+import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assistant.service';
 
 @Component({
   selector: 'app-features',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, TableModule, DialogModule, ButtonModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [CommonModule, ReactiveFormsModule, TableModule, DialogModule, ButtonModule, DropdownModule, PageHeaderComponent, StatusBadgeComponent, ServerPaginatorComponent],
   template: `
     <app-page-header
       title="الميزات"
@@ -39,21 +42,24 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
             <td><code class="text-primary-700 bg-primary-50 px-2 py-0.5 rounded-md text-[13px] font-semibold" dir="ltr">{{ f.code }}</code></td>
             <td class="font-semibold text-slate-800">{{ f.name }}</td>
             <td class="text-slate-500 text-sm hidden sm:table-cell">{{ f.description || '—' }}</td>
-            <td><app-status-badge [badge]="activeBadge(f.isActive)"></app-status-badge></td>
-            <td><button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="open(f)"></button></td>
+            <td><div class="flex flex-wrap gap-1"><app-status-badge [badge]="activeBadge(f.isActive)"></app-status-badge><span class="lf-badge lf-badge-gray">{{ statusLabel(f.status) }}</span></div></td>
+            <td><button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="open(f)"></button>@if(f.status !== 4){<button pButton icon="pi pi-inbox" class="p-button-secondary p-button-text p-button-sm" title="أرشفة" (click)="archive(f)"></button>}</td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
           <tr><td colspan="5" class="text-center text-slate-400 py-10"><i class="pi pi-inbox text-2xl block mb-2 opacity-40"></i>لا توجد ميزات</td></tr>
         </ng-template>
       </p-table>
+      <app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator>
     </div>
     <p-dialog header="إدارة ميزة" [(visible)]="showForm" [modal]="true" [style]="{width:'520px',maxWidth:'95vw'}">
       <form [formGroup]="form" class="grid gap-3">
-        <input class="lf-input" formControlName="code" placeholder="members.manage" />
+        <input class="lf-input" formControlName="code" placeholder="members.manage" [readonly]="!!editingId" />
         <input class="lf-input" formControlName="name" placeholder="Feature name" />
+        <input class="lf-input" formControlName="nameEn" placeholder="English name" />
         <input class="lf-input" formControlName="nameAr" placeholder="الاسم العربي" />
         <input class="lf-input" formControlName="module" placeholder="Module" />
+        <p-dropdown [options]="statusOptions" formControlName="status" optionLabel="label" optionValue="value" placeholder="حالة الميزة" styleClass="w-full"></p-dropdown>
         <textarea class="lf-input" formControlName="description" placeholder="الوصف"></textarea>
         <label><input type="checkbox" formControlName="isFree" /> مجانية</label>
         <label><input type="checkbox" formControlName="supportsQuota" /> تدعم Quota</label>
@@ -64,22 +70,34 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
   `,
 })
 export class FeaturesComponent implements OnInit {
+  @HostListener(`window:${ADMIN_ASSISTANT_COMMAND_EVENT}`, ['$event'])
+  onAssistantCommand(event: Event): void {
+    if ((event as CustomEvent<{ command?: string }>).detail?.command === 'create-feature') this.open();
+  }
+
   private service = inject(FeaturesService);
   private notify = inject(NotifyService);
   private fb = inject(FormBuilder);
 
   rows = signal<FeatureDto[]>([]);
+  page = 1;
+  pageSize = 20;
+  totalCount = 0;
   loading = signal(false);
   showForm = false;
   saving = false;
   editingId: string | undefined;
-  form = this.fb.nonNullable.group({ code: ['', Validators.required], name: ['', Validators.required], nameAr: [''], module: [''], description: [''], isFree: [false], supportsQuota: [false], isActive: [true] });
+  form = this.fb.nonNullable.group({ code: ['', Validators.required], name: ['', Validators.required], nameAr: [''], nameEn: [''], module: [''], description: [''], isFree: [false], supportsQuota: [false], isActive: [true], status: [2] });
+  statusOptions = [{ label: 'مسودة', value: 1 }, { label: 'نشطة', value: 2 }, { label: 'مهجورة', value: 3 }, { label: 'مؤرشفة', value: 4 }];
 
-  ngOnInit(): void {
+  ngOnInit(): void { this.load(); }
+
+  load(): void {
     this.loading.set(true);
-    this.service.list().subscribe({
+    this.service.list(this.page, this.pageSize).subscribe({
       next: (data) => {
-        this.rows.set(data);
+        this.rows.set(data.items);
+        this.totalCount = data.totalCount;
         this.loading.set(false);
       },
       error: (err) => {
@@ -89,19 +107,33 @@ export class FeaturesComponent implements OnInit {
     });
   }
 
+  onPageChange(event: { page: number; pageSize: number }): void {
+    this.page = event.page;
+    this.pageSize = event.pageSize;
+    this.load();
+  }
+
   activeBadge(active: boolean): BadgeInfo {
     return active ? { label: 'مفعّلة', color: 'green' } : { label: 'معطّلة', color: 'gray' };
   }
 
   open(feature?: FeatureDto): void {
     this.editingId = feature?.id;
-    this.form.reset({ code: feature?.code ?? '', name: feature?.name ?? '', nameAr: feature?.nameAr ?? '', module: feature?.module ?? '', description: feature?.description ?? '', isFree: feature?.isFree ?? false, supportsQuota: feature?.supportsQuota ?? false, isActive: feature?.isActive ?? true });
+    this.form.reset({ code: feature?.code ?? '', name: feature?.name ?? '', nameAr: feature?.nameAr ?? '', nameEn: feature?.nameEn ?? '', module: feature?.module ?? '', description: feature?.description ?? '', isFree: feature?.isFree ?? false, supportsQuota: feature?.supportsQuota ?? false, isActive: feature?.isActive ?? true, status: feature?.status ?? 2 });
     this.showForm = true;
   }
 
   save(): void {
     if (this.form.invalid) return;
     this.saving = true;
-    this.service.save({ ...this.form.getRawValue(), id: this.editingId }).subscribe({ next: () => { this.saving = false; this.showForm = false; this.service.invalidate(); this.ngOnInit(); this.notify.success('تم حفظ الميزة'); }, error: (e) => { this.saving = false; this.notify.error(errMsg(e)); } });
+    this.service.save({ ...this.form.getRawValue(), id: this.editingId }).subscribe({ next: () => { this.saving = false; this.showForm = false; this.service.invalidate(); this.load(); this.notify.success('تم حفظ الميزة'); }, error: (e) => { this.saving = false; this.notify.error(errMsg(e)); } });
+  }
+
+  statusLabel(status?: number): string { return this.statusOptions.find((item) => item.value === status)?.label ?? 'غير محددة'; }
+
+  async archive(feature: FeatureDto): Promise<void> {
+    const ok = await this.notify.confirm({ header: 'أرشفة الميزة', message: `أرشفة ${feature.code}؟ لن تُمنح للاشتراكات الجديدة.`, acceptLabel: 'أرشفة', danger: true });
+    if (!ok) return;
+    this.service.save({ ...feature, status: 4, isActive: false }).subscribe({ next: () => { this.service.invalidate(); this.notify.success('تمت أرشفة الميزة'); this.load(); }, error: (error) => this.notify.error(errMsg(error)) });
   }
 }

@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
+import { ServerPaginatorComponent } from '../../shared/ui/server-paginator.component';
 import { PaymentRequestsService } from './payment-requests.service';
 import {
   PAYMENT_REQUEST_STATUS_BADGE,
@@ -31,13 +32,14 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
     TooltipModule,
     PageHeaderComponent,
     StatusBadgeComponent,
+    ServerPaginatorComponent,
   ],
   template: `
     <app-page-header title="طلبات الدفع" subtitle="مراجعة إثباتات الدفع والموافقة أو الرفض" icon="pi pi-inbox">
       <p-dropdown
         [options]="statusOptions"
         [(ngModel)]="statusFilter"
-        (onChange)="load()"
+        (onChange)="resetPage()"
         optionLabel="label"
         optionValue="value"
         placeholder="كل الحالات"
@@ -47,7 +49,7 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
     </app-page-header>
 
     <div class="lf-card overflow-hidden">
-      <p-table [value]="rows()" [loading]="loading()" [paginator]="rows().length > 10" [rows]="10"
+      <p-table [value]="rows()" [loading]="loading()"
         styleClass="p-datatable-sm" [scrollable]="true">
         <ng-template pTemplate="header">
           <tr>
@@ -90,6 +92,7 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
           <tr><td colspan="8" class="text-center text-slate-400 py-10"><i class="pi pi-inbox text-2xl block mb-2 opacity-40"></i>لا توجد طلبات دفع</td></tr>
         </ng-template>
       </p-table>
+      <app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator>
     </div>
 
     <!-- Proof preview -->
@@ -139,6 +142,9 @@ export class PaymentRequestsComponent implements OnInit {
   readonly PRS = PaymentRequestStatus;
   readonly PRO = PaymentRequestOperation;
   rows = signal<PaymentRequestDto[]>([]);
+  page = 1;
+  pageSize = 20;
+  totalCount = 0;
   loading = signal(false);
 
   operationLabel(operation: PaymentRequestOperation): string {
@@ -176,9 +182,10 @@ export class PaymentRequestsComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.service.list(this.statusFilter ?? undefined).subscribe({
+    this.service.list(this.statusFilter ?? undefined, this.page, this.pageSize).subscribe({
       next: (data) => {
-        this.rows.set(data);
+        this.rows.set(data.items);
+        this.totalCount = data.totalCount;
         this.loading.set(false);
       },
       error: (err) => {
@@ -186,6 +193,17 @@ export class PaymentRequestsComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  resetPage(): void {
+    this.page = 1;
+    this.load();
+  }
+
+  onPageChange(event: { page: number; pageSize: number }): void {
+    this.page = event.page;
+    this.pageSize = event.pageSize;
+    this.load();
   }
 
   preview(r: PaymentRequestDto): void {
@@ -247,12 +265,9 @@ export class PaymentRequestsComponent implements OnInit {
     });
   }
 
-  /** Reflect the reviewed row: drop it when a status filter no longer matches. */
+  /** Reloads the server page so status filters and pagination totals remain correct. */
   private applyUpdate(updated: PaymentRequestDto): void {
-    if (this.statusFilter != null && updated.status !== this.statusFilter) {
-      this.rows.update((rows) => rows.filter((r) => r.id !== updated.id));
-    } else {
-      this.rows.update((rows) => rows.map((r) => (r.id === updated.id ? updated : r)));
-    }
+    void updated;
+    this.load();
   }
 }
