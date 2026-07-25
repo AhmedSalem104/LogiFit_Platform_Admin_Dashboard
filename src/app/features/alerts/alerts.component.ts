@@ -1,24 +1,57 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { ButtonModule } from 'primeng/button';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { ServerPaginatorComponent } from '../../shared/ui/server-paginator.component';
-import { PagedResult } from '../../core/models/platform.models';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
+import { PagedResult } from '../../core/models/platform.models';
 import { environment } from '../../../environments/environment';
+
+type NotificationItem = { id: string; title: string; body: string; type: number; isRead: boolean; readAt?: string; createdAt: string };
+type NotificationResponse = PagedResult<NotificationItem> & { unreadCount: number };
 
 @Component({
   selector: 'app-alerts', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ButtonModule, PageHeaderComponent, ServerPaginatorComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ServerPaginatorComponent],
   template: `
-    <div class="lf-page"><app-page-header title="مركز التنبيهات" subtitle="متابعة أعطال المهام والـOutbox والمدفوعات التي تحتاج تدخلاً" icon="pi pi-bell"><button pButton type="button" label="تحديث" icon="pi pi-refresh" [loading]="loading()" (click)="load()"></button></app-page-header>
-      @if (alerts().length) {<section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div class="divide-y divide-slate-100">@for (alert of alerts(); track alert.title + alert.occurredAtUtc + alert.message) {<article class="flex gap-4 p-5" [class.bg-red-50]="alert.severity === 'error'"><span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" [class.bg-red-100]="alert.severity === 'error'" [class.text-red-600]="alert.severity === 'error'" [class.bg-amber-100]="alert.severity !== 'error'" [class.text-amber-600]="alert.severity !== 'error'"><i [class]="alert.severity === 'error' ? 'pi pi-times-circle' : 'pi pi-exclamation-triangle'"></i></span><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center justify-between gap-2"><h2 class="m-0 text-sm font-extrabold text-slate-800">{{alert.title}}</h2><time class="text-xs text-slate-400">{{alert.occurredAtUtc | date:'medium'}}</time></div><p class="mb-0 mt-1 text-sm text-slate-600">{{alert.message}}</p>@if (alert.detail) {<p class="mb-0 mt-2 break-words rounded-lg bg-slate-950 px-3 py-2 font-mono text-xs text-slate-200" dir="ltr">{{alert.detail}}</p>}</div></article>}</div><app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator></section>} @else if (!loading()) {<section class="lf-card p-10 text-center"><i class="pi pi-check-circle text-4xl text-emerald-500"></i><h2 class="mb-0 mt-3 text-lg font-extrabold text-slate-800">لا توجد تنبيهات تحتاج إجراء</h2><p class="mb-0 mt-1 text-sm text-slate-500">المهام والرسائل والمدفوعات تبدو مستقرة حاليًا.</p></section>}
-    </div>`,
+    <div class="lf-page">
+      <app-page-header title="مركز الإشعارات" subtitle="تابع التنبيهات والإجراءات المطلوبة من مكان واحد" icon="pi pi-bell">
+        <button class="lf-btn lf-btn-secondary" type="button" (click)="load()"><i class="pi pi-refresh"></i> تحديث</button>
+        <button class="lf-btn lf-btn-primary" type="button" [disabled]="!unreadCount()" (click)="markAllRead()"><i class="pi pi-check-circle"></i> تعليم الكل كمقروء</button>
+      </app-page-header>
+      <section class="lf-card p-4 sm:p-5">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-[1fr_12rem_10rem]">
+          <label class="lf-input flex items-center gap-2"><i class="pi pi-search text-slate-400"></i><input class="min-w-0 flex-1 border-0 bg-transparent p-0 outline-none" [(ngModel)]="search" (ngModelChange)="refresh()" placeholder="ابحث في العنوان أو التفاصيل" aria-label="بحث الإشعارات"></label>
+          <select class="lf-input" [(ngModel)]="type" (ngModelChange)="refresh()"><option [ngValue]="null">كل الأنواع</option><option [ngValue]="1">عام</option><option [ngValue]="4">انتهاء اشتراك</option><option [ngValue]="5">مخصص</option></select>
+          <select class="lf-input" [(ngModel)]="readFilter" (ngModelChange)="refresh()"><option [ngValue]="null">الكل</option><option [ngValue]="false">غير مقروء</option><option [ngValue]="true">مقروء</option></select>
+        </div>
+        <div class="mt-4 flex items-center justify-between text-xs text-slate-500"><span>{{ totalCount | number }} إشعار</span><span class="lf-chip" [class.bg-rose-50]="unreadCount()" [class.text-rose-700]="unreadCount()">{{ unreadCount() | number }} غير مقروء</span></div>
+      </section>
+      @if (loading()) { <section class="grid gap-3">@for (item of [1,2,3,4]; track item) {<div class="lf-card h-24 animate-pulse bg-slate-50"></div>}</section> }
+      @else if (items().length) { <section class="lf-card overflow-hidden"><div class="divide-y divide-slate-100">@for (item of items(); track item.id) {<article class="notification-row flex gap-4 p-4 sm:p-5" [class.notification-unread]="!item.isRead" (click)="markRead(item)"><span class="notification-icon" [class.text-rose-600]="!item.isRead" [class.bg-rose-50]="!item.isRead"><i [class]="iconFor(item.type)"></i></span><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center justify-between gap-2"><h2 class="m-0 text-sm font-extrabold text-slate-800">{{ item.title }}</h2><time class="text-xs text-slate-400">{{ item.createdAt | date:'medium' }}</time></div><p class="mb-0 mt-1 text-sm leading-7 text-slate-600">{{ item.body }}</p>@if (!item.isRead) {<span class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-rose-600"><i class="pi pi-circle-fill text-[.45rem]"></i> غير مقروء</span>}</div></article>}</div><app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator></section> }
+      @else { <section class="lf-empty-state"><i class="pi pi-check-circle text-emerald-500"></i><h3>لا توجد إشعارات</h3><p>لا توجد إشعارات مطابقة للفلاتر الحالية.</p></section> }
+    </div>`
 })
 export class AlertsComponent implements OnInit {
-  private http = inject(HttpClient); private notify = inject(NotifyService); alerts = signal<any[]>([]); loading = signal(false); page = 1; pageSize = 20; totalCount = 0;
+  private http = inject(HttpClient); private notify = inject(NotifyService);
+  items = signal<NotificationItem[]>([]); loading = signal(false); unreadCount = signal(0);
+  search = ''; type: number | null = null; readFilter: boolean | null = null; page = 1; pageSize = 20; totalCount = 0;
   ngOnInit(): void { this.load(); }
-  load(): void { this.loading.set(true); const params = new HttpParams().set('page', this.page).set('pageSize', this.pageSize); this.http.get<PagedResult<any>>(`${environment.apiUrl}/alerts`, { params }).subscribe({ next: (response) => { this.alerts.set(response.items); this.totalCount = response.totalCount; this.loading.set(false); }, error: (error) => { this.notify.error(errMsg(error)); this.loading.set(false); } }); }
-  onPageChange(event: { page: number; pageSize: number }): void { this.page = event.page; this.pageSize = event.pageSize; this.load(); }
+  refresh(): void { this.page = 1; this.load(); }
+  load(): void {
+    this.loading.set(true);
+    let params = new HttpParams().set('page', this.page).set('pageSize', this.pageSize);
+    if (this.search.trim()) params = params.set('search', this.search.trim());
+    if (this.type !== null) params = params.set('type', this.type);
+    if (this.readFilter !== null) params = params.set('isRead', this.readFilter);
+    this.http.get<NotificationResponse>(`${environment.apiUrl}/notifications`, { params }).subscribe({
+      next: response => { this.items.set(response.items); this.totalCount = response.totalCount; this.unreadCount.set(response.unreadCount); this.loading.set(false); },
+      error: error => { this.notify.error(errMsg(error)); this.loading.set(false); }
+    });
+  }
+  markRead(item: NotificationItem): void { if (item.isRead) return; this.http.post(`${environment.apiUrl}/notifications/${item.id}/read`, {}).subscribe({ next: () => { item.isRead = true; this.items.set([...this.items()]); this.unreadCount.update(value => Math.max(0, value - 1)); }, error: error => this.notify.error(errMsg(error)) }); }
+  markAllRead(): void { this.http.post<{marked:number}>(`${environment.apiUrl}/notifications/read-all`, {}).subscribe({ next: () => { this.items.update(items => items.map(item => ({ ...item, isRead: true }))); this.unreadCount.set(0); this.notify.success('تم تعليم الإشعارات كمقروءة'); }, error: error => this.notify.error(errMsg(error)) }); }
+  onPageChange(event: {page:number; pageSize:number}): void { this.page = event.page; this.pageSize = event.pageSize; this.load(); }
+  iconFor(type: number): string { return type === 4 ? 'pi pi-calendar-times' : type === 5 ? 'pi pi-megaphone' : 'pi pi-bell'; }
 }

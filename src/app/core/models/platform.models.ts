@@ -109,6 +109,16 @@ export interface PlatformDashboardDto {
   pendingApprovalGyms: number;
   suspendedGyms: number;
   totalMembers: number;
+  expiredSubscriptions: number;
+  activeSubscriptions: number;
+  pendingPayments: number;
+  invoiceCount: number;
+  invoicedAmount: number;
+  collectedAmount: number;
+  featureCount: number;
+  quotaDefinitionCount: number;
+  failedJobs: number;
+  failedOutbox: number;
 }
 
 export interface PlatformTenantDto {
