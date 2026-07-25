@@ -6,13 +6,7 @@ import { DashboardService } from './dashboard.service';
 import { PlatformDashboardDto } from '../../core/models/platform.models';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
 
-interface Kpi {
-  label: string;
-  value: number;
-  icon: string;
-  ring: string;
-  accent: string;
-}
+type Kpi = { label: string; value: number; icon: string; tone: string };
 
 @Component({
   selector: 'app-dashboard',
@@ -20,52 +14,61 @@ interface Kpi {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterLink, PageHeaderComponent],
   template: `
-    <app-page-header title="نظرة عامة" subtitle="ملخّص أداء المنصة" icon="pi pi-chart-bar"></app-page-header>
+    <div class="lf-page">
+      <div class="lf-toolbar">
+        <app-page-header title="لوحة قيادة المنصة" subtitle="متابعة صحة المنصة وأهم العمليات من مكان واحد" icon="pi pi-sparkles"></app-page-header>
+        <button class="lf-btn lf-btn-secondary" (click)="load()"><i class="pi pi-refresh"></i> تحديث البيانات</button>
+      </div>
 
-    @if (loading()) {
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        @for (i of skeleton; track i) {
-          <div class="lf-card p-5 h-[104px] animate-pulse">
-            <div class="w-12 h-12 rounded-xl bg-slate-100"></div>
-            <div class="h-3 w-24 bg-slate-100 rounded mt-3"></div>
+      @if (loading()) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          @for (item of skeleton; track item) { <div class="lf-card h-32 animate-pulse bg-slate-50"></div> }
+        </div>
+      } @else if (error()) {
+        <div class="lf-empty-state"><i class="pi pi-exclamation-triangle"></i><h3>تعذّر تحميل بيانات المنصة</h3><p>{{ error() }}</p><button class="lf-btn lf-btn-primary mt-3" (click)="load()">إعادة المحاولة</button></div>
+      } @else {
+        @if (data(); as dashboard) {
+          @if (dashboard.pendingApprovalGyms > 0 || dashboard.suspendedGyms > 0) {
+            <a routerLink="/tenants" class="lf-alert-banner">
+              <span class="lf-alert-icon"><i class="pi pi-bell"></i></span>
+              <span><b>توجد عناصر تحتاج متابعة.</b> {{ dashboard.pendingApprovalGyms }} منشأة بانتظار الموافقة و{{ dashboard.suspendedGyms }} منشأة موقوفة.</span>
+              <i class="pi pi-arrow-left mr-auto"></i>
+            </a>
+          }
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            @for (item of kpis(dashboard); track item.label) {
+              <article class="lf-card lf-kpi-card">
+                <div class="lf-kpi-icon" [ngClass]="item.tone"><i [class]="item.icon"></i></div>
+                <div><div class="lf-kpi-value">{{ item.value | number }}</div><div class="lf-kpi-label">{{ item.label }}</div></div>
+              </article>
+            }
           </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <section class="lf-card p-6 xl:col-span-2">
+              <div class="lf-section-heading"><div><h2>صحة المنصة</h2><p>نسب المنشآت الرياضية بحسب حالتها الحالية</p></div><span class="lf-chip">مباشر</span></div>
+              <div class="mt-7 space-y-5">
+                @for (row of health(dashboard); track row.label) {
+                  <div><div class="flex items-center justify-between text-sm mb-2"><span class="font-semibold text-slate-700">{{ row.label }}</span><span class="font-bold text-slate-900">{{ row.value }}%</span></div><div class="lf-progress"><span [ngClass]="row.tone" [style.width.%]="row.value"></span></div></div>
+                }
+              </div>
+            </section>
+            <section class="lf-card p-6">
+              <div class="lf-section-heading"><div><h2>إجراءات سريعة</h2><p>الوصول المباشر لأكثر المهام استخدامًا</p></div></div>
+              <div class="mt-5 grid gap-2">
+                <a routerLink="/tenants" class="lf-quick-link"><i class="pi pi-building"></i> إدارة المنشآت <i class="pi pi-angle-left mr-auto"></i></a>
+                <a routerLink="/payment-requests" class="lf-quick-link"><i class="pi pi-wallet"></i> مراجعة المدفوعات <i class="pi pi-angle-left mr-auto"></i></a>
+                <a routerLink="/alerts" class="lf-quick-link"><i class="pi pi-bell"></i> مركز التنبيهات <i class="pi pi-angle-left mr-auto"></i></a>
+                <a routerLink="/operations" class="lf-quick-link"><i class="pi pi-cog"></i> مراقبة العمليات <i class="pi pi-angle-left mr-auto"></i></a>
+              </div>
+            </section>
+          </div>
+        } @else {
+          <div class="lf-empty-state"><i class="pi pi-chart-bar"></i><h3>لا تتوفر بيانات للعرض حاليًا</h3><p>حدّث الصفحة أو أعد المحاولة لاحقًا.</p></div>
         }
-      </div>
-    } @else if (error()) {
-      <div class="lf-card p-8 text-center">
-        <i class="pi pi-exclamation-circle text-3xl text-red-400"></i>
-        <p class="text-red-600 mt-2">{{ error() }}</p>
-        <button class="mt-4 px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-semibold" (click)="load()">إعادة المحاولة</button>
-      </div>
-    } @else {
-      @if (data() && data()!.pendingApprovalGyms > 0) {
-        <a routerLink="/tenants"
-          class="lf-card flex items-center gap-3 p-4 mb-5 border-r-4 border-r-amber-400 hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-shadow">
-          <span class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-            <i class="pi pi-exclamation-triangle"></i>
-          </span>
-          <span class="text-sm text-slate-700">
-            يوجد <b class="text-amber-600">{{ data()!.pendingApprovalGyms }}</b> جيم بانتظار الموافقة — راجعها الآن.
-          </span>
-          <i class="pi pi-arrow-left text-slate-300 mr-auto"></i>
-        </a>
       }
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        @for (kpi of kpis(); track kpi.label) {
-          <div class="lf-card p-5 flex items-center gap-4 hover:shadow-[0_4px_12px_rgba(15,23,42,0.07)] transition-shadow">
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0" [ngClass]="kpi.ring">
-              <i [class]="kpi.icon"></i>
-            </div>
-            <div class="min-w-0">
-              <div class="text-2xl font-extrabold text-slate-800 tabular-nums">{{ kpi.value | number }}</div>
-              <div class="text-[13px] text-slate-500 truncate">{{ kpi.label }}</div>
-            </div>
-          </div>
-        }
-      </div>
-    }
-  `,
+    </div>`,
 })
 export class DashboardComponent implements OnInit {
   private service = inject(DashboardService);
@@ -73,35 +76,37 @@ export class DashboardComponent implements OnInit {
 
   readonly skeleton = [1, 2, 3, 4, 5, 6];
   loading = signal(true);
-  error = signal<string>('');
+  error = signal('');
   data = signal<PlatformDashboardDto | null>(null);
-  kpis = signal<Kpi[]>([]);
 
-  ngOnInit(): void {
-    this.load();
-  }
+  ngOnInit(): void { this.load(); }
 
   load(): void {
     this.loading.set(true);
     this.error.set('');
     this.service.get().subscribe({
-      next: (d) => {
-        this.data.set(d);
-        this.kpis.set([
-          { label: 'إجمالي الجيمات', value: d.totalGyms, icon: 'pi pi-building', ring: 'bg-indigo-50 text-indigo-600', accent: '' },
-          { label: 'جيمات نشطة', value: d.activeGyms, icon: 'pi pi-check-circle', ring: 'bg-green-50 text-green-600', accent: '' },
-          { label: 'جيمات تجريبية', value: d.trialGyms, icon: 'pi pi-clock', ring: 'bg-sky-50 text-sky-600', accent: '' },
-          { label: 'بانتظار الموافقة', value: d.pendingApprovalGyms, icon: 'pi pi-hourglass', ring: 'bg-amber-50 text-amber-600', accent: '' },
-          { label: 'جيمات موقوفة', value: d.suspendedGyms, icon: 'pi pi-ban', ring: 'bg-red-50 text-red-600', accent: '' },
-          { label: 'إجمالي الأعضاء', value: d.totalMembers, icon: 'pi pi-users', ring: 'bg-violet-50 text-violet-600', accent: '' },
-        ]);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(errMsg(err));
-        this.notify.error(errMsg(err));
-        this.loading.set(false);
-      },
+      next: value => { this.data.set(value); this.loading.set(false); },
+      error: error => { const message = errMsg(error); this.error.set(message); this.notify.error(message); this.loading.set(false); },
     });
+  }
+
+  kpis(value: PlatformDashboardDto): Kpi[] {
+    return [
+      { label: 'إجمالي المنشآت', value: value.totalGyms, icon: 'pi pi-building', tone: 'lf-tone-indigo' },
+      { label: 'منشآت نشطة', value: value.activeGyms, icon: 'pi pi-check-circle', tone: 'lf-tone-emerald' },
+      { label: 'فترة تجريبية', value: value.trialGyms, icon: 'pi pi-clock', tone: 'lf-tone-sky' },
+      { label: 'بانتظار الموافقة', value: value.pendingApprovalGyms, icon: 'pi pi-hourglass', tone: 'lf-tone-amber' },
+      { label: 'منشآت موقوفة', value: value.suspendedGyms, icon: 'pi pi-ban', tone: 'lf-tone-rose' },
+      { label: 'إجمالي الأعضاء', value: value.totalMembers, icon: 'pi pi-users', tone: 'lf-tone-violet' },
+    ];
+  }
+
+  health(value: PlatformDashboardDto) {
+    const total = Math.max(value.totalGyms, 1);
+    return [
+      { label: 'النشاط', value: Math.round(value.activeGyms * 100 / total), tone: 'bg-emerald-500' },
+      { label: 'الفترة التجريبية', value: Math.round(value.trialGyms * 100 / total), tone: 'bg-sky-500' },
+      { label: 'تحتاج متابعة', value: Math.round((value.pendingApprovalGyms + value.suspendedGyms) * 100 / total), tone: 'bg-amber-500' },
+    ];
   }
 }
