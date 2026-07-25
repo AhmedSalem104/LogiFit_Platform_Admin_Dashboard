@@ -93,3 +93,11 @@ flowchart LR
 5. أضف `AssistantGuide` للكشف والشرح والإجراء الآمن.
 6. حدّث `SCREEN-CATALOG.md` و`ADMIN-WORKSPACE.md` وREADME عند تغير المستخدم أو API أو التصميم.
 7. شغّل `npm run build` قبل التسليم.
+
+## الكتالوج الكامل لعقود API
+
+[API-ENDPOINT-CATALOG.md](API-ENDPOINT-CATALOG.md) يحتوي كل endpoints في Tenant API
+وPlatform API، بما فيها route وHTTP method والصلاحية والمدخلات والاستجابة المعلنة.
+إنه مرآة للملف المولّد من الـControllers في مشروع Backend؛ لا تعتمد على قائمة يدوية
+عند إضافة أو تغيير عقد. حدّثه من `LogicFit/Scripts/Export-ApiEndpointCatalog.ps1`
+في نفس التغيير.

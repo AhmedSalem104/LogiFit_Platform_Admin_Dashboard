@@ -138,7 +138,22 @@ html, body {
 }
 .p-paginator { background: transparent; border: none; padding: 0.75rem; }
 
-.p-toast .p-toast-message { border-radius: 0.7rem; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.14); }
+/* SweetAlert2: calm, high-contrast feedback without native browser dialogs. */
+.swal2-container { direction: rtl; font-family: 'Cairo', system-ui, sans-serif; }
+.lf-swal-popup { width: min(29rem, calc(100vw - 2rem)); padding: 1.6rem; border: 1px solid #e5eaf1; border-radius: 1.25rem; box-shadow: 0 22px 60px rgba(15,23,42,.18); }
+.lf-swal-title { color: #172033; font-size: 1.1rem; font-weight: 800; }
+.lf-swal-text { color: #64748b; font-size: .88rem; line-height: 1.75; }
+.lf-swal-actions { width: 100%; gap: .65rem; margin-top: 1.25rem; }
+.lf-swal-confirm, .lf-swal-confirm-danger, .lf-swal-cancel { min-height: 2.6rem; padding: .55rem 1rem; border-radius: .75rem; font: 700 .84rem 'Cairo', sans-serif; transition: transform .15s ease, box-shadow .15s ease; }
+.lf-swal-confirm { color: #fff; background: linear-gradient(135deg,#2563eb,#4f46e5); box-shadow: 0 7px 16px rgba(37,99,235,.2); }
+.lf-swal-confirm-danger { color: #fff; background: linear-gradient(135deg,#e11d48,#dc2626); box-shadow: 0 7px 16px rgba(220,38,38,.2); }
+.lf-swal-cancel { color: #475569; background: #f8fafc; border: 1px solid #dbe4f0; }
+.lf-swal-confirm:hover, .lf-swal-confirm-danger:hover, .lf-swal-cancel:hover { transform: translateY(-1px); }
+.lf-swal-input { border: 1px solid #cbd5e1 !important; border-radius: .7rem !important; color: #0f172a !important; font-family: inherit !important; text-align: center; }
+.lf-swal-input:focus { border-color: #4f46e5 !important; box-shadow: 0 0 0 3px rgba(79,70,229,.14) !important; }
+.lf-swal-toast { width: min(25rem, calc(100vw - 1.5rem)); padding: .8rem 1rem; border: 1px solid #e5eaf1; border-radius: 1rem; box-shadow: 0 14px 38px rgba(15,23,42,.15); }
+.lf-swal-toast-title { color: #172033; font-size: .84rem; font-weight: 800; }
+.lf-swal-toast-text { color: #64748b; font-size: .77rem; line-height: 1.55; }
 
 /* Consistent dashboard surfaces and dense information layout */
 .lf-page { display: flex; flex-direction: column; gap: 1.25rem; }
