@@ -13,6 +13,7 @@ import {
   PAYMENT_REQUEST_STATUS_BADGE,
   PaymentRequestDto,
   PaymentRequestStatus,
+  PaymentRequestOperation,
 } from '../../core/models/platform.models';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
 
@@ -136,8 +137,14 @@ export class PaymentRequestsComponent implements OnInit {
   private notify = inject(NotifyService);
 
   readonly PRS = PaymentRequestStatus;
+  readonly PRO = PaymentRequestOperation;
   rows = signal<PaymentRequestDto[]>([]);
   loading = signal(false);
+
+  operationLabel(operation: PaymentRequestOperation): string {
+    const labels: Record<number, string> = { 1: 'اشتراك جديد', 2: 'تجديد', 3: 'ترقية', 4: 'تمديد' };
+    return labels[operation] ?? 'غير محدد';
+  }
   busyId = signal<string | null>(null);
   selected = signal<PaymentRequestDto | null>(null);
   showPreview = false;

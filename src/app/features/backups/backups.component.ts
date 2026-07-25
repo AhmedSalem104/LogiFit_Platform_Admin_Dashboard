@@ -27,5 +27,5 @@ export class BackupsComponent implements OnInit {
   rows = signal<BackupRecord[]>([]); loading = signal(false); creating = signal(false);
   ngOnInit(): void { this.load(); }
   load(): void { this.loading.set(true); this.service.list().subscribe({ next: x => { this.rows.set(x); this.loading.set(false); }, error: e => { this.notify.error(errMsg(e)); this.loading.set(false); } }); }
-  create(): void { if (!confirm('Create a database backup now?')) return; this.creating.set(true); this.service.create().subscribe({ next: x => { this.rows.update(rows => [x, ...rows]); this.notify.success('Backup completed'); this.creating.set(false); }, error: e => { this.notify.error(errMsg(e)); this.creating.set(false); } }); }
+  create(): void { if (!confirm('هل تريد إنشاء نسخة احتياطية لقاعدة البيانات الآن؟')) return; this.creating.set(true); this.service.create().subscribe({ next: x => { this.rows.update(rows => [x, ...rows]); this.notify.success('تم إنشاء النسخة الاحتياطية بنجاح'); this.creating.set(false); }, error: e => { this.notify.error(errMsg(e)); this.creating.set(false); } }); }
 }

@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "https://logicfit-platform.runasp.net",
+    "target": "https://logicfit-saas.runasp.net",
     "secure": true,
     "changeOrigin": true
   }

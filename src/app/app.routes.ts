@@ -49,6 +49,9 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/features/features.component').then((m) => m.FeaturesComponent),
       },
+      { path: 'feature-overrides', canActivate: [permissionGuard('ManagePlans')], loadComponent: () => import('./features/feature-overrides/feature-overrides.component').then(m => m.FeatureOverridesComponent) },
+      { path: 'quota-definitions', canActivate: [permissionGuard('ManagePlans')], loadComponent: () => import('./features/quota-definitions/quota-definitions.component').then(m => m.QuotaDefinitionsComponent) },
+      { path: 'feature-dependencies', canActivate: [permissionGuard('ManagePlans')], loadComponent: () => import('./features/feature-dependencies/feature-dependencies.component').then(m => m.FeatureDependenciesComponent) },
       {
         path: 'payment-methods',
         canActivate: [permissionGuard('ManagePaymentRequests')],
@@ -66,6 +69,13 @@ export const routes: Routes = [
         canActivate: [permissionGuard('ManagePlatformBackups')],
         loadComponent: () => import('./features/backups/backups.component').then((m) => m.BackupsComponent),
       },
+      { path: 'audit-logs', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/audit-logs/audit-logs.component').then((m) => m.AuditLogsComponent) },
+      { path: 'invoices', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/invoices/invoices.component').then((m) => m.InvoicesComponent) },
+      { path: 'administrators', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/administrators/administrators.component').then((m) => m.AdministratorsComponent) },
+      { path: 'roles', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/roles/roles.component').then((m) => m.RolesComponent) },
+      { path: 'operations', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/operations/operations.component').then((m) => m.OperationsComponent) },
+      { path: 'reports', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/reports/reports.component').then((m) => m.ReportsComponent) },
+      { path: 'alerts', canActivate: [permissionGuard('ManagePlatformReports')], loadComponent: () => import('./features/alerts/alerts.component').then((m) => m.AlertsComponent) },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

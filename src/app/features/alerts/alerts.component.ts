@@ -1,0 +1,9 @@
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { ButtonModule } from 'primeng/button';
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { NotifyService, errMsg } from '../../shared/ui/notify.service';
+import { environment } from '../../../environments/environment';
+@Component({selector:'app-alerts',standalone:true,changeDetection:ChangeDetectionStrategy.OnPush,imports:[CommonModule,ButtonModule,PageHeaderComponent],template:`<div class="lf-page"><div class="lf-toolbar"><app-page-header title="التنبيهات" subtitle="المهام الفاشلة ورسائل النظام التي تحتاج متابعة" icon="pi pi-bell"></app-page-header><button pButton label="تحديث" icon="pi pi-refresh" (click)="load()"></button></div>@if(alerts().length){<div class="grid gap-3">@for(a of alerts();track a.title+a.occurredAtUtc){<div class="lf-card p-4 border-r-4" [class.border-r-red-500]="a.severity==='error'" [class.border-r-amber-400]="a.severity==='warning'"><div class="flex justify-between gap-4"><div><b>{{a.title}}</b><p class="m-0 mt-1 text-slate-600">{{a.message}}</p>@if(a.detail){<p class="m-0 mt-1 text-xs text-red-600">{{a.detail}}</p>}</div><span class="text-xs text-slate-400 whitespace-nowrap">{{a.occurredAtUtc|date:'medium'}}</span></div></div>}</div>}@else if(!loading()){<div class="lf-card p-8 text-center text-green-600"><i class="pi pi-check-circle text-3xl"></i><p>لا توجد تنبيهات تحتاج إجراء</p></div>}</div>`})
+export class AlertsComponent{private http=inject(HttpClient);private notify=inject(NotifyService);alerts=signal<any[]>([]);loading=signal(false);ngOnInit(){this.load()}load(){this.loading.set(true);this.http.get<any[]>(`${environment.apiUrl}/alerts`).subscribe({next:x=>{this.alerts.set(x);this.loading.set(false)},error:e=>{this.notify.error(errMsg(e));this.loading.set(false)}})}}

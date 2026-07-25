@@ -24,4 +24,18 @@ export class FeaturesService {
   invalidate(): void {
     this.cache$ = undefined;
   }
+  overrides(): Observable<any[]> { return this.http.get<any[]>(`${this.base}/tenant-overrides`); }
+  setOverride(command: any): Observable<string> { return this.http.post<string>(`${this.base}/tenant-overrides`, command); }
+  quotaDefinitions(): Observable<any[]> { return this.http.get<any[]>(`${this.base}/quota-definitions`); }
+  dependencies(): Observable<any[]> { return this.http.get<any[]>(`${this.base}/dependencies`); }
+  addDependency(command: { featureId: string; dependsOnFeatureId: string }): Observable<string> {
+    return this.http.post<string>(`${this.base}/dependencies`, command);
+  }
+
+  save(command: Partial<FeatureDto> & { code: string; name: string }): Observable<FeatureDto> {
+    const request = command.id
+      ? this.http.put<FeatureDto>(`${this.base}/${command.id}`, command)
+      : this.http.post<FeatureDto>(this.base, command);
+    return request.pipe(shareReplay(1));
+  }
 }
