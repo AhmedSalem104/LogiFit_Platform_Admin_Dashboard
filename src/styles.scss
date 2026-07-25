@@ -189,8 +189,9 @@ app-main-layout .lf-sidebar { inset: 0 0 0 auto; }
 @media print {
   html, body { width:100% !important; min-width:0 !important; background:#fff !important; }
   .lf-sidebar, .lf-topbar, .print-hide, app-admin-assistant { display:none !important; }
-  main, .lf-page { width:100% !important; max-width:none !important; margin:0 !important; padding:0 !important; }
-  .lf-page > *, .lf-table-shell, table { width:100% !important; max-width:none !important; }
+  main, .lf-page { width:100% !important; max-width:none !important; margin:0 auto !important; padding:0 !important; }
+  .lf-page { align-items:center !important; }
+  .lf-page > *, .lf-table-shell, table { width:100% !important; max-width:none !important; margin-inline:auto !important; }
   .overflow-x-auto { overflow:visible !important; }
   .p-datatable-wrapper { overflow:visible !important; }
   .lf-card { box-shadow:none !important; border-color:#cbd5e1 !important; break-inside:avoid; }
