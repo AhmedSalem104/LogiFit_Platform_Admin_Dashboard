@@ -17,6 +17,7 @@ import {
   PaymentRequestOperation,
 } from '../../core/models/platform.models';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-payment-requests',
@@ -106,9 +107,10 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
             <div class="bg-slate-50 rounded-lg px-3 py-2"><span class="text-slate-400 block text-xs">المبلغ</span><b>{{ r.amount | number }} {{ r.currency }}</b></div>
             <div class="bg-slate-50 rounded-lg px-3 py-2"><span class="text-slate-400 block text-xs">رقم العملية</span><b dir="ltr">{{ r.transactionNumber || '—' }}</b></div>
           </div>
-          <a [href]="r.proofFileUrl" target="_blank" rel="noopener">
-            <img [src]="r.proofFileUrl" alt="إثبات الدفع" loading="lazy" decoding="async"
+          <a [href]="proofUrl(r)" target="_blank" rel="noopener">
+            @if (!proofLoadError()) { <img [src]="proofUrl(r)" alt="إثبات الدفع" loading="lazy" decoding="async" (load)="proofLoadError.set(false)" (error)="proofLoadError.set(true)"
               class="w-full rounded-lg border border-slate-200 max-h-[60vh] object-contain bg-slate-50" />
+            } @else { <div class="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-700"><i class="pi pi-exclamation-triangle block mb-2 text-xl"></i>تعذر تحميل إثبات الدفع أو أن الملف غير موجود.</div> }
           </a>
           @if (r.notes) { <p class="text-sm text-slate-500">ملاحظات: {{ r.notes }}</p> }
         </div>
@@ -154,6 +156,7 @@ export class PaymentRequestsComponent implements OnInit {
   busyId = signal<string | null>(null);
   selected = signal<PaymentRequestDto | null>(null);
   showPreview = false;
+  proofLoadError = signal(false);
 
   // Reject dialog state
   showReject = false;
@@ -208,7 +211,13 @@ export class PaymentRequestsComponent implements OnInit {
 
   preview(r: PaymentRequestDto): void {
     this.selected.set(r);
+    this.proofLoadError.set(false);
     this.showPreview = true;
+  }
+
+  proofUrl(request: PaymentRequestDto): string {
+    if (!request.proofFileUrl) return '';
+    return `${environment.apiUrl}/payment-requests/${request.id}/proof`;
   }
 
   async approve(r: PaymentRequestDto): Promise<void> {
