@@ -6,11 +6,107 @@ import { DashboardService } from './dashboard.service';
 import { PlatformDashboardDto } from '../../core/models/platform.models';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
 
-@Component({ selector: 'app-dashboard', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush, imports: [CommonModule, RouterLink, PageHeaderComponent], template: `
-<div class="lf-page"><div class="lf-toolbar"><app-page-header title="لوحة قيادة المنصة" subtitle="نظرة تشغيلية شاملة على صحة LogicFit وأهم مؤشرات الأداء" icon="pi pi-chart-bar"></app-page-header><button class="p-button p-component" (click)="load()"><i class="pi pi-refresh ml-2"></i> تحديث البيانات</button></div>
-@if(loading()){<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">@for(i of skeleton;track i){<div class="lf-card h-28 animate-pulse bg-slate-50"></div>}</div>}
-@else if(error()){<div class="lf-card p-8 text-center"><i class="pi pi-exclamation-circle text-3xl text-red-500"></i><p class="text-red-600">{{error()}}</p><button class="p-button p-component" (click)="load()">إعادة المحاولة</button></div>}
-@else if(data();as d){<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">@for(k of cards(d);track k.label){<div class="lf-card lf-stat"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl" [ngClass]="k.color"><i [class]="k.icon"></i></div><div><div class="text-3xl font-black tabular-nums">{{k.value|number}}</div><div class="text-sm text-slate-500">{{k.label}}</div></div></div></div>}</div>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-4"><div class="lf-card p-5 lg:col-span-2"><h3 class="lf-section-title">صحة المنصة</h3><p class="lf-section-subtitle">نسب النشاط الحالية بين الجيمات المسجلة</p><div class="mt-5 space-y-4">@for(x of health(d);track x.label){<div><div class="flex justify-between text-sm mb-1"><span>{{x.label}}</span><b>{{x.percent}}%</b></div><div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full" [ngClass]="x.color" [style.width.%]="x.percent"></div></div></div>}</div></div><div class="lf-card p-5"><h3 class="lf-section-title">إجراءات سريعة</h3><div class="grid gap-2 mt-4"><a routerLink="/tenants" class="p-button p-component p-button-outlined justify-start"><i class="pi pi-building ml-2"></i> إدارة الجيمات</a><a routerLink="/subscriptions" class="p-button p-component p-button-outlined justify-start"><i class="pi pi-sync ml-2"></i> متابعة الاشتراكات</a><a routerLink="/payment-requests" class="p-button p-component p-button-outlined justify-start"><i class="pi pi-inbox ml-2"></i> مراجعة المدفوعات</a><a routerLink="/audit-logs" class="p-button p-component p-button-outlined justify-start"><i class="pi pi-history ml-2"></i> سجل التدقيق</a></div></div></div>
-<div class="lf-card p-5 flex items-center gap-3" [class.border-amber-300]="d.pendingApprovalGyms>0"><i class="pi pi-info-circle text-xl text-amber-500"></i><span>الجيمات بانتظار الموافقة: <b>{{d.pendingApprovalGyms|number}}</b></span><a routerLink="/tenants" class="mr-auto text-primary-600 font-bold">فتح القائمة</a></div>}</div>` })
-export class DashboardComponent implements OnInit { private service=inject(DashboardService); private notify=inject(NotifyService); skeleton=[1,2,3,4,5,6]; loading=signal(true); error=signal(''); data=signal<PlatformDashboardDto|null>(null); ngOnInit(){this.load();} load(){this.loading.set(true);this.service.get().subscribe({next:d=>{this.data.set(d);this.error.set('');this.loading.set(false)},error:e=>{this.error.set(errMsg(e));this.notify.error(errMsg(e));this.loading.set(false)}})} cards(d:PlatformDashboardDto){return [{label:'إجمالي الجيمات',value:d.totalGyms,icon:'pi pi-building',color:'bg-indigo-50 text-indigo-600'},{label:'جيمات نشطة',value:d.activeGyms,icon:'pi pi-check-circle',color:'bg-green-50 text-green-600'},{label:'جيمات تجريبية',value:d.trialGyms,icon:'pi pi-clock',color:'bg-sky-50 text-sky-600'},{label:'بانتظار الموافقة',value:d.pendingApprovalGyms,icon:'pi pi-hourglass',color:'bg-amber-50 text-amber-600'},{label:'جيمات موقوفة',value:d.suspendedGyms,icon:'pi pi-ban',color:'bg-red-50 text-red-600'},{label:'إجمالي الأعضاء',value:d.totalMembers,icon:'pi pi-users',color:'bg-violet-50 text-violet-600'}];} health(d:PlatformDashboardDto){const total=Math.max(d.totalGyms,1);return [{label:'نشاط الجيمات',percent:Math.round(d.activeGyms*100/total),color:'bg-green-500'},{label:'الفترة التجريبية',percent:Math.round(d.trialGyms*100/total),color:'bg-sky-500'},{label:'تحتاج مراجعة',percent:Math.round((d.pendingApprovalGyms+d.suspendedGyms)*100/total),color:'bg-amber-500'}];}}
+type Kpi = { label: string; value: number; icon: string; tone: string };
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, RouterLink, PageHeaderComponent],
+  template: `
+    <div class="lf-page">
+      <div class="lf-toolbar">
+        <app-page-header title="لوحة قيادة المنصة" subtitle="متابعة صحة المنصة وأهم العمليات من مكان واحد" icon="pi pi-sparkles"></app-page-header>
+        <button class="lf-btn lf-btn-secondary" (click)="load()"><i class="pi pi-refresh"></i> تحديث البيانات</button>
+      </div>
+
+      @if (loading()) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          @for (item of skeleton; track item) { <div class="lf-card h-32 animate-pulse bg-slate-50"></div> }
+        </div>
+      } @else if (error()) {
+        <div class="lf-empty-state"><i class="pi pi-exclamation-triangle"></i><h3>تعذّر تحميل بيانات المنصة</h3><p>{{ error() }}</p><button class="lf-btn lf-btn-primary mt-3" (click)="load()">إعادة المحاولة</button></div>
+      } @else {
+        @if (data(); as dashboard) {
+          @if (dashboard.pendingApprovalGyms > 0 || dashboard.suspendedGyms > 0) {
+            <a routerLink="/tenants" class="lf-alert-banner">
+              <span class="lf-alert-icon"><i class="pi pi-bell"></i></span>
+              <span><b>توجد عناصر تحتاج متابعة.</b> {{ dashboard.pendingApprovalGyms }} منشأة بانتظار الموافقة و{{ dashboard.suspendedGyms }} منشأة موقوفة.</span>
+              <i class="pi pi-arrow-left mr-auto"></i>
+            </a>
+          }
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            @for (item of kpis(dashboard); track item.label) {
+              <article class="lf-card lf-kpi-card">
+                <div class="lf-kpi-icon" [ngClass]="item.tone"><i [class]="item.icon"></i></div>
+                <div><div class="lf-kpi-value">{{ item.value | number }}</div><div class="lf-kpi-label">{{ item.label }}</div></div>
+              </article>
+            }
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <section class="lf-card p-6 xl:col-span-2">
+              <div class="lf-section-heading"><div><h2>صحة المنصة</h2><p>نسب المنشآت الرياضية بحسب حالتها الحالية</p></div><span class="lf-chip">مباشر</span></div>
+              <div class="mt-7 space-y-5">
+                @for (row of health(dashboard); track row.label) {
+                  <div><div class="flex items-center justify-between text-sm mb-2"><span class="font-semibold text-slate-700">{{ row.label }}</span><span class="font-bold text-slate-900">{{ row.value }}%</span></div><div class="lf-progress"><span [ngClass]="row.tone" [style.width.%]="row.value"></span></div></div>
+                }
+              </div>
+            </section>
+            <section class="lf-card p-6">
+              <div class="lf-section-heading"><div><h2>إجراءات سريعة</h2><p>الوصول المباشر لأكثر المهام استخدامًا</p></div></div>
+              <div class="mt-5 grid gap-2">
+                <a routerLink="/tenants" class="lf-quick-link"><i class="pi pi-building"></i> إدارة المنشآت <i class="pi pi-angle-left mr-auto"></i></a>
+                <a routerLink="/payment-requests" class="lf-quick-link"><i class="pi pi-wallet"></i> مراجعة المدفوعات <i class="pi pi-angle-left mr-auto"></i></a>
+                <a routerLink="/alerts" class="lf-quick-link"><i class="pi pi-bell"></i> مركز التنبيهات <i class="pi pi-angle-left mr-auto"></i></a>
+                <a routerLink="/operations" class="lf-quick-link"><i class="pi pi-cog"></i> مراقبة العمليات <i class="pi pi-angle-left mr-auto"></i></a>
+              </div>
+            </section>
+          </div>
+        } @else {
+          <div class="lf-empty-state"><i class="pi pi-chart-bar"></i><h3>لا تتوفر بيانات للعرض حاليًا</h3><p>حدّث الصفحة أو أعد المحاولة لاحقًا.</p></div>
+        }
+      }
+    </div>`,
+})
+export class DashboardComponent implements OnInit {
+  private service = inject(DashboardService);
+  private notify = inject(NotifyService);
+
+  readonly skeleton = [1, 2, 3, 4, 5, 6];
+  loading = signal(true);
+  error = signal('');
+  data = signal<PlatformDashboardDto | null>(null);
+
+  ngOnInit(): void { this.load(); }
+
+  load(): void {
+    this.loading.set(true);
+    this.error.set('');
+    this.service.get().subscribe({
+      next: value => { this.data.set(value); this.loading.set(false); },
+      error: error => { const message = errMsg(error); this.error.set(message); this.notify.error(message); this.loading.set(false); },
+    });
+  }
+
+  kpis(value: PlatformDashboardDto): Kpi[] {
+    return [
+      { label: 'إجمالي المنشآت', value: value.totalGyms, icon: 'pi pi-building', tone: 'lf-tone-indigo' },
+      { label: 'منشآت نشطة', value: value.activeGyms, icon: 'pi pi-check-circle', tone: 'lf-tone-emerald' },
+      { label: 'فترة تجريبية', value: value.trialGyms, icon: 'pi pi-clock', tone: 'lf-tone-sky' },
+      { label: 'بانتظار الموافقة', value: value.pendingApprovalGyms, icon: 'pi pi-hourglass', tone: 'lf-tone-amber' },
+      { label: 'منشآت موقوفة', value: value.suspendedGyms, icon: 'pi pi-ban', tone: 'lf-tone-rose' },
+      { label: 'إجمالي الأعضاء', value: value.totalMembers, icon: 'pi pi-users', tone: 'lf-tone-violet' },
+    ];
+  }
+
+  health(value: PlatformDashboardDto) {
+    const total = Math.max(value.totalGyms, 1);
+    return [
+      { label: 'النشاط', value: Math.round(value.activeGyms * 100 / total), tone: 'bg-emerald-500' },
+      { label: 'الفترة التجريبية', value: Math.round(value.trialGyms * 100 / total), tone: 'bg-sky-500' },
+      { label: 'تحتاج متابعة', value: Math.round((value.pendingApprovalGyms + value.suspendedGyms) * 100 / total), tone: 'bg-amber-500' },
+    ];
+  }
+}
