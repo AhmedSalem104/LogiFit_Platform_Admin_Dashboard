@@ -25,8 +25,8 @@ export class RolesComponent implements OnInit {
   roles = signal<any[]>([]); catalog = signal<any[]>([]); selected = signal<any | null>(null); chosen = signal<Set<string>>(new Set()); loading = signal(false); saving = signal(false);
   page = 1; pageSize = 20; totalCount = 0;
   ngOnInit(): void { this.load(); }
-  load(): void { this.loading.set(true); const params = new HttpParams().set('page', this.page).set('pageSize', this.pageSize); this.http.get<PagedResult<any>>(`${environment.apiUrl}/roles`, { params }).subscribe({ next: (response) => { this.roles.set(response.items); this.totalCount = response.totalCount; this.loadCatalog(); }, error: (error) => this.fail(error) }); }
-  private loadCatalog(): void { this.http.get<any[]>(`${environment.apiUrl}/roles/permissions`).subscribe({ next: (items) => { this.catalog.set(items); this.loading.set(false); }, error: (error) => this.fail(error) }); }
+  load(): void { this.loading.set(true); const params = new HttpParams().set('page', this.page).set('pageSize', this.pageSize); this.http.get<PagedResult<any>>(`${environment.apiUrl}/roles`, { params }).subscribe({ next: (response) => { this.roles.set(response.items.map((role: any) => ({ ...role, name: role.nameAr || role.name }))); this.totalCount = response.totalCount; this.loadCatalog(); }, error: (error) => this.fail(error) }); }
+  private loadCatalog(): void { this.http.get<any[]>(`${environment.apiUrl}/roles/permissions`).subscribe({ next: (items) => { this.catalog.set(items.map((item: any) => ({ ...item, displayName: item.displayNameAr || item.displayName }))); this.loading.set(false); }, error: (error) => this.fail(error) }); }
   onPageChange(event: { page: number; pageSize: number }): void { this.page = event.page; this.pageSize = event.pageSize; this.selected.set(null); this.load(); }
   select(role: any): void { this.selected.set(role); this.chosen.set(new Set(role.permissions || [])); }
   has(code: string): boolean { return this.chosen().has(code); }
