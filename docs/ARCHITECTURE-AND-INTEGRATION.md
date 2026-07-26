@@ -48,7 +48,7 @@ flowchart LR
 | البيئة | `apiUrl` | كيف يعمل؟ |
 |---|---|---|
 | Development | `/api/platform` | `proxy.conf.json` يمرر الطلب إلى Platform API؛ المتصفح لا يحتاج CORS. |
-| Production | `/api/platform` | `vercel.json` يعيد كتابة `/api/*` إلى `http://logicfit-saas-model.runasp.net`. |
+| Production | `/api/platform` | `vercel.json` يعيد كتابة `/api/*` إلى `https://logicfit-saas-model.runasp.net`. |
 
 لا تغيّر production إلى عنوان مطلق إلا إذا أضيف نطاق الواجهة إلى CORS في API. العنوان
 التشغيلي للخادم موجود في `platformApiUrl` للمرجع، بينما الطلبات الفعلية تبقى relative

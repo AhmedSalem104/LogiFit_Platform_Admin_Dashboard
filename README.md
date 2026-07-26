@@ -167,7 +167,7 @@ npm run build
 3. The JWT interceptor attaches Bearer authentication.
 4. A 401 triggers one shared token refresh; failure clears the session.
 5. `environment.prod.ts` keeps `apiUrl: '/api/platform'`; Vercel rewrites `/api/*`
-   to `http://logicfit-saas-model.runasp.net` through `vercel.json`.
+   to `https://logicfit-saas-model.runasp.net` through `vercel.json`.
 
 Do not change production to a direct absolute API URL without configuring CORS at the
 backend. Do not commit credentials, tokens, connection strings or publish profiles.
