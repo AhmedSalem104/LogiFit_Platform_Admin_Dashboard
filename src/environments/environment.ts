@@ -2,7 +2,7 @@ export const environment = {
   production: false,
   // Platform API host — the Platform Admin Dashboard talks ONLY to this host.
   // (The gym/Tenant app uses a different host: https://logicfit.runasp.net — not used here.)
-  platformApiUrl: 'http://logicfit-saas-model.runasp.net',
+  platformApiUrl: 'https://logicfit-saas-model.runasp.net',
   // In DEV we call through a relative path proxied by proxy.conf.json → the browser
   // never makes a cross-origin request, so no CORS whitelist is needed locally.
   apiUrl: '/api/platform',
