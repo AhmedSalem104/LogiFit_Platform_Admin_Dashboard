@@ -21,7 +21,7 @@ import { NotificationService } from '../../shared/ui/notification.service';
         @if (!effectiveCollapsed()) { <div class="lf-nav-search"><i class="pi pi-search"></i><input [(ngModel)]="navQuery" placeholder="ابحث في القائمة" aria-label="البحث في القائمة"><kbd>Ctrl /</kbd></div> }
         <nav class="flex-1 overflow-y-auto px-3 py-4">
           @for (group of visibleGroups(); track group) {
-            @if (!effectiveCollapsed()) { <p class="lf-nav-group-label">{{ groupLabel(group) }}</p> }
+            @if (!effectiveCollapsed()) { <div class="lf-nav-divider" aria-hidden="true"><span></span></div> }
             <div class="lf-nav-grid">
               @for (item of groupedNav()[group]; track item.route) {
                 <a [routerLink]="item.route" routerLinkActive="lf-nav-active" (click)="mobileOpen.set(false)" class="lf-nav-item" [title]="item.label">
@@ -53,7 +53,7 @@ import { NotificationService } from '../../shared/ui/notification.service';
     .lf-brand-mark { width:2.6rem; height:2.6rem; display:grid; place-items:center; flex:none; border-radius:.85rem; color:#fff; background:linear-gradient(135deg,#38bdf8,#6366f1); box-shadow:0 8px 18px rgba(56,189,248,.2); }
     .lf-brand b { display:block; color:#fff; font-size:1rem; }.lf-brand span { display:block; margin-top:.1rem; color:#94a3b8; font-size:.7rem; }
     .lf-nav-search { display:flex; align-items:center; gap:.5rem; margin:.85rem .75rem .25rem; padding:.5rem .65rem; color:#94a3b8; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08); border-radius:.7rem; }.lf-nav-search input { min-width:0; flex:1; outline:0; color:#fff; background:transparent; font:600 .75rem inherit; }.lf-nav-search input::placeholder { color:#64748b; }.lf-nav-search kbd { color:#64748b; font-size:.6rem; }
-    .lf-nav-group-label { margin:.9rem .7rem .45rem; color:#64748b; font-size:.64rem; font-weight:800; }
+    .lf-nav-divider { height:1px; margin:.85rem .55rem .65rem; background:linear-gradient(90deg,transparent,rgba(148,163,184,.12),rgba(148,163,184,.48),rgba(148,163,184,.12),transparent); }
     .lf-nav-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.55rem; margin-bottom:.35rem; }
     .lf-nav-item { min-height:5.1rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.42rem; padding:.65rem .35rem; border:1px solid transparent; border-radius:1rem; color:#cbd5e1; text-align:center; font-size:.68rem; line-height:1.2; font-weight:700; transition:transform .18s, background .18s, border-color .18s, color .18s; }
     .lf-nav-item i { width:auto; text-align:center; font-size:1.45rem; line-height:1; }
