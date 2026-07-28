@@ -242,19 +242,28 @@ export class PaymentRequestsComponent implements OnInit {
   }
 
   async approve(r: PaymentRequestDto): Promise<void> {
+    // SweetAlert must not render underneath the PrimeNG image dialog.
+    // Temporarily hide the preview while asking for confirmation and restore it
+    // unchanged if the operator cancels.
+    const previewWasOpen = this.showPreview;
+    this.showPreview = false;
     const ok = await this.notify.confirm({
       header: 'الموافقة على الدفعة',
       message: `الموافقة ستفعّل اشتراك "${r.tenantName}" تلقائياً. متابعة؟`,
       acceptLabel: 'موافقة وتفعيل',
       icon: 'pi pi-check-circle',
     });
-    if (!ok) return;
+    if (!ok) {
+      this.showPreview = previewWasOpen;
+      return;
+    }
 
     this.busyId.set(r.id);
     this.service.approve(r.id).subscribe({
       next: (updated) => {
         this.busyId.set(null);
         this.showPreview = false;
+        this.releaseProofUrl();
         this.notify.success('تمت الموافقة وتفعيل الاشتراك');
         this.applyUpdate(updated);
       },
