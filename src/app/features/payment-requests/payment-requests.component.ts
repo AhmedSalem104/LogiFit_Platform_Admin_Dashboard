@@ -107,8 +107,9 @@ import { environment } from '../../../environments/environment';
             <div class="bg-slate-50 rounded-lg px-3 py-2"><span class="text-slate-400 block text-xs">المبلغ</span><b>{{ r.amount | number }} {{ r.currency }}</b></div>
             <div class="bg-slate-50 rounded-lg px-3 py-2"><span class="text-slate-400 block text-xs">رقم العملية</span><b dir="ltr">{{ r.transactionNumber || '—' }}</b></div>
           </div>
-          <a [href]="proofUrl(r)" target="_blank" rel="noopener">
-            @if (!proofLoadError()) { <img [src]="proofUrl(r)" alt="إثبات الدفع" loading="lazy" decoding="async" (load)="proofLoadError.set(false)" (error)="proofLoadError.set(true)"
+          <a [href]="proofBlobUrl() || undefined" target="_blank" rel="noopener">
+            @if (proofLoading()) { <div class="p-6 text-center text-slate-500"><i class="pi pi-spin pi-spinner mr-2"></i>جاري تحميل إثبات الدفع...</div>
+            } @else if (!proofLoadError() && proofBlobUrl()) { <img [src]="proofBlobUrl()!" alt="إثبات الدفع" loading="lazy" decoding="async"
               class="w-full rounded-lg border border-slate-200 max-h-[60vh] object-contain bg-slate-50" />
             } @else { <div class="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-700"><i class="pi pi-exclamation-triangle block mb-2 text-xl"></i>تعذر تحميل إثبات الدفع أو أن الملف غير موجود.</div> }
           </a>
@@ -157,6 +158,8 @@ export class PaymentRequestsComponent implements OnInit {
   selected = signal<PaymentRequestDto | null>(null);
   showPreview = false;
   proofLoadError = signal(false);
+  proofLoading = signal(false);
+  proofBlobUrl = signal<string | null>(null);
 
   // Reject dialog state
   showReject = false;
@@ -210,9 +213,27 @@ export class PaymentRequestsComponent implements OnInit {
   }
 
   preview(r: PaymentRequestDto): void {
+    this.releaseProofUrl();
     this.selected.set(r);
     this.proofLoadError.set(false);
+    this.proofLoading.set(true);
     this.showPreview = true;
+    this.service.proof(r.id).subscribe({
+      next: (blob) => {
+        this.proofBlobUrl.set(URL.createObjectURL(blob));
+        this.proofLoading.set(false);
+      },
+      error: () => {
+        this.proofLoading.set(false);
+        this.proofLoadError.set(true);
+      },
+    });
+  }
+
+  private releaseProofUrl(): void {
+    const url = this.proofBlobUrl();
+    if (url) URL.revokeObjectURL(url);
+    this.proofBlobUrl.set(null);
   }
 
   proofUrl(request: PaymentRequestDto): string {
