@@ -69,4 +69,20 @@ describe('WorkspaceApplicationsComponent information request', () => {
       ['BrandName', 'Bio'],
     );
   });
+
+  it('explains a missing freelance-role conflict without exposing the raw server message', () => {
+    const message = (component as any).actionErrorMessage({
+      status: 409,
+      error: { message: 'Freelance roles are not seeded yet.' },
+    });
+
+    expect(message).toContain('SeedFreelanceSystemRoles');
+    expect(message).not.toContain('Freelance roles are not seeded yet.');
+  });
+
+  it('asks the administrator to review the refreshed request for a normal concurrency conflict', () => {
+    const message = (component as any).actionErrorMessage({ status: 409, error: { code: 'CONCURRENCY_CONFLICT' } });
+
+    expect(message).toContain('تم تحديث القائمة');
+  });
 });

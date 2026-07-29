@@ -128,8 +128,18 @@ export class WorkspaceApplicationsComponent implements OnInit {
   toggleInformationField(value: string, selected: boolean): void { this.informationFields = selected ? [...this.informationFields, value] : this.informationFields.filter(field => field !== value); }
 
   private async confirmThen(application: PlatformWorkspaceApplication, header: string, message: string, request: () => ReturnType<WorkspaceApplicationsService['approve']>, success: string, danger = false): Promise<void> { if (await this.notify.confirm({ header, message, acceptLabel: 'تأكيد', danger })) this.run(application, request, success); }
-  private run(application: PlatformWorkspaceApplication, request: () => ReturnType<WorkspaceApplicationsService['approve']>, success: string): void { this.busyId.set(application.id); request().subscribe({ next: updated => { this.replace(updated); this.busyId.set(null); this.notify.success(success); }, error: err => { this.busyId.set(null); this.notify.error(errMsg(err)); this.load(); } }); }
+  private run(application: PlatformWorkspaceApplication, request: () => ReturnType<WorkspaceApplicationsService['approve']>, success: string): void { this.busyId.set(application.id); request().subscribe({ next: updated => { this.replace(updated); this.busyId.set(null); this.notify.success(success); }, error: err => { this.busyId.set(null); this.notify.error(this.actionErrorMessage(err)); this.load(); } }); }
   private replace(updated: PlatformWorkspaceApplication): void { this.rows.update(rows => rows.map(row => row.id === updated.id ? updated : row)); }
+  private actionErrorMessage(error: any): string {
+    if (error?.status !== 409) return errMsg(error);
+
+    const serverMessage = String(error?.error?.message || error?.message || '');
+    if (/freelance roles are not seeded/i.test(serverMessage)) {
+      return 'لا يمكن اعتماد مساحة المدرب الحر لأن أدوارها المرجعية غير مهيأة على الخادم. طبّق Migration SeedFreelanceSystemRoles ثم أعد المحاولة.';
+    }
+
+    return 'تغيّرت حالة الطلب أو بياناته في عملية أخرى. تم تحديث القائمة؛ راجع حالته ثم أعد المحاولة إذا كان ما زال قيد المراجعة.';
+  }
 
   private readonly freelanceInformationFields: readonly InformationFieldOption[] = [
     { value: 'WorkspaceName', label: 'اسم مساحة العمل' }, { value: 'OwnerFullName', label: 'اسم المالك' }, { value: 'BrandName', label: 'الاسم التجاري' },
