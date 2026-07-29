@@ -47,17 +47,19 @@ describe('WorkspaceApplicationsComponent information request', () => {
     component = TestBed.runInInjectionContext(() => new WorkspaceApplicationsComponent());
   });
 
-  it('opens the freelance information dialog with no submitted field names', () => {
+  it('opens the freelance information dialog with no preselected field names', () => {
     component.openInformation(freelanceApplication);
 
-    expect(component.informationFields).toBe('');
-    expect(component.fieldHint(freelanceApplication)).toBe('BrandName, Bio');
+    expect(component.informationFields).toEqual([]);
+    expect(component.informationFieldOptions(freelanceApplication).map(field => field.value)).toContain('BrandName');
+    expect(component.informationFieldOptions(freelanceApplication).map(field => field.value)).toContain('Bio');
   });
 
-  it('sends only field names explicitly entered by the administrator', () => {
+  it('sends only allow-listed field names selected by the administrator', () => {
     component.openInformation(freelanceApplication);
     component.informationMessage = 'Please complete your branding details.';
-    component.informationFields = 'BrandName, Bio';
+    component.toggleInformationField('BrandName', true);
+    component.toggleInformationField('Bio', true);
 
     component.sendInformationRequest();
 
