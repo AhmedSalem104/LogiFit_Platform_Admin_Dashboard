@@ -2,7 +2,7 @@
 
 > **Source of truth:** this document is generated from the API controllers by `Scripts/Export-ApiEndpointCatalog.ps1`. Do not edit endpoint rows manually; change the controller, rerun the script, and include the refreshed catalog in the same Pull Request.
 
-Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
+Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 ## Contract rules
 
@@ -100,8 +100,14 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 #### `GET /api/platform/dashboard` - `Get`
 
 - **Access:** JWT + Policy: `Permissions.ManagePlatformReports`
-- **Inputs:** No request input.
+- **Inputs:** Query `query`: `GetPlatformDashboardQuery`<br>Handler signature: `[FromQuery] GetPlatformDashboardQuery query`
 - **Declared response:** typeof(PlatformDashboardDto), StatusCodes.Status200OK
+
+#### `GET /api/platform/dashboard/tenants` - `Tenants`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformReports`
+- **Inputs:** Query `search`: `string?`<br>Query `status`: `TenantStatus?`<br>Query `planId`: `Guid?`<br>Query `page`: `int`<br>Query `pageSize`: `int`<br>Handler signature: `[FromQuery] string? search = null, [FromQuery] TenantStatus? status = null, [FromQuery] Guid? planId = null, [FromQuery] int page = 1, [FromQuery] int pageSize = PlatformPaging.DefaultPageSize`
+- **Declared response:** Task<IActionResult>
 
 ### PlatformFeatures
 
@@ -179,6 +185,26 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Inputs:** Query `number`: `string?`<br>Query `tenantId`: `Guid?`<br>Query `page`: `int`<br>Query `pageSize`: `int`<br>Handler signature: `[FromQuery] string? number = null, [FromQuery] Guid? tenantId = null, [FromQuery] int page = 1, [FromQuery] int pageSize = PlatformPaging.DefaultPageSize`
 - **Declared response:** Task<IActionResult>
 
+### PlatformNotifications
+
+#### `GET /api/platform/notifications` - `List`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformReports`
+- **Inputs:** Query `search`: `string?`<br>Query `type`: `NotificationType?`<br>Query `isRead`: `bool?`<br>Query `page`: `int`<br>Query `pageSize`: `int`<br>Handler signature: `[FromQuery] string? search = null, [FromQuery] NotificationType? type = null, [FromQuery] bool? isRead = null, [FromQuery] int page = 1, [FromQuery] int pageSize = PlatformPaging.DefaultPageSize`
+- **Declared response:** Task<ActionResult<object>>
+
+#### `POST /api/platform/notifications/{id:guid}/read` - `MarkRead`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformReports`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<IActionResult>
+
+#### `POST /api/platform/notifications/read-all` - `MarkAllRead`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformReports`
+- **Inputs:** No request input.
+- **Declared response:** Task<IActionResult>
+
 ### PlatformOperations
 
 #### `GET /api/platform/operations/jobs` - `GetJobs`
@@ -233,6 +259,12 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** typeof(PaymentRequestDto), StatusCodes.Status200OK
 
+#### `GET /api/platform/payment-requests/{id:guid}/proof` - `Proof`
+
+- **Access:** JWT + Policy: `Permissions.ManagePaymentRequests`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<IActionResult>
+
 #### `POST /api/platform/payment-requests/{id:guid}/reject` - `Reject`
 
 - **Access:** JWT + Policy: `Permissions.ManagePaymentRequests`
@@ -266,6 +298,12 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Declared response:** typeof(PlanDto), StatusCodes.Status200OK
 
 ### PlatformReports
+
+#### `GET /api/platform/reports/catalog` - `Catalog`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformReports`
+- **Inputs:** No request input.
+- **Declared response:** Task<IActionResult>
 
 #### `GET /api/platform/reports/overview` - `Overview`
 
@@ -719,39 +757,45 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 
 #### `GET /api/Clients` - `GetClients`
 
-- **Access:** JWT + Policy: `Permissions.ManageMembers`
+- **Access:** JWT + Policy: `Permissions.ViewMembers`
 - **Inputs:** Query `searchTerm`: `string?`<br>Query `isActive`: `bool?`<br>Handler signature: `[FromQuery] string? searchTerm, [FromQuery] bool? isActive`
 - **Declared response:** Task<ActionResult<List<ClientDto>>>
 
 #### `POST /api/Clients` - `CreateClient`
 
-- **Access:** JWT + Policy: `Permissions.ManageMembers`
+- **Access:** JWT + Policy: `Permissions.CreateMembers`
 - **Inputs:** Handler signature: `CreateClientCommand command`
 - **Declared response:** Task<ActionResult<Guid>>
 
 #### `DELETE /api/Clients/{id}` - `DeleteClient`
 
-- **Access:** JWT + Policy: `Permissions.ManageMembers`
+- **Access:** JWT + Policy: `Permissions.DeleteMembers`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** Task<ActionResult>
 
 #### `GET /api/Clients/{id}` - `GetClient`
 
-- **Access:** JWT + Policy: `Permissions.ManageMembers`
+- **Access:** JWT + Policy: `Permissions.ViewMembers`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** Task<ActionResult<ClientDto>>
 
 #### `PUT /api/Clients/{id}` - `UpdateClient`
 
-- **Access:** JWT + Policy: `Permissions.ManageMembers`
+- **Access:** JWT + Policy: `Permissions.UpdateMembers`
 - **Inputs:** Handler signature: `Guid id, UpdateClientCommand command`
 - **Declared response:** Task<ActionResult>
+
+#### `POST /api/Clients/onboard` - `OnboardClient`
+
+- **Access:** JWT + Policy: `Permissions.CreateMembers`
+- **Inputs:** Handler signature: `OnboardClientCommand command`
+- **Declared response:** Task<ActionResult<OnboardClientResult>>
 
 ### CoachClients
 
 #### `GET /api/coach-clients` - `GetCoachClients`
 
-- **Access:** JWT + Policy: `Permissions.ManageCoaches`
+- **Access:** JWT + Policy: `Permissions.ViewMembers`
 - **Inputs:** Query `coachId`: `Guid?`<br>Query `isActive`: `bool?`<br>Handler signature: `[FromQuery] Guid? coachId, [FromQuery] bool? isActive = true`
 - **Declared response:** Task<ActionResult<List<CoachClientDto>>>
 
@@ -759,7 +803,7 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 
 - **Access:** JWT + Policy: `Permissions.ManageCoaches`
 - **Inputs:** Handler signature: `AddTraineeCommand command`
-- **Declared response:** Task<ActionResult<Guid>>
+- **Declared response:** Task<ActionResult<AddTraineeResult>>
 
 #### `DELETE /api/coach-clients/{clientId}` - `UnassignClientFromCoach`
 
@@ -769,7 +813,7 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 
 #### `GET /api/coach-clients/{id}` - `GetCoachClientById`
 
-- **Access:** JWT + Policy: `Permissions.ManageCoaches`
+- **Access:** JWT + Policy: `Permissions.ViewMembers`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** Task<ActionResult<CoachClientDto>>
 
@@ -816,6 +860,18 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Access:** JWT + Policy: `Permissions.ManageCoaches`
 - **Inputs:** Handler signature: `Guid id, UpdateCoachCommand command`
 - **Declared response:** Task<ActionResult>
+
+#### `POST /api/Coaches/{id}/qr/regenerate` - `RegenerateQr`
+
+- **Access:** JWT + Policy: `Permissions.ManageCoaches`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<ActionResult<object>>
+
+#### `POST /api/Coaches/{id}/qr/revoke` - `RevokeQr`
+
+- **Access:** JWT + Policy: `Permissions.ManageCoaches`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<IActionResult>
 
 ### Commissions
 
@@ -962,6 +1018,18 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Access:** JWT + Policy: `Permissions.ManageEmployees`
 - **Inputs:** Handler signature: `Guid id, UpdateEmployeeCommand command`
 - **Declared response:** Task<ActionResult>
+
+#### `POST /api/Employees/{id}/qr/regenerate` - `RegenerateQr`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<ActionResult<object>>
+
+#### `POST /api/Employees/{id}/qr/revoke` - `RevokeQr`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<IActionResult>
 
 #### `POST /api/Employees/{id}/terminate` - `Terminate`
 
@@ -1117,6 +1185,14 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Inputs:** Handler signature: `int id, UpdateFoodCommand command`
 - **Declared response:** Task<ActionResult>
 
+### FreelanceTeamApplications
+
+#### `POST /api/freelance/team/applications` - `Sponsor`
+
+- **Access:** JWT + Policy: `Permissions.ManageCoaches`
+- **Inputs:** Body `command`: `SponsorFreelanceMembershipCommand` { `IdentityEmail`: string; `RequestedRole`: UserRole; `FullName`: string }<br>Handler signature: `[FromBody] SponsorFreelanceMembershipCommand command`
+- **Declared response:** typeof(ApplicationTrackingStatusDto), StatusCodes.Status201Created
+
 ### GateAccess
 
 #### `POST /api/GateAccess/check-in-qr` - `CheckInByQr`
@@ -1130,6 +1206,12 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Access:** JWT + Policy: `Permissions.ManageAttendance`
 - **Inputs:** Query `clientId`: `Guid?`<br>Query `branchId`: `Guid?`<br>Query `result`: `GateAccessResult?`<br>Query `fromDate`: `DateTime?`<br>Query `toDate`: `DateTime?`<br>Query `take`: `int`<br>Handler signature: `[FromQuery] Guid? clientId, [FromQuery] Guid? branchId, [FromQuery] GateAccessResult? result, [FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate, [FromQuery] int take = 200`
 - **Declared response:** typeof(List<GateAccessLogDto>), StatusCodes.Status200OK
+
+#### `GET /api/GateAccess/scan` - `Scan`
+
+- **Access:** JWT + Policy: `Permissions.ManageAttendance`
+- **Inputs:** Query `qrCode`: `string`<br>Handler signature: `[FromQuery] string qrCode`
+- **Declared response:** typeof(QrMemberLookupDto), StatusCodes.Status200OK
 
 ### GroupClasses
 
@@ -1168,8 +1250,20 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 #### `PUT /api/GymProfile` - `UpdateProfile`
 
 - **Access:** JWT + Policy: `Permissions.ManageSettings`
-- **Inputs:** Body `command`: `UpdateGymProfileCommand` { `Name`: string?; `Description`: string?; `Address`: string?; `PhoneNumber`: string?; `Email`: string?; `LogoUrl`: string?; `CoverImageUrl`: string?; `GalleryImages`: List<string>?; `PrimaryColor`: string?; `SecondaryColor`: string?; `AppName`: string?; `FontFamily`: string?; `CustomCss`: string?; `InvoiceLogoUrl`: string?; `SupportPhone`: string?; `SupportEmail`: string?; `CustomDomain`: string? }<br>Handler signature: `[FromBody] UpdateGymProfileCommand command`
+- **Inputs:** Body `command`: `UpdateGymProfileCommand` { `Name`: string?; `Description`: string?; `Address`: string?; `PhoneNumber`: string?; `Email`: string?; `LogoUrl`: string?; `CoverImageUrl`: string?; `GalleryImages`: List<string>?; `PrimaryColor`: string?; `SecondaryColor`: string?; `LogoDarkUrl`: string?; `LogoLightUrl`: string?; `LogoIconUrl`: string?; `FaviconUrl`: string?; `LoginBackgroundUrl`: string?; `DashboardBannerUrl`: string?; `PrimaryHoverColor`: string?; `PrimaryForegroundColor`: string?; `SecondaryHoverColor`: string?; `SecondaryForegroundColor`: string?; `AccentColor`: string?; `BackgroundColor`: string?; `SurfaceColor`: string?; `CardColor`: string? }<br>Handler signature: `[FromBody] UpdateGymProfileCommand command`
 - **Declared response:** StatusCodes.Status204NoContent<br>StatusCodes.Status404NotFound
+
+#### `POST /api/GymProfile/assets` - `UploadBrandAsset`
+
+- **Access:** JWT + Policy: `Permissions.ManageSettings`
+- **Inputs:** Form `file`: `IFormFile`<br>Form `assetType`: `string`<br>Form `title`: `string?`<br>Form `altText`: `string?`<br>Handler signature: `[FromForm] IFormFile file, [FromForm] string assetType = "Gallery", [FromForm] string? title = null, [FromForm] string? altText = null`
+- **Declared response:** Task<ActionResult<BrandAssetResponse>>
+
+#### `DELETE /api/GymProfile/assets/{id:guid}` - `DeleteBrandAsset`
+
+- **Access:** JWT + Policy: `Permissions.ManageSettings`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<IActionResult>
 
 #### `POST /api/GymProfile/cover` - `UploadCover`
 
@@ -1188,6 +1282,32 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Access:** JWT + Policy: `Permissions.ManageSettings`
 - **Inputs:** Handler signature: `IFormFile file`
 - **Declared response:** typeof(UploadResponseDto), StatusCodes.Status200OK<br>StatusCodes.Status400BadRequest
+
+### Identity
+
+#### `POST /api/identity/application-tracking-sessions` - `ReissueApplicationTrackingSessions`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** Body `command`: `ReissueApplicationTrackingSessionsCommand` { `WorkspaceSelectionToken`: string }<br>Handler signature: `[FromBody] ReissueApplicationTrackingSessionsCommand command`
+- **Declared response:** typeof(IReadOnlyList<ApplicationTrackingSessionDto>), StatusCodes.Status200OK
+
+#### `POST /api/identity/login` - `Login`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** Body `command`: `IdentitySignInCommand` { `Identifier`: string; `Password`: string }<br>Handler signature: `[FromBody] IdentitySignInCommand command`
+- **Declared response:** typeof(IdentitySignInDto), StatusCodes.Status200OK
+
+#### `POST /api/identity/register` - `Register`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** Body `command`: `RegisterIdentityCommand` { `Email`: string; `PhoneNumber`: string?; `Password`: string }<br>Handler signature: `[FromBody] RegisterIdentityCommand command`
+- **Declared response:** StatusCodes.Status204NoContent
+
+#### `POST /api/identity/select-workspace` - `SelectWorkspace`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** Body `command`: `SelectIdentityWorkspaceCommand` { `WorkspaceSelectionToken`: string; `WorkspaceId`: Guid }<br>Handler signature: `[FromBody] SelectIdentityWorkspaceCommand command`
+- **Declared response:** typeof(AuthResponseDto), StatusCodes.Status200OK
 
 ### Invoices
 
@@ -1286,6 +1406,14 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Access:** JWT required
 - **Inputs:** Query `date`: `DateTime?`<br>Handler signature: `[FromQuery] DateTime? date`
 - **Declared response:** typeof(NutritionSummaryDto), StatusCodes.Status200OK
+
+### Media
+
+#### `GET /api/media/object` - `GetObject`
+
+- **Access:** JWT required
+- **Inputs:** Query `key`: `string`<br>Handler signature: `[FromQuery] string key`
+- **Declared response:** Task<IActionResult>
 
 ### MembershipCards
 
@@ -1664,6 +1792,26 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Access:** JWT + Policy: `Permissions.ManageEmployees`
 - **Inputs:** Query `employeeId`: `Guid?`<br>Query `shiftId`: `Guid?`<br>Query `fromDate`: `DateTime?`<br>Query `toDate`: `DateTime?`<br>Handler signature: `[FromQuery] Guid? employeeId, [FromQuery] Guid? shiftId, [FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate`
 - **Declared response:** Task<ActionResult<List<ShiftAssignmentDto>>>
+
+### StaffAttendance
+
+#### `GET /api/staff-attendance` - `Get`
+
+- **Access:** JWT + Policy: `Permissions.ManageAttendance`
+- **Inputs:** Query `fromDate`: `DateTime?`<br>Query `toDate`: `DateTime?`<br>Query `branchId`: `Guid?`<br>Query `userId`: `Guid?`<br>Handler signature: `[FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate, [FromQuery] Guid? branchId, [FromQuery] Guid? userId`
+- **Declared response:** Task<ActionResult<List<StaffAttendanceDto>>>
+
+#### `POST /api/staff-attendance/{id}/check-out` - `CheckOut`
+
+- **Access:** JWT + Policy: `Permissions.ManageAttendance`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<IActionResult>
+
+#### `POST /api/staff-attendance/toggle-qr` - `ToggleByQr`
+
+- **Access:** JWT + Policy: `Permissions.ManageAttendance`
+- **Inputs:** Body `request`: `ToggleStaffQrRequest`<br>Handler signature: `[FromBody] ToggleStaffQrRequest request`
+- **Declared response:** Task<ActionResult<StaffAttendanceDto>>
 
 ### Stock
 
@@ -2082,3 +2230,29 @@ Generated: `2026-07-25 18:16 UTC`  |  Total endpoints: **322**
 - **Access:** JWT required
 - **Inputs:** Handler signature: `StartWorkoutSessionCommand command`
 - **Declared response:** Task<ActionResult<Guid>>
+
+### WorkspaceApplications
+
+#### `POST /api/workspace-applications/freelance` - `SubmitFreelance`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** Body `command`: `SubmitFreelanceWorkspaceApplicationCommand` { `Email`: string; `PhoneNumber`: string?; `Password`: string; `WorkspaceName`: string; `WorkspaceIdentifier`: string; `OwnerFullName`: string; `BrandName`: string?; `LogoUrl`: string?; `PhotoUrl`: string?; `CoverImageUrl`: string?; `BackgroundImageUrl`: string?; `PrimaryColor`: string?; `SecondaryColor`: string?; `Bio`: string?; `Specialties`: IReadOnlyList<string>?; `Certifications`: IReadOnlyList<string>?; `WelcomeMessage`: string?; `BookingSettings`: System.Text.Json.JsonElement? }<br>Handler signature: `[FromBody] SubmitFreelanceWorkspaceApplicationCommand command`
+- **Declared response:** typeof(ApplicationTrackingSessionDto), StatusCodes.Status201Created
+
+#### `GET /api/workspace-applications/tracking` - `GetTrackingStatus`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** No request input.
+- **Declared response:** typeof(ApplicationTrackingStatusDto), StatusCodes.Status200OK
+
+#### `PATCH /api/workspace-applications/tracking/fields` - `UpdateRequestedFields`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** Body `System`: `IReadOnlyDictionary<string,`<br>Handler signature: `[FromBody] IReadOnlyDictionary<string, System.Text.Json.JsonElement> fields`
+- **Declared response:** typeof(ApplicationTrackingStatusDto), StatusCodes.Status200OK
+
+#### `POST /api/workspace-applications/tracking/resubmit` - `Resubmit`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** No request input.
+- **Declared response:** typeof(ApplicationTrackingStatusDto), StatusCodes.Status200OK
