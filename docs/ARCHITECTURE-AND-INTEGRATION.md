@@ -49,6 +49,8 @@ flowchart LR
    واحدة مع `X-LogicFit-OTP-Step-Up` و`X-Session-Id`.
 8. `authGuard` يحمي الـshell و`permissionGuard` يحمي كل Route؛ API يكرر التحقق كحاجز
    أمني فعلي.
+9. Issue #127 يضيف وضع اختبار مستضاف مؤقتًا بكود `1234`. الواجهة تعرض تلميحًا فقط؛ الخادم
+   ينشئ challenge حقيقيًا ويطبّق الـHash والحدود والاستهلاك الذري وتاريخ انتهاء الاستثناء.
 
 `ManagePlatform` يمنح كل الصلاحيات؛ غيره يرى فقط الشاشات التي تحقق
 `AuthService.hasAnyPermission`.
