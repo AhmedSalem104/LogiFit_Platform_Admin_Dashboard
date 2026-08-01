@@ -24,10 +24,30 @@ export const Permissions = {
 export interface LoginRequest {
   email: string;
   password: string;
+  sessionBinding: string;
 }
 
-export interface RefreshRequest {
-  refreshToken: string;
+export enum OtpPurpose {
+  PhoneVerification = 1,
+  PasswordlessLogin = 2,
+  PlatformAdminLogin = 3,
+  SensitiveActionStepUp = 4,
+  PasswordReset = 5,
+  ChangePhone = 6,
+  InviteAcceptance = 7,
+}
+
+export interface OtpChallenge {
+  challengeId: string;
+  purpose: OtpPurpose;
+  expiresAtUtc: string;
+  resendAvailableAtUtc: string;
+  maskedPhoneNumber: string;
+}
+
+export interface OtpStepUp {
+  token: string;
+  expiresAtUtc: string;
 }
 
 // AuthResponseDto from the Platform API
@@ -41,7 +61,6 @@ export interface AuthResponse {
   permissions: Permission[];
   tenantId: string;
   accessToken: string;
-  refreshToken: string;
   expiresAt: string;
 }
 

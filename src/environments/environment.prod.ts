@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
+  otpDevelopmentHint: '',
   // Platform API host — the Platform Admin Dashboard talks ONLY to this host.
   platformApiUrl: 'https://logicfit-saas-model.runasp.net',
   // RELATIVE path → the browser calls the same origin (the Vercel domain), and Vercel
@@ -9,7 +10,6 @@ export const environment = {
   //  AllowedOrigins — otherwise the browser blocks it with a CORS preflight error.)
   apiUrl: '/api/platform',
   tokenKey: 'logifit_platform_token',
-  refreshTokenKey: 'logifit_platform_refresh_token',
   userKey: 'logifit_platform_user',
   permissionsKey: 'logifit_platform_permissions',
 };
