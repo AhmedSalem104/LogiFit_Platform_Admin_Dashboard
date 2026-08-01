@@ -2,7 +2,7 @@
 
 > **Source of truth:** this document is generated from the API controllers by `Scripts/Export-ApiEndpointCatalog.ps1`. Do not edit endpoint rows manually; change the controller, rerun the script, and include the refreshed catalog in the same Pull Request.
 
-Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
+Generated: `2026-07-30 18:07 UTC`  |  Total endpoints: **377**
 
 ## Contract rules
 
@@ -23,13 +23,13 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/administrators` - `Create`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlatformReports`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `request`: `CreateAdministratorRequest`<br>Handler signature: `[FromBody] CreateAdministratorRequest request`
 - **Declared response:** Task<IActionResult>
 
 #### `PATCH /api/platform/administrators/{id:guid}/status` - `SetStatus`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlatformReports`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `isActive`: `bool`<br>Handler signature: `Guid id, [FromBody] bool isActive`
 - **Declared response:** Task<IActionResult>
 
@@ -54,8 +54,8 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 #### `POST /api/platform/auth/login` - `Login`
 
 - **Access:** Anonymous (no token required)
-- **Inputs:** Body `command`: `PlatformLoginCommand` { `Email`: string; `Password`: string }<br>Handler signature: `[FromBody] PlatformLoginCommand command`
-- **Declared response:** typeof(AuthResponseDto), StatusCodes.Status200OK<br>StatusCodes.Status401Unauthorized
+- **Inputs:** Body `command`: `RequestPlatformLoginOtpCommand`<br>Handler signature: `[FromBody] RequestPlatformLoginOtpCommand command`
+- **Declared response:** typeof(OtpChallengeDto), StatusCodes.Status200OK<br>StatusCodes.Status401Unauthorized
 
 #### `POST /api/platform/auth/logout-all` - `LogoutAll`
 
@@ -63,10 +63,16 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 - **Inputs:** No request input.
 - **Declared response:** StatusCodes.Status204NoContent
 
+#### `POST /api/platform/auth/otp/verify` - `VerifyOtp`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `VerifyPlatformLoginOtpCommand`<br>Handler signature: `[FromBody] VerifyPlatformLoginOtpCommand command`
+- **Declared response:** typeof(AuthResponseDto), StatusCodes.Status200OK
+
 #### `POST /api/platform/auth/refresh` - `Refresh`
 
 - **Access:** Anonymous (no token required)
-- **Inputs:** Body `command`: `RefreshTokenCommand` { `RefreshToken`: string; `Surface`: string }<br>Handler signature: `[FromBody] RefreshTokenCommand command`
+- **Inputs:** No request input.
 - **Declared response:** typeof(AuthResponseDto), StatusCodes.Status200OK<br>StatusCodes.Status401Unauthorized
 
 ### PlatformBackups
@@ -79,7 +85,7 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/backups` - `Create`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** No request input.
 - **Declared response:** Task<ActionResult<BackupRecord>>
 
@@ -119,13 +125,13 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/features` - `Create`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlans`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `UpsertFeatureCommand` { `Id`: Guid?; `Code`: string; `NameAr`: string?; `NameEn`: string?; `Name`: string; `Description`: string?; `Module`: string?; `IsFree`: bool; `IsActive`: bool; `SupportsQuota`: bool; `Status`: FeatureLifecycleStatus }<br>Handler signature: `[FromBody] UpsertFeatureCommand command`
 - **Declared response:** Task<ActionResult<FeatureDto>>
 
 #### `PUT /api/platform/features/{id:guid}` - `Update`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlans`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `UpsertFeatureCommand` { `Id`: Guid?; `Code`: string; `NameAr`: string?; `NameEn`: string?; `Name`: string; `Description`: string?; `Module`: string?; `IsFree`: bool; `IsActive`: bool; `SupportsQuota`: bool; `Status`: FeatureLifecycleStatus }<br>Handler signature: `Guid id, [FromBody] UpsertFeatureCommand command`
 - **Declared response:** Task<ActionResult<FeatureDto>>
 
@@ -137,13 +143,13 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/features/dependencies` - `SetDependency`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlans`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `SetFeatureDependencyCommand` { `FeatureId`: Guid; `DependsOnFeatureId`: Guid }<br>Handler signature: `[FromBody] SetFeatureDependencyCommand command`
 - **Declared response:** Task<ActionResult<Guid>>
 
 #### `DELETE /api/platform/features/dependencies/{id:guid}` - `DeleteDependency`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlans`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** Task<IActionResult>
 
@@ -155,13 +161,13 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/features/quota-definitions` - `CreateQuotaDefinition`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlans`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `UpsertQuotaDefinitionCommand` { `Id`: Guid?; `FeatureId`: Guid; `ResourceKey`: string; `Unit`: string; `DefaultLimit`: int?; `IsActive`: bool }<br>Handler signature: `[FromBody] UpsertQuotaDefinitionCommand command`
 - **Declared response:** Task<ActionResult<Guid>>
 
 #### `PUT /api/platform/features/quota-definitions/{id:guid}` - `UpdateQuotaDefinition`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlans`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `UpsertQuotaDefinitionCommand` { `Id`: Guid?; `FeatureId`: Guid; `ResourceKey`: string; `Unit`: string; `DefaultLimit`: int?; `IsActive`: bool }<br>Handler signature: `Guid id, [FromBody] UpsertQuotaDefinitionCommand command`
 - **Declared response:** Task<ActionResult<Guid>>
 
@@ -173,7 +179,7 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/features/tenant-overrides` - `SetTenantOverride`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlans`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `SetTenantOverrideCommand` { `TenantId`: Guid; `FeatureId`: Guid; `IsEnabled`: bool; `LimitOverride`: int?; `Reason`: string; `StartsAt`: DateTime; `EndsAt`: DateTime? }<br>Handler signature: `[FromBody] SetTenantOverrideCommand command`
 - **Declared response:** Task<ActionResult<Guid>>
 
@@ -229,19 +235,19 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/payment-methods` - `Create`
 
-- **Access:** JWT + Policy: `Permissions.ManagePaymentRequests`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `SavePaymentMethodCommand` { `Id`: Guid?; `Name`: string; `Type`: string?; `AccountName`: string?; `AccountNumber`: string?; `IBAN`: string?; `WalletNumber`: string?; `Instructions`: string?; `QRImageUrl`: string?; `IsActive`: bool; `DisplayOrder`: int }<br>Handler signature: `[FromBody] SavePaymentMethodCommand command`
 - **Declared response:** typeof(PaymentMethodDto), StatusCodes.Status201Created
 
 #### `DELETE /api/platform/payment-methods/{id:guid}` - `Delete`
 
-- **Access:** JWT + Policy: `Permissions.ManagePaymentRequests`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** StatusCodes.Status204NoContent
 
 #### `PUT /api/platform/payment-methods/{id:guid}` - `Update`
 
-- **Access:** JWT + Policy: `Permissions.ManagePaymentRequests`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `SavePaymentMethodCommand` { `Id`: Guid?; `Name`: string; `Type`: string?; `AccountName`: string?; `AccountNumber`: string?; `IBAN`: string?; `WalletNumber`: string?; `Instructions`: string?; `QRImageUrl`: string?; `IsActive`: bool; `DisplayOrder`: int }<br>Handler signature: `Guid id, [FromBody] SavePaymentMethodCommand command`
 - **Declared response:** typeof(PaymentMethodDto), StatusCodes.Status200OK
 
@@ -255,7 +261,7 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/payment-requests/{id:guid}/approve` - `Approve`
 
-- **Access:** JWT + Policy: `Permissions.ManagePaymentRequests`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** typeof(PaymentRequestDto), StatusCodes.Status200OK
 
@@ -267,7 +273,7 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/payment-requests/{id:guid}/reject` - `Reject`
 
-- **Access:** JWT + Policy: `Permissions.ManagePaymentRequests`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `RejectPaymentRequestCommand` { `PaymentRequestId`: Guid; `RejectReason`: string }<br>Handler signature: `Guid id, [FromBody] RejectPaymentRequestCommand command`
 - **Declared response:** typeof(PaymentRequestDto), StatusCodes.Status200OK
 
@@ -281,19 +287,19 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/plans` - `CreatePlan`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlans`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `CreatePlanCommand` { `Name`: string; `Description`: string?; `Price`: decimal; `Currency`: string; `BillingCycle`: BillingCycle; `DurationInDays`: int; `MaxMembers`: int?; `MaxCoaches`: int?; `MaxBranches`: int?; `MaxEmployees`: int?; `MaxStorageMB`: int?; `IsActive`: bool; `DisplayOrder`: int; `FeatureCodes`: List<string> }<br>Handler signature: `[FromBody] CreatePlanCommand command`
 - **Declared response:** typeof(PlanDto), StatusCodes.Status201Created
 
 #### `DELETE /api/platform/plans/{id:guid}` - `DeletePlan`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlans`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** StatusCodes.Status204NoContent
 
 #### `PUT /api/platform/plans/{id:guid}` - `UpdatePlan`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlans`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `UpdatePlanCommand` { `Id`: Guid; `Name`: string; `Description`: string?; `Price`: decimal; `Currency`: string; `BillingCycle`: BillingCycle; `DurationInDays`: int; `MaxMembers`: int?; `MaxCoaches`: int?; `MaxBranches`: int?; `MaxEmployees`: int?; `MaxStorageMB`: int?; `IsActive`: bool; `DisplayOrder`: int; `FeatureCodes`: List<string> }<br>Handler signature: `Guid id, [FromBody] UpdatePlanCommand command`
 - **Declared response:** typeof(PlanDto), StatusCodes.Status200OK
 
@@ -321,7 +327,7 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `PUT /api/platform/roles/{id:guid}/permissions` - `Update`
 
-- **Access:** JWT + Policy: `Permissions.ManagePlatformReports`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `request`: `UpdateRolePermissionsRequest`<br>Handler signature: `Guid id, [FromBody] UpdateRolePermissionsRequest request`
 - **Declared response:** Task<IActionResult>
 
@@ -341,13 +347,13 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/subscriptions/{id:guid}/extend` - `Extend`
 
-- **Access:** JWT + Policy: `Permissions.ManageTenants`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `ExtendSubscriptionCommand` { `SubscriptionId`: Guid; `Days`: int }<br>Handler signature: `Guid id, [FromBody] ExtendSubscriptionCommand command`
 - **Declared response:** Task<ActionResult<DateTime>>
 
 #### `POST /api/platform/subscriptions/{id:guid}/transition` - `Transition`
 
-- **Access:** JWT + Policy: `Permissions.ManageTenants`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `TransitionSubscriptionCommand` { `SubscriptionId`: Guid; `TargetStatus`: TenantSubscriptionStatus }<br>Handler signature: `Guid id, [FromBody] TransitionSubscriptionCommand command`
 - **Declared response:** Task<ActionResult<TenantSubscriptionStatus>>
 
@@ -373,33 +379,71 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/platform/tenants` - `CreateTenant`
 
-- **Access:** JWT + Policy: `Permissions.ManageTenants`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Body `command`: `CreateTenantWithOwnerCommand` { `Name`: string; `Subdomain`: string?; `Email`: string?; `PhoneNumber`: string?; `OwnerEmail`: string; `OwnerPhoneNumber`: string?; `OwnerPassword`: string; `OwnerFullName`: string }<br>Handler signature: `[FromBody] CreateTenantWithOwnerCommand command`
 - **Declared response:** typeof(PlatformTenantDto), StatusCodes.Status201Created
 
 #### `POST /api/platform/tenants/{id:guid}/activate` - `Activate`
 
-- **Access:** JWT + Policy: `Permissions.ManageTenants`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** typeof(PlatformTenantDto), StatusCodes.Status200OK
 
 #### `POST /api/platform/tenants/{id:guid}/approve` - `Approve`
 
-- **Access:** JWT + Policy: `Permissions.ManageTenants`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** typeof(PlatformTenantDto), StatusCodes.Status200OK
 
 #### `POST /api/platform/tenants/{id:guid}/archive` - `Archive`
 
-- **Access:** JWT + Policy: `Permissions.ManageTenants`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** typeof(PlatformTenantDto), StatusCodes.Status200OK
 
 #### `POST /api/platform/tenants/{id:guid}/suspend` - `Suspend`
 
-- **Access:** JWT + Policy: `Permissions.ManageTenants`
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
 - **Inputs:** Handler signature: `Guid id`
 - **Declared response:** typeof(PlatformTenantDto), StatusCodes.Status200OK
+
+### PlatformWorkspaceApplications
+
+#### `GET /api/platform/workspace-applications` - `List`
+
+- **Access:** JWT + Policy: `Permissions.ManageTenants`
+- **Inputs:** Query `applicationType`: `ApplicationType?`<br>Query `status`: `ApplicationRequestStatus?`<br>Query `page`: `int`<br>Query `pageSize`: `int`<br>Handler signature: `[FromQuery] ApplicationType? applicationType, [FromQuery] ApplicationRequestStatus? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20`
+- **Declared response:** typeof(PagedResult<PlatformApplicationDto>), StatusCodes.Status200OK
+
+#### `POST /api/platform/workspace-applications/{id:guid}/approve-freelance` - `ApproveFreelance`
+
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
+- **Inputs:** Body `request`: `ConcurrencyRequest`<br>Handler signature: `Guid id, [FromBody] ConcurrencyRequest request`
+- **Declared response:** Task<ActionResult<PlatformApplicationDto>>
+
+#### `POST /api/platform/workspace-applications/{id:guid}/approve-membership` - `ApproveMembership`
+
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
+- **Inputs:** Body `request`: `ConcurrencyRequest`<br>Handler signature: `Guid id, [FromBody] ConcurrencyRequest request`
+- **Declared response:** Task<ActionResult<PlatformApplicationDto>>
+
+#### `POST /api/platform/workspace-applications/{id:guid}/reject` - `Reject`
+
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
+- **Inputs:** Body `request`: `RejectRequest`<br>Handler signature: `Guid id, [FromBody] RejectRequest request`
+- **Declared response:** Task<ActionResult<PlatformApplicationDto>>
+
+#### `POST /api/platform/workspace-applications/{id:guid}/request-information` - `RequestInformation`
+
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
+- **Inputs:** Body `request`: `RequestInformationRequest`<br>Handler signature: `Guid id, [FromBody] RequestInformationRequest request`
+- **Declared response:** Task<ActionResult<PlatformApplicationDto>>
+
+#### `POST /api/platform/workspace-applications/{id:guid}/start-review` - `StartReview`
+
+- **Access:** JWT + Policy: `OtpStepUpRequirement.PolicyName`
+- **Inputs:** Body `request`: `ConcurrencyRequest`<br>Handler signature: `Guid id, [FromBody] ConcurrencyRequest request`
+- **Declared response:** Task<ActionResult<PlatformApplicationDto>>
 
 ## Tenant API
 
@@ -496,7 +540,7 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 #### `POST /api/Auth/refresh` - `Refresh`
 
 - **Access:** Anonymous (no token required)
-- **Inputs:** Body `command`: `RefreshTokenCommand` { `RefreshToken`: string; `Surface`: string }<br>Handler signature: `[FromBody] RefreshTokenCommand command`
+- **Inputs:** No request input.
 - **Declared response:** typeof(AuthResponseDto), StatusCodes.Status200OK<br>StatusCodes.Status401Unauthorized
 
 #### `POST /api/Auth/register` - `Register`
@@ -1193,6 +1237,12 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 - **Inputs:** Body `command`: `SponsorFreelanceMembershipCommand` { `IdentityEmail`: string; `RequestedRole`: UserRole; `FullName`: string }<br>Handler signature: `[FromBody] SponsorFreelanceMembershipCommand command`
 - **Declared response:** typeof(ApplicationTrackingStatusDto), StatusCodes.Status201Created
 
+#### `POST /api/freelance/team/applications/api/freelance/team/invites` - `Invite`
+
+- **Access:** JWT + Policy: `Permissions.ManageCoaches`
+- **Inputs:** Body `command`: `CreateWorkspaceInviteCommand` { `Email`: string; `RequestedRole`: UserRole }<br>Handler signature: `[FromBody] CreateWorkspaceInviteCommand command`
+- **Declared response:** typeof(WorkspaceInviteCreatedDto), StatusCodes.Status201Created
+
 ### GateAccess
 
 #### `POST /api/GateAccess/check-in-qr` - `CheckInByQr`
@@ -1287,27 +1337,93 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 
 #### `POST /api/identity/application-tracking-sessions` - `ReissueApplicationTrackingSessions`
 
-- **Access:** Server default (not declared explicitly)
+- **Access:** Anonymous (no token required)
 - **Inputs:** Body `command`: `ReissueApplicationTrackingSessionsCommand` { `WorkspaceSelectionToken`: string }<br>Handler signature: `[FromBody] ReissueApplicationTrackingSessionsCommand command`
 - **Declared response:** typeof(IReadOnlyList<ApplicationTrackingSessionDto>), StatusCodes.Status200OK
 
 #### `POST /api/identity/login` - `Login`
 
-- **Access:** Server default (not declared explicitly)
-- **Inputs:** Body `command`: `IdentitySignInCommand` { `Identifier`: string; `Password`: string }<br>Handler signature: `[FromBody] IdentitySignInCommand command`
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `IdentitySignInCommand` { `Email`: string; `Password`: string }<br>Handler signature: `[FromBody] IdentitySignInCommand command`
 - **Declared response:** typeof(IdentitySignInDto), StatusCodes.Status200OK
+
+#### `POST /api/identity/password-reset` - `RequestPasswordReset`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `RequestIdentityPasswordResetCommand` { `Email`: string }<br>Handler signature: `[FromBody] RequestIdentityPasswordResetCommand command`
+- **Declared response:** StatusCodes.Status202Accepted
+
+#### `POST /api/identity/password-reset/confirm` - `ResetPassword`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `ResetIdentityPasswordCommand` { `Token`: string; `NewPassword`: string }<br>Handler signature: `[FromBody] ResetIdentityPasswordCommand command`
+- **Declared response:** StatusCodes.Status204NoContent
+
+#### `POST /api/identity/phone/password-reset/confirm` - `ConfirmPhonePasswordReset`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `ResetPasswordWithPhoneOtpCommand`<br>Handler signature: `[FromBody] ResetPasswordWithPhoneOtpCommand command`
+- **Declared response:** Task<IActionResult>
+
+#### `POST /api/identity/phone/password-reset/request` - `RequestPhonePasswordReset`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `RequestPhonePasswordResetOtpCommand`<br>Handler signature: `[FromBody] RequestPhonePasswordResetOtpCommand command`
+- **Declared response:** Task<ActionResult<OtpChallengeDto>>
+
+#### `POST /api/identity/phone/request` - `RequestPhoneVerification`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `RequestIdentityPhoneOtpCommand`<br>Handler signature: `[FromBody] RequestIdentityPhoneOtpCommand command`
+- **Declared response:** Task<ActionResult<OtpChallengeDto>>
+
+#### `POST /api/identity/phone/verify` - `VerifyPhone`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `VerifyIdentityPhoneOtpCommand`<br>Handler signature: `[FromBody] VerifyIdentityPhoneOtpCommand command`
+- **Declared response:** Task<IActionResult>
+
+#### `POST /api/identity/phone-login/request` - `RequestPhoneLogin`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `RequestPhoneLoginOtpCommand`<br>Handler signature: `[FromBody] RequestPhoneLoginOtpCommand command`
+- **Declared response:** Task<ActionResult<OtpChallengeDto>>
+
+#### `POST /api/identity/phone-login/verify` - `VerifyPhoneLogin`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `VerifyPhoneLoginOtpCommand`<br>Handler signature: `[FromBody] VerifyPhoneLoginOtpCommand command`
+- **Declared response:** Task<ActionResult<IdentitySignInDto>>
 
 #### `POST /api/identity/register` - `Register`
 
-- **Access:** Server default (not declared explicitly)
-- **Inputs:** Body `command`: `RegisterIdentityCommand` { `Email`: string; `PhoneNumber`: string?; `Password`: string }<br>Handler signature: `[FromBody] RegisterIdentityCommand command`
-- **Declared response:** StatusCodes.Status204NoContent
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `RegisterIdentityCommand` { `FullName`: string; `Email`: string; `Password`: string; `PhoneNumber`: string? }<br>Handler signature: `[FromBody] RegisterIdentityCommand command`
+- **Declared response:** StatusCodes.Status202Accepted
 
 #### `POST /api/identity/select-workspace` - `SelectWorkspace`
 
-- **Access:** Server default (not declared explicitly)
+- **Access:** Anonymous (no token required)
 - **Inputs:** Body `command`: `SelectIdentityWorkspaceCommand` { `WorkspaceSelectionToken`: string; `WorkspaceId`: Guid }<br>Handler signature: `[FromBody] SelectIdentityWorkspaceCommand command`
 - **Declared response:** typeof(AuthResponseDto), StatusCodes.Status200OK
+
+#### `POST /api/identity/step-up/request` - `RequestStepUp`
+
+- **Access:** JWT required
+- **Inputs:** Body `command`: `RequestOtpStepUpCommand`<br>Handler signature: `[FromBody] RequestOtpStepUpCommand command`
+- **Declared response:** Task<ActionResult<OtpChallengeDto>>
+
+#### `POST /api/identity/step-up/verify` - `VerifyStepUp`
+
+- **Access:** JWT required
+- **Inputs:** Body `command`: `VerifyOtpStepUpCommand`<br>Handler signature: `[FromBody] VerifyOtpStepUpCommand command`
+- **Declared response:** Task<ActionResult<OtpStepUpDto>>
+
+#### `POST /api/identity/verify-email` - `VerifyEmail`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `VerifyIdentityEmailCommand` { `Token`: string }<br>Handler signature: `[FromBody] VerifyIdentityEmailCommand command`
+- **Declared response:** StatusCodes.Status204NoContent
 
 ### Invoices
 
@@ -1434,6 +1550,20 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 - **Access:** JWT + Policy: `Permissions.ManageMembers`
 - **Inputs:** Handler signature: `IssueMembershipCardCommand command`
 - **Declared response:** typeof(Guid), StatusCodes.Status200OK
+
+### MetaWhatsAppOtpWebhook
+
+#### `GET /api/otp/webhooks/meta-whatsapp` - `Verify`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** Handler signature: `[FromQuery(Name = "hub.mode")] string? mode, [FromQuery(Name = "hub.verify_token")] string? token, [FromQuery(Name = "hub.challenge")] string? challenge`
+- **Declared response:** IActionResult
+
+#### `POST /api/otp/webhooks/meta-whatsapp` - `Status`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** No request input.
+- **Declared response:** Task<IActionResult>
 
 ### Muscles
 
@@ -2256,3 +2386,49 @@ Generated: `2026-07-29 11:28 UTC`  |  Total endpoints: **349**
 - **Access:** Server default (not declared explicitly)
 - **Inputs:** No request input.
 - **Declared response:** typeof(ApplicationTrackingStatusDto), StatusCodes.Status200OK
+
+### WorkspaceClientJoinCodes
+
+#### `POST /api/workspace/client-join-codes` - `Generate`
+
+- **Access:** JWT + Policy: `Permissions.ManageMembers`
+- **Inputs:** Body `command`: `GenerateWorkspaceClientJoinCodeCommand` { `AutoApproveClients`: bool; `ValidForDays`: int }<br>Handler signature: `[FromBody] GenerateWorkspaceClientJoinCodeCommand command`
+- **Declared response:** typeof(WorkspaceClientJoinCodeDto), StatusCodes.Status201Created
+
+#### `POST /api/workspace/client-join-codes/join` - `Join`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `JoinWorkspaceAsClientCommand` { `Code`: string; `WorkspaceSelectionToken`: string }<br>Handler signature: `[FromBody] JoinWorkspaceAsClientCommand command`
+- **Declared response:** typeof(ClientJoinResultDto), StatusCodes.Status200OK
+
+#### `POST /api/workspace/client-join-codes/memberships/{membershipId:guid}/approve` - `Approve`
+
+- **Access:** JWT + Policy: `Permissions.ManageMembers`
+- **Inputs:** Handler signature: `Guid membershipId`
+- **Declared response:** StatusCodes.Status204NoContent
+
+#### `POST /api/workspace/client-join-codes/preview` - `Preview`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `PreviewWorkspaceClientJoinCommand` { `Code`: string }<br>Handler signature: `[FromBody] PreviewWorkspaceClientJoinCommand command`
+- **Declared response:** typeof(WorkspaceClientJoinPreviewDto), StatusCodes.Status200OK
+
+### WorkspaceInvites
+
+#### `POST /api/workspace-invites/accept` - `Accept`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `AcceptWorkspaceInviteCommand` { `Token`: string; `WorkspaceSelectionToken`: string; `ChallengeId`: Guid?; `Code`: string?; `SessionBinding`: string? }<br>Handler signature: `[FromBody] AcceptWorkspaceInviteCommand command`
+- **Declared response:** StatusCodes.Status204NoContent
+
+#### `POST /api/workspace-invites/otp/request` - `RequestOtp`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `RequestWorkspaceInviteOtpCommand`<br>Handler signature: `[FromBody] RequestWorkspaceInviteOtpCommand command`
+- **Declared response:** typeof(OtpChallengeDto), StatusCodes.Status202Accepted
+
+#### `POST /api/workspace-invites/preview` - `Preview`
+
+- **Access:** Anonymous (no token required)
+- **Inputs:** Body `command`: `PreviewWorkspaceInviteCommand` { `Token`: string }<br>Handler signature: `[FromBody] PreviewWorkspaceInviteCommand command`
+- **Declared response:** typeof(WorkspaceInvitePreviewDto), StatusCodes.Status200OK

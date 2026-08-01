@@ -7,6 +7,10 @@
 كل Route أدناه lazy-loaded ومحمٍ على مستوى الواجهة والخادم. القائمة الجانبية والمساعد
 يخفيان ما لا يملكه المستخدم، لكن الـPlatform API هو الحاجز الأمني النهائي.
 
+الدخول `/auth/login` شاشة من مرحلتين: Email + Password ثم OTP إلزامي. العمليات الحساسة
+تستخدم Dialog OTP step-up مركزي قبل إعادة mutation مرة واحدة؛ Refresh Token داخل HttpOnly
+Cookie ولا يوجد له مفتاح localStorage.
+
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
 |---|---|---|---|---|---|
 | `/dashboard` | لوحة المتابعة | `ManagePlatformReports` | `/dashboard` | متابعة المؤشرات والتنبيهات | لا قرار مالي من KPI فقط. |

@@ -24,11 +24,6 @@ function handle401(
   next: HttpHandlerFn,
   auth: AuthService,
 ): Observable<HttpEvent<unknown>> {
-  if (!auth.getRefreshToken()) {
-    auth.logout();
-    return throwError(() => ({ status: 401, translatedMessage: 'انتهت صلاحية الجلسة، سجّل الدخول مرة أخرى' }));
-  }
-
   if (!isRefreshing) {
     isRefreshing = true;
     refreshTokenSubject.next(null);
