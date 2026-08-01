@@ -1,6 +1,7 @@
 export const environment = {
   production: true,
-  otpDevelopmentHint: '',
+  // Temporary Issue #127 exception. Remove this hint when the production OTP provider is enabled.
+  otpDevelopmentHint: 'وضع اختبار مؤقت: استخدم الكود 1234',
   // Platform API host — the Platform Admin Dashboard talks ONLY to this host.
   platformApiUrl: 'https://logicfit-saas-model.runasp.net',
   // RELATIVE path → the browser calls the same origin (the Vercel domain), and Vercel
