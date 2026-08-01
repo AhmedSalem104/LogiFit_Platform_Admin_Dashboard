@@ -1,5 +1,7 @@
 # معمارية وربط لوحة إدارة LogicFit
 
+> **حالة Issue #118:** تم الدمج في فروع `develop` للـBackend وTenant UI وPlatform UI بتاريخ 2026-08-01. لم تُصدر أو تُنشر أو تُتحقق على Production بعد.
+
 ## الغرض والنطاق
 
 هذه الواجهة مخصصة فقط لإدارة منصة LogicFit SaaS من قبل `PlatformOwner` و
