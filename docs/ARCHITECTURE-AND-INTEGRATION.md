@@ -37,6 +37,7 @@ flowchart LR
 ## المصادقة والجلسة
 
 1. `POST /api/platform/auth/login` يفحص البريد وكلمة المرور ثم يعيد OTP challenge فقط.
+   أحداث الإدخال التي لا تدعم `getModifierState` لا توقف إرسال الطلب؛ Caps Lock تحسين واجهة فقط.
 2. الواجهة ترسل `challengeId + code + sessionBinding` إلى
    `POST /api/platform/auth/otp/verify`. لا تصدر جلسة Platform قبل نجاح الخطوتين.
 3. تحفظ الواجهة Access Token وبيانات المستخدم والصلاحيات فقط. Refresh Token يكتبه

@@ -109,10 +109,10 @@ export class LoginComponent implements OnDestroy {
     return !!field && field.invalid && (field.touched || field.dirty);
   }
   @HostListener('window:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent): void {
-    if (event.key === 'CapsLock') this.capsLock.set(event.getModifierState('CapsLock'));
+  onKeydown(event: KeyboardEvent | Event): void {
+    if ('key' in event && event.key === 'CapsLock') this.updateCapsLock(event);
   }
-  detectCaps(event: KeyboardEvent): void { this.capsLock.set(event.getModifierState('CapsLock')); }
+  detectCaps(event: KeyboardEvent | Event): void { this.updateCapsLock(event); }
 
   submitCredentials(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
@@ -159,6 +159,11 @@ export class LoginComponent implements OnDestroy {
   private stopTimer(): void {
     if (this.timerId) clearInterval(this.timerId);
     this.timerId = undefined;
+  }
+  private updateCapsLock(event: KeyboardEvent | Event): void {
+    const getModifierState = (event as Partial<KeyboardEvent>)?.getModifierState;
+    if (typeof getModifierState !== 'function') return;
+    this.capsLock.set(getModifierState.call(event, 'CapsLock'));
   }
   private otpError(error: any): string {
     const code = error?.error?.message || error?.error?.code;
