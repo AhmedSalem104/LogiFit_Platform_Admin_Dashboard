@@ -1,5 +1,9 @@
 # معمارية وربط لوحة إدارة LogicFit
 
+> **حالة Issue #118:** تم الدمج في فروع `develop` للـBackend وTenant UI وPlatform UI بتاريخ 2026-08-01. لم تُصدر أو تُنشر أو تُتحقق على Production بعد.
+
+> **Production API routing:** both `/api/*` and `/uploads/*` are rewritten by Vercel to the verified unified RunASP host `https://logicfit-saas-model.runasp.net`. The similarly named `logicfit-saas.runasp.net` host is not a valid production target and must not be reintroduced.
+
 ## الغرض والنطاق
 
 هذه الواجهة مخصصة فقط لإدارة منصة LogicFit SaaS من قبل `PlatformOwner` و
