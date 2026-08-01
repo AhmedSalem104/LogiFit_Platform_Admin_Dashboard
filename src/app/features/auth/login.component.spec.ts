@@ -58,4 +58,19 @@ describe('Platform LoginComponent OTP flow', () => {
       challenge.challengeId, '1234', jasmine.any(String));
     expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
   });
+
+  it('detects Caps Lock from a keyboard event', () => {
+    component.detectCaps({
+      getModifierState: (key: string) => key === 'CapsLock',
+    } as unknown as KeyboardEvent);
+
+    expect(component.capsLock()).toBeTrue();
+  });
+
+  it('ignores synthetic events that do not implement getModifierState', () => {
+    component.capsLock.set(true);
+
+    expect(() => component.detectCaps(new Event('keyup'))).not.toThrow();
+    expect(component.capsLock()).toBeTrue();
+  });
 });
