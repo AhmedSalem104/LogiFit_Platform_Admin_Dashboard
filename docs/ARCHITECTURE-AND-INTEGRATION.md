@@ -10,7 +10,8 @@
 flowchart LR
     User[Platform Owner / Admin] --> Angular[Angular 18 Admin Dashboard]
     Angular --> Auth[AuthService + Guards]
-    Auth --> Interceptor[JWT / Refresh single-flight]
+    Auth --> Otp[Password + mandatory OTP]
+    Otp --> Interceptor[JWT / HttpOnly refresh single-flight / OTP step-up]
     Interceptor --> Proxy[/api/platform rewrite or dev proxy/]
     Proxy --> API[LogicFit.Platform.API]
     API --> Domain[Application / Domain / Infrastructure]
@@ -31,13 +32,18 @@ flowchart LR
 
 ## المصادقة والجلسة
 
-1. `POST /api/platform/auth/login` بالبريد وكلمة المرور.
-2. تحفظ الواجهة Access Token وRefresh Token وبيانات المستخدم والصلاحيات في التخزين
-   المحلي بأسماء `logifit_platform_*`.
-3. `jwt.interceptor` يضيف Bearer Token لكل API محمي.
-4. عند انتهاء Access Token تشارك الطلبات المتزامنة عملية refresh واحدة (`single-flight`).
-5. فشل refresh يمسح الجلسة ويعيد إلى `/auth/login`.
-6. `authGuard` يحمي الـshell و`permissionGuard` يحمي كل Route؛ API يكرر التحقق كحاجز
+1. `POST /api/platform/auth/login` يفحص البريد وكلمة المرور ثم يعيد OTP challenge فقط.
+2. الواجهة ترسل `challengeId + code + sessionBinding` إلى
+   `POST /api/platform/auth/otp/verify`. لا تصدر جلسة Platform قبل نجاح الخطوتين.
+3. تحفظ الواجهة Access Token وبيانات المستخدم والصلاحيات فقط. Refresh Token يكتبه
+   الخادم في Cookie آمنة `HttpOnly; Secure; SameSite=None` ولا يقرأها JavaScript.
+4. `jwt.interceptor` يضيف Bearer Token ويرسل credentials مع طلبات API.
+5. عند انتهاء Access Token تشارك الطلبات المتزامنة عملية refresh واحدة (`single-flight`).
+6. فشل refresh يمسح الجلسة ويعيد إلى `/auth/login`.
+7. العمليات الحساسة في tenants/plans/roles/workspace applications تعيد `403` عند غياب
+   step-up؛ `otpStepUpInterceptor` يفتح Dialog، يطلب/يتحقق من OTP، ثم يعيد الطلب مرة
+   واحدة مع `X-LogicFit-OTP-Step-Up` و`X-Session-Id`.
+8. `authGuard` يحمي الـshell و`permissionGuard` يحمي كل Route؛ API يكرر التحقق كحاجز
    أمني فعلي.
 
 `ManagePlatform` يمنح كل الصلاحيات؛ غيره يرى فقط الشاشات التي تحقق
@@ -48,7 +54,7 @@ flowchart LR
 | البيئة | `apiUrl` | كيف يعمل؟ |
 |---|---|---|
 | Development | `/api/platform` | `proxy.conf.json` يمرر الطلب إلى Platform API؛ المتصفح لا يحتاج CORS. |
-| Production | `/api/platform` | `vercel.json` يعيد كتابة `/api/*` إلى `https://logicfit-saas.runasp.net`. |
+| Production | `/api/platform` | `vercel.json` يعيد كتابة `/api/*` إلى `https://logicfit-saas-model.runasp.net`. |
 
 لا تغيّر production إلى عنوان مطلق إلا إذا أضيف نطاق الواجهة إلى CORS في API. العنوان
 التشغيلي للخادم موجود في `platformApiUrl` للمرجع، بينما الطلبات الفعلية تبقى relative
@@ -68,9 +74,9 @@ flowchart LR
 |---|---|---|
 | 400 | عرض رسالة تحقق مفهومة. | صحح مدخلات النموذج. |
 | 401 | محاولة refresh ثم logout عند الفشل. | تحقق من الجلسة والصلاحيات. |
-| 403 | رسالة عدم صلاحية. | راجع الدور من شاشة الأدوار. |
+| 403 | في mutation حساس يبدأ OTP step-up؛ بعده تظهر رسالة عدم صلاحية إن ظل الرفض. | أكمل OTP أو راجع الدور؛ OTP لا يمنح Permission جديدة. |
 | 404 | المورد/الـEndpoint غير موجود. | تحقق من اسم المورد أو إصدار API المنشور. |
-| 409 | تعارض عمل مثل حذف خطة مستخدمة. | أعد قراءة السجل واتبع دورة الحياة. |
+| 409 | تعارض عمل مثل حذف خطة مستخدمة أو نسخة طلب قديمة. | أعد قراءة السجل واتبع دورة الحياة. في اعتماد المدرب الحر، رسالة تهيئة الأدوار تعني تطبيق Migration `SeedFreelanceSystemRoles` وليس إعادة المحاولة العشوائية. |
 | 500/503 | رسالة عامة بلا كشف تفاصيل. | راجع Logs وإعدادات API/الخدمة. |
 
 ## المساعد التشغيلي
@@ -93,6 +99,10 @@ flowchart LR
 5. أضف `AssistantGuide` للكشف والشرح والإجراء الآمن.
 6. حدّث `SCREEN-CATALOG.md` و`ADMIN-WORKSPACE.md` وREADME عند تغير المستخدم أو API أو التصميم.
 7. شغّل `npm run build` قبل التسليم.
+
+## تكامل مراجعة طلبات مساحة العمل
+
+`WorkspaceApplicationsService` يتصل فقط بـ`/api/platform/workspace-applications` عبر interceptor منصة الإدارة. لا يرسل `TenantId` من المتصفح ولا يحاول تنفيذ قرارات محلية. يمرر كل mutation `rowVersion` الذي أعاده الخادم، ويعتمد حالة الصف الجديدة من الاستجابة. أما مقدم الطلب فيستخدم Tenant API العامة `/api/identity` و`/api/workspace-applications` مع Tracking Token قصير العمر، لا Platform JWT.
 
 ## الكتالوج الكامل لعقود API
 

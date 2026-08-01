@@ -27,4 +27,9 @@ export class PaymentRequestsService {
   reject(id: string, cmd: RejectPaymentRequestCommand): Observable<PaymentRequestDto> {
     return this.http.post<PaymentRequestDto>(`${this.base}/${id}/reject`, cmd);
   }
+
+  /** Loads the protected proof through HttpClient so the JWT interceptor is applied. */
+  proof(id: string): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/proof`, { responseType: 'blob' });
+  }
 }

@@ -32,6 +32,12 @@ export const routes: Routes = [
           import('./features/tenants/tenants.component').then((m) => m.TenantsComponent),
       },
       {
+        path: 'workspace-applications',
+        canActivate: [permissionGuard('ManageTenants')],
+        loadComponent: () =>
+          import('./features/workspace-applications/workspace-applications.component').then((m) => m.WorkspaceApplicationsComponent),
+      },
+      {
         path: 'subscriptions',
         canActivate: [permissionGuard('ManageTenants')],
         loadComponent: () =>
