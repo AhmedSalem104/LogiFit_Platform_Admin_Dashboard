@@ -6,7 +6,6 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { routes } from './app.routes';
 import { jwtInterceptor } from './core/auth/interceptors/jwt.interceptor';
 import { errorInterceptor } from './core/auth/interceptors/error.interceptor';
-import { otpStepUpInterceptor } from './core/auth/interceptors/otp-step-up.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,7 +14,7 @@ export const appConfig: ApplicationConfig = {
       routes,
       withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
     ),
-    provideHttpClient(withInterceptors([jwtInterceptor, errorInterceptor, otpStepUpInterceptor])),
+    provideHttpClient(withInterceptors([jwtInterceptor, errorInterceptor])),
     provideAnimations(),
   ],
 };

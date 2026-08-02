@@ -1,5 +1,7 @@
 # معمارية وربط لوحة إدارة LogicFit
 
+> **Issue #60 — local implementation, not released:** the dashboard keeps password + OTP login and removes all post-login OTP step-up services, dialogs, interceptors, headers, and retries.
+
 > **حالة Issue #118:** تم الدمج في فروع `develop` للـBackend وTenant UI وPlatform UI بتاريخ 2026-08-01. لم تُصدر أو تُنشر أو تُتحقق على Production بعد.
 
 > **Production API routing:** both `/api/*` and `/uploads/*` are rewritten by Vercel to the verified unified RunASP host `https://logicfit-saas-model.runasp.net`. The similarly named `logicfit-saas.runasp.net` host is not a valid production target and must not be reintroduced.
@@ -15,7 +17,7 @@ flowchart LR
     User[Platform Owner / Admin] --> Angular[Angular 18 Admin Dashboard]
     Angular --> Auth[AuthService + Guards]
     Auth --> Otp[Password + mandatory OTP]
-    Otp --> Interceptor[JWT / HttpOnly refresh single-flight / OTP step-up]
+    Otp --> Interceptor[JWT / HttpOnly refresh single-flight]
     Interceptor --> Proxy[/api/platform rewrite or dev proxy/]
     Proxy --> API[LogicFit.Platform.API]
     API --> Domain[Application / Domain / Infrastructure]
@@ -45,9 +47,8 @@ flowchart LR
 4. `jwt.interceptor` يضيف Bearer Token ويرسل credentials مع طلبات API.
 5. عند انتهاء Access Token تشارك الطلبات المتزامنة عملية refresh واحدة (`single-flight`).
 6. فشل refresh يمسح الجلسة ويعيد إلى `/auth/login`.
-7. العمليات الحساسة في tenants/plans/roles/workspace applications تعيد `403` عند غياب
-   step-up؛ `otpStepUpInterceptor` يفتح Dialog، يطلب/يتحقق من OTP، ثم يعيد الطلب مرة
-   واحدة مع `X-LogicFit-OTP-Step-Up` و`X-Session-Id`.
+7. بعد نجاح الدخول ترسل كل عملية طلبًا واحدًا عاديًا مع JWT؛ لا يوجد step-up interceptor أو
+   OTP dialog أو headers إضافية. تعني `403` أن الدور أو الصلاحية لا تسمح بالعملية.
 8. `authGuard` يحمي الـshell و`permissionGuard` يحمي كل Route؛ API يكرر التحقق كحاجز
    أمني فعلي.
 9. Issue #127 يضيف وضع اختبار مستضاف مؤقتًا بكود `1234`. الواجهة تعرض تلميحًا فقط؛ الخادم
@@ -81,7 +82,7 @@ flowchart LR
 |---|---|---|
 | 400 | عرض رسالة تحقق مفهومة. | صحح مدخلات النموذج. |
 | 401 | محاولة refresh ثم logout عند الفشل. | تحقق من الجلسة والصلاحيات. |
-| 403 | في mutation حساس يبدأ OTP step-up؛ بعده تظهر رسالة عدم صلاحية إن ظل الرفض. | أكمل OTP أو راجع الدور؛ OTP لا يمنح Permission جديدة. |
+| 403 | الجلسة لا تملك الدور أو الصلاحية اللازمة للعملية. | راجع صلاحيات الحساب؛ لا يبدأ OTP بعد تسجيل الدخول. |
 | 404 | المورد/الـEndpoint غير موجود. | تحقق من اسم المورد أو إصدار API المنشور. |
 | 409 | تعارض عمل مثل حذف خطة مستخدمة أو نسخة طلب قديمة. | أعد قراءة السجل واتبع دورة الحياة. في اعتماد المدرب الحر، رسالة تهيئة الأدوار تعني تطبيق Migration `SeedFreelanceSystemRoles` وليس إعادة المحاولة العشوائية. |
 | 500/503 | رسالة عامة بلا كشف تفاصيل. | راجع Logs وإعدادات API/الخدمة. |
