@@ -1,5 +1,7 @@
 # كتالوج شاشات لوحة المنصة
 
+> **Issue #60 — local implementation, not released:** the two-step OTP experience exists on `/auth/login` only. All screens call authorized operations directly without a post-login OTP dialog.
+
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
 |---|---|---|---|---|---|
 | `/workspace-applications` | طابور طلبات مساحات العمل | `ManageTenants` | `/api/platform/workspace-applications` | بدء مراجعة / طلب استكمال / اعتماد / رفض | القرار نهائي ومدقق بـ`rowVersion`، ولا تظهر بيانات صحية أو تدريبية؛ تعارض تهيئة دور المدرب الحر يوضح Migration المطلوبة ثم يعيد قراءة الصف. |
@@ -7,12 +9,12 @@
 كل Route أدناه lazy-loaded ومحمٍ على مستوى الواجهة والخادم. القائمة الجانبية والمساعد
 يخفيان ما لا يملكه المستخدم، لكن الـPlatform API هو الحاجز الأمني النهائي.
 
-الدخول `/auth/login` شاشة من مرحلتين: Email + Password ثم OTP إلزامي. العمليات الحساسة
-تستخدم Dialog OTP step-up مركزي قبل إعادة mutation مرة واحدة؛ Refresh Token داخل HttpOnly
+الدخول `/auth/login` شاشة من مرحلتين: Email + Password ثم OTP إلزامي. بعد الدخول تعتمد العمليات
+على JWT والصلاحيات بدون OTP إضافي؛ Refresh Token داخل HttpOnly
 Cookie ولا يوجد له مفتاح localStorage. اكتشاف Caps Lock محمي من أحداث الهاتف والملء التلقائي
 غير المتوافقة ولا يعطل إرسال النموذج.
 
-تعرض مرحلتا OTP وstep-up مؤقتًا عبارة اختبار Issue #127 (`1234`) في النسخة المستضافة حتى
+تعرض مرحلة OTP الخاصة بالدخول مؤقتًا عبارة اختبار Issue #127 (`1234`) في النسخة المستضافة حتى
 يتوفر مزود الإرسال. لا تعتمد أي صلاحية على العبارة؛ التحقق والحالة والانتهاء كلها من الـBackend.
 
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |

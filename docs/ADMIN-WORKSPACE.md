@@ -1,5 +1,7 @@
 # منصة الإدارة: Pagination وعمليات التحكم
 
+> **Issue #60 — local implementation, not released:** OTP remains mandatory for Platform login only. No action after login opens an OTP dialog or requires a step-up header.
+
 ## طابور مراجعة مساحات العمل
 
 - المسار `/workspace-applications` محمي في الواجهة بـ`ManageTenants` ومحمي بالسياسة نفسها في Platform API.
@@ -12,8 +14,8 @@
 
 المشغل لا يحصل على جلسة بعد كلمة المرور وحدها: يجب إكمال OTP إلى الهاتف المؤكد.
 تحسين اكتشاف Caps Lock لا يُعد شرطًا للدخول؛ الأحداث غير المدعومة تمر بأمان إلى تحقق الخادم.
-وعند اعتماد مساحة، تغيير Tenant/Plan/Role، أو عملية حساسة مشابهة، تفتح الواجهة OTP
-step-up قصير العمر. هذا الإثبات لا يتجاوز Permission الحالية ولا يلغي `rowVersion`.
+بعد اكتمال الدخول لا تفتح الواجهة OTP لأي عملية. تعتمد كل عملية على Access Token والصلاحية
+المطلوبة وقيود الحالة و`rowVersion` كما كانت قبل إضافة step-up.
 Refresh Token لا يظهر في التخزين المحلي؛ الخادم يدوره في HttpOnly Cookie.
 
 خلال استثناء الاختبار المستضاف في Issue #127 تعرض شاشة OTP الكود `1234` مؤقتًا. يظل
