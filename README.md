@@ -228,3 +228,5 @@ case, and the `/documentation` page search.
 
 Built for reliable SaaS operations — with clear ownership, auditable decisions, and
 tenant-safe controls.
+Authentication is Email + Password only. See [docs/ISSUE-161-AUTH-FLOW.md](docs/ISSUE-161-AUTH-FLOW.md)
+for the current API and refresh-cookie flow.

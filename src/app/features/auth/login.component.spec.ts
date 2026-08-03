@@ -1,76 +1,50 @@
-import { TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { of } from 'rxjs';
-import { AuthService } from '../../core/auth/services/auth.service';
-import { AuthResponse, OtpChallenge, OtpPurpose } from '../../core/auth/models/auth.models';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+import { of, throwError } from 'rxjs';
 import { LoginComponent } from './login.component';
+import { AuthService } from '../../core/auth/services/auth.service';
+import { AuthResponse } from '../../core/auth/models/auth.models';
 
-describe('Platform LoginComponent OTP flow', () => {
+describe('Platform LoginComponent', () => {
+  let fixture: ComponentFixture<LoginComponent>;
   let component: LoginComponent;
   let auth: jasmine.SpyObj<AuthService>;
-  let router: jasmine.SpyObj<Router>;
 
-  const challenge: OtpChallenge = {
-    challengeId: '631c0453-42a9-441f-a985-fcf9b67bf9f3',
-    purpose: OtpPurpose.PlatformAdminLogin,
-    expiresAtUtc: new Date(Date.now() + 300_000).toISOString(),
-    resendAvailableAtUtc: new Date(Date.now() + 60_000).toISOString(),
-    maskedPhoneNumber: '+20***678',
-  };
+  const response = { accessToken: 'token' } as AuthResponse;
 
-  beforeEach(() => {
-    auth = jasmine.createSpyObj<AuthService>('AuthService', ['requestLoginOtp', 'verifyLoginOtp']);
-    auth.requestLoginOtp.and.returnValue(of(challenge));
-    auth.verifyLoginOtp.and.returnValue(of({} as AuthResponse));
-    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
-
-    TestBed.configureTestingModule({
-      imports: [ReactiveFormsModule],
+  beforeEach(async () => {
+    auth = jasmine.createSpyObj<AuthService>('AuthService', ['login']);
+    auth.login.and.returnValue(of(response));
+    await TestBed.configureTestingModule({
+      imports: [LoginComponent],
       providers: [
         { provide: AuthService, useValue: auth },
-        { provide: Router, useValue: router },
+        provideRouter([]),
       ],
-    });
-    component = TestBed.runInInjectionContext(() => new LoginComponent());
+    }).compileComponents();
+    fixture = TestBed.createComponent(LoginComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
-  afterEach(() => component.ngOnDestroy());
+  it('submits email and password directly to the platform login endpoint', () => {
+    component.form.setValue({ email: 'admin@example.com', password: 'Password1!' });
+    component.submit();
 
-  it('does not navigate or create a session after password verification alone', () => {
-    component.form.setValue({ email: 'admin@logicfit.test', password: 'Password1' });
-
-    component.submitCredentials();
-
-    expect(component.challenge()).toEqual(challenge);
-    expect(auth.verifyLoginOtp).not.toHaveBeenCalled();
-    expect(router.navigate).not.toHaveBeenCalled();
+    expect(auth.login).toHaveBeenCalledWith({ email: 'admin@example.com', password: 'Password1!' });
   });
 
-  it('issues the platform session only through the OTP verification endpoint', () => {
-    component.form.setValue({ email: 'admin@logicfit.test', password: 'Password1' });
-    component.submitCredentials();
-    component.otpForm.setValue({ code: '1234' });
-
-    component.verifyOtp();
-
-    expect(auth.verifyLoginOtp).toHaveBeenCalledWith(
-      challenge.challengeId, '1234', jasmine.any(String));
-    expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
+  it('does not expose an OTP step or development fixed code', () => {
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).not.toContain('OTP');
+    expect(text).not.toContain('1234');
   });
 
-  it('detects Caps Lock from a keyboard event', () => {
-    component.detectCaps({
-      getModifierState: (key: string) => key === 'CapsLock',
-    } as unknown as KeyboardEvent);
+  it('shows a safe error when password login fails', () => {
+    auth.login.and.returnValue(throwError(() => ({ error: { message: 'Invalid credentials' } })));
+    component.form.setValue({ email: 'admin@example.com', password: 'bad' });
+    component.submit();
 
-    expect(component.capsLock()).toBeTrue();
-  });
-
-  it('ignores synthetic events that do not implement getModifierState', () => {
-    component.capsLock.set(true);
-
-    expect(() => component.detectCaps(new Event('keyup'))).not.toThrow();
-    expect(component.capsLock()).toBeTrue();
+    expect(component.error()).toContain('Invalid credentials');
   });
 });

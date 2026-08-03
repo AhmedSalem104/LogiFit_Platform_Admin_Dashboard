@@ -1,8 +1,8 @@
 import { environment } from './environment.prod';
 
-describe('temporary hosted OTP configuration', () => {
-  it('shows the reviewed temporary code while Issue #127 is active', () => {
+describe('production environment', () => {
+  it('does not include development authentication bypass settings', () => {
     expect(environment.production).toBeTrue();
-    expect(environment.otpDevelopmentHint).toContain('1234');
+    expect(Object.prototype.hasOwnProperty.call(environment, 'otpDevelopmentHint')).toBeFalse();
   });
 });

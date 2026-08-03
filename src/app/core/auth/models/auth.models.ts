@@ -24,24 +24,6 @@ export const Permissions = {
 export interface LoginRequest {
   email: string;
   password: string;
-  sessionBinding: string;
-}
-
-export enum OtpPurpose {
-  PhoneVerification = 1,
-  PasswordlessLogin = 2,
-  PlatformAdminLogin = 3,
-  PasswordReset = 5,
-  ChangePhone = 6,
-  InviteAcceptance = 7,
-}
-
-export interface OtpChallenge {
-  challengeId: string;
-  purpose: OtpPurpose;
-  expiresAtUtc: string;
-  resendAvailableAtUtc: string;
-  maskedPhoneNumber: string;
 }
 
 // AuthResponseDto from the Platform API
