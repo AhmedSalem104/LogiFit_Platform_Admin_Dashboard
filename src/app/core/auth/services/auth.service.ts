@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { StorageService } from '../../services/storage.service';
-import { AuthResponse, LoginRequest, OtpChallenge, Permission, UserInfo } from '../models/auth.models';
+import { AuthResponse, LoginRequest, Permission, UserInfo } from '../models/auth.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -32,12 +32,8 @@ export class AuthService {
 
   // ------------------------------- Auth API --------------------------------
 
-  requestLoginOtp(credentials: LoginRequest): Observable<OtpChallenge> {
-    return this.http.post<OtpChallenge>(`${this.apiUrl}/login`, credentials);
-  }
-
-  verifyLoginOtp(challengeId: string, code: string, sessionBinding: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/otp/verify`, { challengeId, code, sessionBinding }).pipe(
+  login(credentials: LoginRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials, { withCredentials: true }).pipe(
       tap((res) => this.handleAuthSuccess(res)),
     );
   }
