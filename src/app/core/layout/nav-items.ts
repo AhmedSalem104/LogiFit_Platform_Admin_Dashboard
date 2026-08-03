@@ -30,6 +30,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'سجل التدقيق', icon: 'pi pi-history', route: '/audit-logs', group: 'governance', permissions: ['ManagePlatformReports'] },
   { label: 'المرجع والدليل', icon: 'pi pi-book', route: '/documentation', group: 'governance', permissions: ['ManagePlatformReports'] },
   { label: 'النسخ الاحتياطية', icon: 'pi pi-database', route: '/backups', group: 'operations', permissions: ['ManagePlatformBackups'] },
+  { label: 'Database Resources', icon: 'pi pi-server', route: '/database-resources', group: 'operations', permissions: ['ManagePlatformBackups'] },
   { label: 'مراقبة العمليات', icon: 'pi pi-cog', route: '/operations', group: 'operations', permissions: ['ManagePlatformReports'] },
   { label: 'مركز التنبيهات', icon: 'pi pi-bell', route: '/alerts', group: 'operations', permissions: ['ManagePlatformReports'] },
 ];
