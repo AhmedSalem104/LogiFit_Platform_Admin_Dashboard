@@ -1,5 +1,13 @@
 # كتالوج شاشات لوحة المنصة
 
+## `/tenants` lifecycle additions (Issue #214)
+
+The tenant row now has explicit **بيانات الدخول**, reset-link, soft-delete, restore, and permanent
+delete actions. The credentials dialog is metadata-only: owner email, identity/membership state,
+and account activity are safe to display; passwords and hashes are never present in the response.
+Permanent delete uses a typed gym-name confirmation and explains that backup must succeed before
+database purge/resource release; it also states that the owner's Global Identity is preserved.
+
 > **Issue #60 — local implementation, not released:** the two-step OTP experience exists on `/auth/login` only. All screens call authorized operations directly without a post-login OTP dialog.
 
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
@@ -20,7 +28,7 @@ Cookie ولا يوجد له مفتاح localStorage. اكتشاف Caps Lock مح
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
 |---|---|---|---|---|---|
 | `/dashboard` | لوحة المتابعة | `ManagePlatformReports` | `/dashboard` | متابعة المؤشرات والتنبيهات | لا قرار مالي من KPI فقط. |
-| `/tenants` | الصالات والمستأجرون | `ManageTenants` | `/tenants` | إنشاء/اعتماد/تعليق/تفعيل/أرشفة | لا حذف لصالة ذات تاريخ. |
+| `/tenants` | الصالات والمستأجرون | `ManageTenants` | `/tenants` | إنشاء/اعتماد/تعليق/تفعيل/أرشفة، بيانات دخول، reset، حذف مؤقت/استعادة، حذف نهائي مؤكد | لا حذف عام؛ الحذف النهائي مشروط بنسخة احتياطية وPlatformOwner. |
 | `/subscriptions` | دورات الاشتراك | `ManageTenants` | `/subscriptions` | transition/extend/preview | EndDate غير شامل، Snapshot ثابت. |
 | `/plans` | الخطط والأسعار | `ManagePlans` | `/plans` | إنشاء وتعديل قوالب الخطط | لا تعديل Snapshot مفعل. |
 | `/features` | كتالوج الميزات | `ManagePlans` | `/features` | تعريف/تعديل/أرشفة | FeatureKey ثابت. |

@@ -130,6 +130,44 @@ export interface PlatformTenantDto {
   phoneNumber: string;
   membersCount: number;
   createdAt: string;
+  isDeleted: boolean;
+  deletedAt: string | null;
+}
+
+export interface PlatformTenantCredentialsDto {
+  tenantId: string;
+  tenantName: string;
+  ownerEmail: string | null;
+  identityLinked: boolean;
+  identityActive: boolean;
+  emailVerifiedAtUtc: string | null;
+  ownerAccountActive: boolean;
+  membershipStatus: number | null;
+  lastLoginAtUtc: string | null;
+  lockoutEndUtc: string | null;
+  passwordResetAvailable: boolean;
+}
+
+export interface PlatformTenantPasswordResetDto {
+  tenantId: string;
+  ownerEmail: string | null;
+  resetEmailAccepted: boolean;
+  expiresInMinutes: number;
+}
+
+export interface PlatformTenantDeleteRequest {
+  tenantNameConfirmation: string;
+  preserveGlobalIdentity: boolean;
+}
+
+export interface PlatformTenantPermanentDeleteDto {
+  tenantId: string;
+  tenantName: string;
+  status: string;
+  backupBatchId: string;
+  backupArtifactId: string;
+  databaseResourceId: string;
+  globalIdentityPreserved: boolean;
 }
 
 export interface CreateTenantWithOwnerCommand {

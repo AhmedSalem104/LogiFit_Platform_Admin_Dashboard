@@ -1,5 +1,14 @@
 # معمارية وربط لوحة إدارة LogicFit
 
+## Gym lifecycle API integration (Issue #214)
+
+`TenantsService` maps the explicit Backend routes under `/api/platform/tenants/{id}` for credentials,
+reset, soft-delete, restore, and permanent-delete. The UI uses `NotifyService` for confirmation and
+bounded typed-name input; it never accepts a database name, connection string, password hash, or
+current password from the API. Backend authorization is `ManageTenants` for ordinary lifecycle
+operations and `PlatformOwner` for irreversible deletion. The response refreshes the server-side
+list after mutations, including the `Deleted` filter used for restore.
+
 > **Issue #60 — local implementation, not released:** the dashboard keeps password + OTP login and removes all post-login OTP step-up services, dialogs, interceptors, headers, and retries.
 
 > **حالة Issue #118:** تم الدمج في فروع `develop` للـBackend وTenant UI وPlatform UI بتاريخ 2026-08-01. لم تُصدر أو تُنشر أو تُتحقق على Production بعد.

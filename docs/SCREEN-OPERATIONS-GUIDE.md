@@ -1,5 +1,15 @@
 # الدليل التشغيلي الكامل لشاشات لوحة إدارة المنصة
 
+## `/tenants` — credentials and deletion flow (Issue #214)
+
+Use **بيانات الدخول** to inspect only the owner email and status. Use **إعادة تعيين كلمة المرور**
+to send a single-use reset email; no current password is displayed. Use **حذف مؤقت** when the gym
+must be blocked but recoverable. For **حذف نهائي**, type the exact gym name and confirm the warning:
+the Backend creates the full backup first, purges the tenant database only when the configured
+provider permits it, releases the resource, and audits the full sequence. The owner Global Identity
+is retained for other workspaces. A `TENANT_DATABASE_PURGE_MANUAL_ONLY` response means the action
+must be completed through the separately reviewed operator workflow.
+
 > **Issue #60 — local implementation, not released:** OTP is required on the login screen only. No post-login action triggers an OTP step-up request.
 
 > هذا الدليل يشرح **كل شاشة فعلية** في لوحة إدارة LogicFit SaaS: لماذا توجد، لمن تظهر، ما بياناتها، ما الذي يمكن تغييره منها، ما الذي لا يجوز تغييره، وما الإجراء الصحيح عند ظهور مشكلة. تفاصيل كل طلب HTTP ومدخلاته واستجابته موجودة في [كتالوج الـAPI الكامل](API-ENDPOINT-CATALOG.md).
@@ -79,10 +89,10 @@
 | جانب | الوصف |
 |---|---|
 | **الصلاحية** | `ManageTenants`. |
-| **الغرض والفائدة** | إدارة دورة حياة كل صالة (Tenant) دون خلط بياناتها أو فقد تاريخها: اعتماد، تفعيل، تعليق أو أرشفة. |
+| **الغرض والفائدة** | إدارة دورة حياة كل صالة (Tenant) دون خلط بياناتها أو فقد تاريخها: اعتماد، تفعيل، تعليق، أرشفة، تعطيل مؤقت واستعادة. |
 | **ما يعرض** | اسم/معرف الصالة، حالة التشغيل، الخطة والاشتراك المرتبطان، معلومات التسجيل والبيانات اللازمة لاتخاذ القرار، مع بحث وفلترة وترقيم. مصدره `GET /api/platform/tenants`. |
-| **الإجراءات** | إنشاء/استعراض السجل وفق ما تدعمه الشاشة، ثم أوامر دورة الحياة من الصف أو التفاصيل: اعتماد، تفعيل، تعليق، أو أرشفة. كل أمر يطلب تأكيد SweetAlert ويعرض النتيجة. |
-| **الضوابط** | لا حذف مباشر لصالة لها تاريخ. التعليق يمنع الوصول لكنه لا يغير مدة الاشتراك. لا يُستنتج `TenantId` من الواجهة لتجاوز العزل. راجع سبب القرار وحالة الاشتراك قبل الأمر. |
+| **الإجراءات** | إنشاء/استعراض السجل، عرض بيانات دخول المالك بدون كلمة مرور، إرسال reset آمن، تعطيل مؤقت، استعادة، أو حذف نهائي مؤكد بالاسم. كل mutation يطلب تأكيد SweetAlert ويعرض النتيجة. |
+| **الضوابط** | الحذف النهائي لا يبدأ من الواجهة إلا بعد تأكيد الاسم، ويظل Backend هو الذي يفرض PlatformOwner والنسخة الاحتياطية وpurge/release. التعليق والحذف المؤقت يمنعان الوصول ولا يغيران مدة الاشتراك. لا يُستنتج `TenantId` من الواجهة لتجاوز العزل. |
 
 ### `/subscriptions` — دورات اشتراك الصالات
 
