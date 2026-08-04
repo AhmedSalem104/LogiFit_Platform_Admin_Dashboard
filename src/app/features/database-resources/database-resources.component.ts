@@ -92,6 +92,9 @@ interface ResourceEditor {
             </td>
             <td class="whitespace-nowrap text-center">
               <button pButton type="button" icon="pi pi-pencil" class="p-button-text p-button-sm" title="Edit" (click)="openEdit(row)"></button>
+              @if (row.lifecycleStatus === 'Allocated') {
+                <button pButton type="button" icon="pi pi-wrench" class="p-button-text p-button-sm p-button-warning" title="Repair protected connection" (click)="openRepair(row)"></button>
+              }
               <button pButton type="button" icon="pi pi-sync" class="p-button-text p-button-sm" title="Run migrations" [loading]="busyId() === row.id && busyAction() === 'migrations'" (click)="runMigrations(row)"></button>
               @if (row.lifecycleStatus === 'Allocated') {
                 <button pButton type="button" icon="pi pi-save" class="p-button-text p-button-sm" title="Create backup" [loading]="busyId() === row.id && busyAction() === 'backup'" (click)="createBackup(row)"></button>
@@ -120,7 +123,7 @@ interface ResourceEditor {
       [draggable]="false"
       [dismissableMask]="true"
       [style]="{ width: '650px', maxWidth: '94vw' }"
-      [header]="editingId ? 'Edit database resource' : 'Add database resource'">
+      [header]="repairMode ? 'Repair allocated database connection' : editingId ? 'Edit database resource' : 'Add database resource'">
       <form #resourceForm="ngForm" (ngSubmit)="save()" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label class="lf-label">Provider *</label>
@@ -135,9 +138,12 @@ interface ResourceEditor {
           <input class="lf-input" name="serverKey" [(ngModel)]="editor.serverKey" dir="ltr" placeholder="Host or server label" />
         </div>
         <div class="sm:col-span-2">
-          <label class="lf-label">Connection string {{ editingId ? '(leave blank to keep the current one)' : '*' }}</label>
+          <label class="lf-label">Connection string {{ repairMode ? '*' : editingId ? '(leave blank to keep the current one)' : '*' }}</label>
           <textarea class="lf-input min-h-28 font-mono text-xs" name="connectionString" [(ngModel)]="editor.connectionString" dir="ltr" [required]="!editingId" autocomplete="new-password"></textarea>
-          <p class="mt-1 text-xs text-slate-500">It is tested first, then encrypted and stored in the DatabaseResources table. It is not returned by the API.</p>
+          <p class="mt-1 text-xs text-slate-500">It is tested first, then encrypted and stored in the central database. It is never returned by the API.</p>
+          @if (repairMode) {
+            <p class="mt-1 text-xs font-semibold text-amber-700">This repairs the allocated workspace mapping and replaces only the protected value. The current connection is never displayed.</p>
+          }
         </div>
         @if (lastTest(); as test) {
           <div class="sm:col-span-2 rounded-xl p-3 text-sm" [class.bg-emerald-50]="test.succeeded" [class.text-emerald-700]="test.succeeded" [class.bg-rose-50]="!test.succeeded" [class.text-rose-700]="!test.succeeded">
@@ -148,8 +154,10 @@ interface ResourceEditor {
       </form>
       <ng-template pTemplate="footer">
         <button pButton type="button" label="Cancel" class="p-button-text p-button-secondary" (click)="dialogVisible = false"></button>
-        <button pButton type="button" label="Test connection" icon="pi pi-link" class="p-button-outlined" [loading]="testing()" [disabled]="!editor.databaseName || !editor.connectionString" (click)="testConnection()"></button>
-        <button pButton type="button" label="Save" icon="pi pi-check" [loading]="saving()" [disabled]="!editor.provider || (!editingId && !editor.databaseName) || (!editingId && !editor.connectionString)" (click)="save()"></button>
+        @if (!repairMode) {
+          <button pButton type="button" label="Test connection" icon="pi pi-link" class="p-button-outlined" [loading]="testing()" [disabled]="!editor.databaseName || !editor.connectionString" (click)="testConnection()"></button>
+        }
+        <button pButton type="button" [label]="repairMode ? 'Repair and protect' : 'Save'" icon="pi pi-check" [loading]="saving()" [disabled]="!editor.provider || (repairMode && !editor.connectionString) || (!editingId && !editor.databaseName) || (!editingId && !editor.connectionString)" (click)="save()"></button>
       </ng-template>
     </p-dialog>
   `,
@@ -174,6 +182,7 @@ export class DatabaseResourcesComponent implements OnInit {
 
   dialogVisible = false;
   editingId: string | null = null;
+  repairMode = false;
   editor: ResourceEditor = this.emptyEditor();
 
   ngOnInit(): void { this.load(); }
@@ -188,6 +197,7 @@ export class DatabaseResourcesComponent implements OnInit {
 
   openCreate(): void {
     this.editingId = null;
+    this.repairMode = false;
     this.editor = this.emptyEditor();
     this.lastTest.set(null);
     this.dialogVisible = true;
@@ -195,6 +205,21 @@ export class DatabaseResourcesComponent implements OnInit {
 
   openEdit(row: DatabaseResource): void {
     this.editingId = row.id;
+    this.repairMode = false;
+    this.editor = { provider: row.provider, databaseName: '', serverKey: '', connectionString: '' };
+    this.lastTest.set(null);
+    this.dialogVisible = true;
+  }
+
+  async openRepair(row: DatabaseResource): Promise<void> {
+    if (!await this.notify.confirm({
+      header: 'Repair protected connection',
+      message: `The new connection will be tested and then applied to ${row.resourceCode} and its active workspace mapping. Continue?`,
+      acceptLabel: 'Continue',
+    })) return;
+
+    this.editingId = row.id;
+    this.repairMode = true;
     this.editor = { provider: row.provider, databaseName: '', serverKey: '', connectionString: '' };
     this.lastTest.set(null);
     this.dialogVisible = true;
@@ -210,6 +235,26 @@ export class DatabaseResourcesComponent implements OnInit {
   }
 
   save(): void {
+    if (this.repairMode && this.editingId) {
+      if (!this.editor.connectionString.trim()) {
+        this.notify.error('A new connection string is required for repair.');
+        return;
+      }
+      this.saving.set(true);
+      this.service.repairConnection(this.editingId, this.editor.connectionString.trim()).subscribe({
+        next: result => {
+          this.saving.set(false);
+          this.dialogVisible = false;
+          this.repairMode = false;
+          this.editor.connectionString = '';
+          this.notify.success(result.message);
+          this.load();
+        },
+        error: error => { this.saving.set(false); this.notify.error(errMsg(error)); },
+      });
+      return;
+    }
+
     if (!this.editor.provider.trim() || (!this.editingId && !this.editor.databaseName.trim()) || (!this.editingId && !this.editor.connectionString.trim())) {
       this.notify.error('Provider, database name, and a connection string are required for a new resource.');
       return;

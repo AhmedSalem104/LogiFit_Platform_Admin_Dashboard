@@ -76,6 +76,13 @@ export class DatabaseResourcesService {
     return this.http.put<DatabaseResource>(`${this.base}/${id}`, request);
   }
 
+  repairConnection(id: string, connectionString: string): Observable<ResourceOperationResult> {
+    return this.http.post<ResourceOperationResult>(`${this.base}/${id}/repair-connection`, {
+      connectionString,
+      confirm: true,
+    });
+  }
+
   setStatus(id: string, status: DatabaseResourceStatus): Observable<DatabaseResource> {
     return this.http.post<DatabaseResource>(`${this.base}/${id}/status`, { status });
   }
