@@ -1,5 +1,13 @@
 # نظام التصميم — لوحة إدارة LogicFit
 
+## Sensitive tenant lifecycle actions (Issue #214)
+
+Use icon buttons with tooltips for **بيانات الدخول**, reset, soft-delete, restore, and permanent
+delete. Credentials use a modal card with status labels and no password field. Reset and lifecycle
+mutations use `NotifyService` confirmations; permanent delete uses bounded typed-name input and a
+danger treatment. Always explain the backup-before-purge rule and Global Identity preservation in
+the confirmation copy, and route all errors through the shared notification service.
+
 هذا الملف هو العقد البصري للوحة الإدارة. الهدف: واجهة عربية RTL متناسقة، غنية
 بالمعلومات دون ازدحام، قابلة للوصول، وسهلة الصيانة باستخدام Tailwind مع PrimeNG.
 لا تضف CSS محلياً أو لوناً/زرّاً جديداً قبل محاولة استخدام الـtokens والـprimitives
