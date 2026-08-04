@@ -91,6 +91,40 @@ export class NotifyService {
     }).then(result => result.isConfirmed ? Number(result.value) : null);
   }
 
+  /** Bounded text confirmation used for irreversible administrative actions. */
+  textPrompt(opts: {
+    title: string;
+    label: string;
+    placeholder?: string;
+    confirmLabel?: string;
+    maxLength?: number;
+  }): Promise<string | null> {
+    return Swal.fire({
+      title: opts.title,
+      text: opts.label,
+      icon: 'warning',
+      input: 'text',
+      inputPlaceholder: opts.placeholder,
+      inputAttributes: { maxlength: String(opts.maxLength ?? 200), autocomplete: 'off' },
+      inputValidator: value => value?.trim() ? undefined : 'Ø§Ù„ØªØ£ÙƒÙŠØ¯ Ù…Ø·Ù„ÙˆØ¨.',
+      showCancelButton: true,
+      confirmButtonText: opts.confirmLabel ?? 'ØªØ£ÙƒÙŠØ¯',
+      cancelButtonText: 'Ø¥Ù„ØºØ§Ø¡',
+      reverseButtons: true,
+      focusCancel: true,
+      customClass: {
+        popup: 'lf-swal-popup',
+        title: 'lf-swal-title',
+        htmlContainer: 'lf-swal-text',
+        input: 'lf-swal-input',
+        actions: 'lf-swal-actions',
+        confirmButton: 'lf-swal-confirm-danger',
+        cancelButton: 'lf-swal-cancel',
+      },
+      buttonsStyling: false,
+    }).then(result => result.isConfirmed ? String(result.value ?? '') : null);
+  }
+
   private toast(icon: SweetAlertIcon, title: string, text: string, timer: number): void {
     void Swal.fire({
       toast: true,

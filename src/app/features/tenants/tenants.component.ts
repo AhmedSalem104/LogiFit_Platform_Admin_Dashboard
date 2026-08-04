@@ -12,17 +12,12 @@ import { ServerPaginatorComponent } from '../../shared/ui/server-paginator.compo
 import { TenantsService } from './tenants.service';
 import {
   PlatformTenantDto,
+  PlatformTenantCredentialsDto,
   TENANT_STATUS_BADGE,
   TenantStatus,
 } from '../../core/models/platform.models';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
 import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assistant.service';
-
-interface CreatedOwner {
-  subdomain: string;
-  phone: string;
-  password: string;
-}
 
 @Component({
   selector: 'app-tenants',
@@ -80,6 +75,7 @@ interface CreatedOwner {
             <td class="hidden md:table-cell tabular-nums">{{ t.membersCount | number }}</td>
             <td dir="ltr" class="text-left hidden lg:table-cell">{{ t.createdAt | date: 'yyyy-MM-dd' }}</td>
             <td class="text-center whitespace-nowrap">
+              <button pButton pTooltip="بيانات الدخول" aria-label="بيانات الدخول" icon="pi pi-id-card" class="p-button-sm p-button-text" (click)="openCredentials(t)"></button>
               @if (t.status === TS.PendingApproval) {
                 <button pButton pTooltip="موافقة" icon="pi pi-check" class="p-button-sm p-button-success p-button-text" (click)="act(t, 'approve')"></button>
               }
@@ -92,6 +88,12 @@ interface CreatedOwner {
               @if (t.status !== TS.Archived) {
                 <button pButton pTooltip="أرشفة" icon="pi pi-inbox" class="p-button-sm p-button-secondary p-button-text" (click)="act(t, 'archive')"></button>
               }
+              @if (t.isDeleted || t.status === TS.Deleted) {
+                <button pButton pTooltip="استعادة" aria-label="استعادة" icon="pi pi-replay" class="p-button-sm p-button-success p-button-text" (click)="restore(t)"></button>
+              } @else {
+                <button pButton pTooltip="حذف مؤقت" aria-label="حذف مؤقت" icon="pi pi-ban" class="p-button-sm p-button-warning p-button-text" (click)="softDelete(t)"></button>
+              }
+              <button pButton pTooltip="حذف نهائي" aria-label="حذف نهائي" icon="pi pi-trash" class="p-button-sm p-button-danger p-button-text" (click)="permanentDelete(t)"></button>
             </td>
           </tr>
         </ng-template>
@@ -139,7 +141,7 @@ interface CreatedOwner {
         </div>
         <div>
           <label class="lf-label">كلمة مرور المالك *</label>
-          <input class="lf-input" formControlName="ownerPassword" dir="ltr" />
+          <input class="lf-input" formControlName="ownerPassword" type="password" autocomplete="new-password" dir="ltr" />
         </div>
       </form>
       <ng-template pTemplate="footer">
@@ -148,29 +150,22 @@ interface CreatedOwner {
       </ng-template>
     </p-dialog>
 
-    <!-- Owner credentials dialog (after create) -->
-    <p-dialog header="تم إنشاء الجيم بنجاح" [(visible)]="showCredentials" [modal]="true" [style]="{ width: '460px', maxWidth: '94vw' }" [draggable]="false">
-      @if (created(); as c) {
+    <!-- Safe owner credentials dialog: password/hash are never returned or displayed. -->
+    <p-dialog header="بيانات دخول المالك" [(visible)]="showCredentials" [modal]="true" [style]="{ width: '500px', maxWidth: '94vw' }" [draggable]="false">
+      @if (credentials(); as c) {
         <div class="text-sm text-slate-600 leading-relaxed">
-          <p class="flex items-center gap-2 text-green-600 font-semibold mb-3">
-            <i class="pi pi-check-circle"></i> الجيم أُنشئ بحالة "بانتظار الموافقة".
-          </p>
-          <p class="mb-3">بلّغ صاحب الجيم ببياناته للدخول إلى تطبيق الجيم:</p>
-          <div class="space-y-2">
-            <div class="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-              <span class="text-slate-500">Subdomain</span><b dir="ltr">{{ c.subdomain }}</b>
-            </div>
-            <div class="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-              <span class="text-slate-500">الهاتف</span><b dir="ltr">{{ c.phone }}</b>
-            </div>
-            <div class="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-              <span class="text-slate-500">كلمة المرور</span><b dir="ltr">{{ c.password }}</b>
-            </div>
+          <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+            <div class="flex items-center justify-between gap-4"><span>البريد المستخدم للدخول</span><b dir="ltr">{{ c.ownerEmail || 'غير متاح' }}</b></div>
+            <div class="flex items-center justify-between gap-4"><span>Global Identity</span><b>{{ c.identityLinked ? 'مرتبطة' : 'غير مرتبطة' }}</b></div>
+            <div class="flex items-center justify-between gap-4"><span>حالة الحساب</span><b>{{ c.ownerAccountActive ? 'نشط' : 'معطل' }}</b></div>
+            <div class="flex items-center justify-between gap-4"><span>التحقق من البريد</span><b>{{ c.emailVerifiedAtUtc ? 'تم التحقق' : 'غير متحقق' }}</b></div>
           </div>
+          <p class="mt-4 text-xs text-slate-500">لا يتم عرض كلمة المرور الحالية. استخدم إعادة التعيين لإرسال رابط آمن لمرة واحدة إلى البريد.</p>
         </div>
       }
       <ng-template pTemplate="footer">
-        <button pButton label="تمام" icon="pi pi-check" (click)="showCredentials = false"></button>
+        <button pButton label="إعادة تعيين كلمة المرور" icon="pi pi-envelope" class="p-button-outlined" [disabled]="!credentials()?.passwordResetAvailable || saving()" (click)="resetPassword()"></button>
+        <button pButton label="إغلاق" icon="pi pi-times" class="p-button-text p-button-secondary" (click)="showCredentials = false"></button>
       </ng-template>
     </p-dialog>
   `,
@@ -195,7 +190,8 @@ export class TenantsComponent implements OnInit {
   statusFilter: TenantStatus | null = null;
   showCreate = false;
   showCredentials = false;
-  created = signal<CreatedOwner | null>(null);
+  credentials = signal<PlatformTenantCredentialsDto | null>(null);
+  selectedTenant = signal<PlatformTenantDto | null>(null);
 
   statusOptions = [
     { label: 'نشط', value: TenantStatus.Active },
@@ -203,6 +199,7 @@ export class TenantsComponent implements OnInit {
     { label: 'موقوف', value: TenantStatus.Suspended },
     { label: 'تجريبي', value: TenantStatus.Trial },
     { label: 'مؤرشف', value: TenantStatus.Archived },
+    { label: 'محذوف مؤقتاً', value: TenantStatus.Deleted },
   ];
 
   form = this.fb.nonNullable.group({
@@ -266,9 +263,107 @@ export class TenantsComponent implements OnInit {
       next: () => {
         this.saving.set(false);
         this.showCreate = false;
-        this.created.set({ subdomain: cmd.subdomain, phone: cmd.ownerPhoneNumber, password: cmd.ownerPassword });
-        this.showCredentials = true;
+        this.form.reset();
         this.notify.success('تم إنشاء الجيم');
+        this.load();
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.notify.error(errMsg(err));
+      },
+    });
+  }
+
+  openCredentials(t: PlatformTenantDto): void {
+    this.selectedTenant.set(t);
+    this.credentials.set(null);
+    this.showCredentials = true;
+    this.service.credentials(t.id).subscribe({
+      next: (data) => this.credentials.set(data),
+      error: (err) => {
+        this.showCredentials = false;
+        this.notify.error(errMsg(err));
+      },
+    });
+  }
+
+  async resetPassword(): Promise<void> {
+    const tenant = this.selectedTenant();
+    const credentials = this.credentials();
+    if (!tenant || !credentials?.passwordResetAvailable) return;
+
+    const ok = await this.notify.confirm({
+      header: 'إعادة تعيين كلمة المرور',
+      message: `سيتم إرسال رابط آمن إلى ${credentials.ownerEmail || 'بريد المالك'} دون كشف كلمة المرور الحالية. متابعة؟`,
+      acceptLabel: 'إرسال الرابط',
+    });
+    if (!ok) return;
+
+    this.saving.set(true);
+    this.service.requestPasswordReset(tenant.id).subscribe({
+      next: (result) => {
+        this.saving.set(false);
+        this.notify.success(`تم إرسال رابط إعادة التعيين إلى ${result.ownerEmail || 'بريد المالك'}`);
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.notify.error(errMsg(err));
+      },
+    });
+  }
+
+  async softDelete(t: PlatformTenantDto): Promise<void> {
+    const ok = await this.notify.confirm({
+      header: 'حذف مؤقت للجيم',
+      message: `سيتم تعطيل "${t.name}" ومنع الدخول مع الاحتفاظ بالبيانات وإمكانية الاستعادة.`,
+      acceptLabel: 'تعطيل وحذف مؤقت',
+      danger: true,
+    });
+    if (!ok) return;
+
+    this.service.softDelete(t.id).subscribe({
+      next: () => {
+        this.notify.success('تم تعطيل الجيم وحفظ بياناته');
+        this.load();
+      },
+      error: (err) => this.notify.error(errMsg(err)),
+    });
+  }
+
+  async restore(t: PlatformTenantDto): Promise<void> {
+    const ok = await this.notify.confirm({
+      header: 'استعادة الجيم',
+      message: `استعادة "${t.name}" وإتاحة الدخول مرة أخرى؟`,
+      acceptLabel: 'استعادة',
+    });
+    if (!ok) return;
+
+    this.service.restore(t.id).subscribe({
+      next: () => {
+        this.notify.success('تمت استعادة الجيم');
+        this.load();
+      },
+      error: (err) => this.notify.error(errMsg(err)),
+    });
+  }
+
+  async permanentDelete(t: PlatformTenantDto): Promise<void> {
+    const confirmation = await this.notify.textPrompt({
+      title: 'حذف نهائي وغير قابل للتراجع',
+      label: `سيتم إنشاء نسخة BACPAC كاملة أولاً، ثم تفريغ قاعدة بيانات الجيم وإعادتها لقائمة الموارد. لن يتم حذف Global Identity للمالك. اكتب اسم الجيم حرفياً للتأكيد: ${t.name}`,
+      placeholder: t.name,
+      confirmLabel: 'تنفيذ الحذف النهائي',
+    });
+    if (confirmation?.trim() !== t.name.trim()) return;
+
+    this.saving.set(true);
+    this.service.permanentDelete(t.id, {
+      tenantNameConfirmation: confirmation,
+      preserveGlobalIdentity: true,
+    }).subscribe({
+      next: (result) => {
+        this.saving.set(false);
+        this.notify.success(`تم الحذف النهائي بعد نجاح النسخة الاحتياطية. رقم النسخة: ${result.backupBatchId}`);
         this.load();
       },
       error: (err) => {

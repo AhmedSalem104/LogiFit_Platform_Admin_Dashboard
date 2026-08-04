@@ -1,5 +1,15 @@
 # منصة الإدارة: Pagination وعمليات التحكم
 
+## Tenant credential and deletion controls (Issue #214)
+
+The `/tenants` screen exposes owner email and account state through **بيانات الدخول** only; it
+never stores or renders the current password. **إعادة تعيين كلمة المرور** asks the Backend to send
+the normal one-time reset link. **حذف مؤقت** disables access while retaining the tenant and its
+database mapping. **حذف نهائي** requires the exact gym name and is restricted by the Backend to
+`PlatformOwner`; the API must complete a BACPAC backup before provider-backed purge and resource
+release. The owner Global Identity is preserved and only the deleted workspace association is
+removed. `ManualOnly` purge responses are shown as an operator-actionable error.
+
 > **Issue #60 — local implementation, not released:** OTP remains mandatory for Platform login only. No action after login opens an OTP dialog or requires a step-up header.
 
 ## طابور مراجعة مساحات العمل
@@ -51,7 +61,7 @@ interface PagedResult<T> {
 | كتالوج الميزات | إنشاء، تعديل، أرشفة؛ مفتاح الميزة ثابت بعد الإنشاء |
 | اعتماديات الميزات | إضافة وإزالة علاقة إعداد آمنة |
 | الحدود والاستثناءات | إنشاء وتعديل/تعطيل زمني؛ لا حذف تاريخي |
-| الجيمات والاشتراكات والمشرفون | أوامر دورة حياة، وليست حذفًا مباشرًا |
+| الجيمات والاشتراكات والمشرفون | أوامر دورة حياة؛ الحذف النهائي استثناء محمي بنسخة احتياطية وتأكيد صريح |
 | طلبات الدفع | موافقة أو رفض فقط |
 | الفواتير والتدقيق والنسخ والـOutbox والـJobs والتنبيهات | قراءة/تشغيل آمن فقط؛ لا تعديل أو حذف للسجل |
 
