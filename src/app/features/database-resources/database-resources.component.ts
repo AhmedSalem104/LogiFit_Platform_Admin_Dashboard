@@ -92,7 +92,7 @@ interface ResourceEditor {
             </td>
             <td class="whitespace-nowrap text-center">
               <button pButton type="button" icon="pi pi-pencil" class="p-button-text p-button-sm" title="Edit" (click)="openEdit(row)"></button>
-              @if (row.lifecycleStatus === 'Allocated') {
+              @if (row.lifecycleStatus === 'Allocated' || row.lifecycleStatus === 'Failed') {
                 <button pButton type="button" icon="pi pi-wrench" class="p-button-text p-button-sm p-button-warning" title="Repair protected connection" (click)="openRepair(row)"></button>
               }
               <button pButton type="button" icon="pi pi-sync" class="p-button-text p-button-sm" title="Run migrations" [loading]="busyId() === row.id && busyAction() === 'migrations'" (click)="runMigrations(row)"></button>
@@ -142,7 +142,14 @@ interface ResourceEditor {
           <textarea class="lf-input min-h-28 font-mono text-xs" name="connectionString" [(ngModel)]="editor.connectionString" dir="ltr" [required]="!editingId" autocomplete="new-password"></textarea>
           <p class="mt-1 text-xs text-slate-500">It is tested first, then encrypted and stored in the central database. It is never returned by the API.</p>
           @if (repairMode) {
-            <p class="mt-1 text-xs font-semibold text-amber-700">This repairs the allocated workspace mapping and replaces only the protected value. The current connection is never displayed.</p>
+            <p class="mt-1 text-xs font-semibold text-amber-700">
+              @if (repairAllocated) {
+                This repairs the allocated workspace mapping and replaces only the protected value.
+              } @else {
+                This repairs the failed pool resource and returns it to Available for a new workspace.
+              }
+              The current connection is never displayed.
+            </p>
           }
         </div>
         @if (lastTest(); as test) {
@@ -183,6 +190,7 @@ export class DatabaseResourcesComponent implements OnInit {
   dialogVisible = false;
   editingId: string | null = null;
   repairMode = false;
+  repairAllocated = false;
   editor: ResourceEditor = this.emptyEditor();
 
   ngOnInit(): void { this.load(); }
@@ -198,6 +206,7 @@ export class DatabaseResourcesComponent implements OnInit {
   openCreate(): void {
     this.editingId = null;
     this.repairMode = false;
+    this.repairAllocated = false;
     this.editor = this.emptyEditor();
     this.lastTest.set(null);
     this.dialogVisible = true;
@@ -206,20 +215,25 @@ export class DatabaseResourcesComponent implements OnInit {
   openEdit(row: DatabaseResource): void {
     this.editingId = row.id;
     this.repairMode = false;
+    this.repairAllocated = false;
     this.editor = { provider: row.provider, databaseName: '', serverKey: '', connectionString: '' };
     this.lastTest.set(null);
     this.dialogVisible = true;
   }
 
   async openRepair(row: DatabaseResource): Promise<void> {
+    const allocated = row.lifecycleStatus === 'Allocated';
     if (!await this.notify.confirm({
       header: 'Repair protected connection',
-      message: `The new connection will be tested and then applied to ${row.resourceCode} and its active workspace mapping. Continue?`,
+      message: allocated
+        ? `The new connection will be tested and then applied to ${row.resourceCode} and its active workspace mapping. Continue?`
+        : `The new connection will be tested and then ${row.resourceCode} will be returned to the Available pool. Continue?`,
       acceptLabel: 'Continue',
     })) return;
 
     this.editingId = row.id;
     this.repairMode = true;
+    this.repairAllocated = allocated;
     this.editor = { provider: row.provider, databaseName: '', serverKey: '', connectionString: '' };
     this.lastTest.set(null);
     this.dialogVisible = true;
@@ -246,6 +260,7 @@ export class DatabaseResourcesComponent implements OnInit {
           this.saving.set(false);
           this.dialogVisible = false;
           this.repairMode = false;
+          this.repairAllocated = false;
           this.editor.connectionString = '';
           this.notify.success(result.message);
           this.load();
