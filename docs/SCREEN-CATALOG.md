@@ -20,7 +20,7 @@
 | `/payment-methods` | طرق الدفع | `ManagePaymentRequests` | `/payment-methods` | CRUD طرق الدفع اليدوي | لا تضع أسراراً ظاهرة. |
 | `/payment-requests` | طلبات الدفع | `ManagePaymentRequests` | `/payment-requests` | موافقة/رفض سبب | قرار معتمد لا يعدل. |
 | `/backups` | النسخ الاحتياطية | `ManagePlatformBackups` | `/backups`, `/batch`, `/batches`, `/restores/capabilities` | تشغيل FullSystem/AllTenants، متابعة artifacts، checksum/manifest، retry آمن | السجلات immutable؛ لا connection material؛ `ManualOnly` لا يضيف زر restore. |
-| `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `/database-resources` | مراجعة حالة الموارد، التخصيص، الصحة ووجود اتصال محمي | يعرض `hasProtectedConnection` كمؤشر Boolean فقط؛ لا يعرض اسم قاعدة البيانات أو أي connection material. |
+| `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `GET /database-resources` | مراجعة الحالة، الصحة، التخصيص، الترقيم، ووجود اتصال محمي | الشاشة قراءة فقط؛ لا تعرض نموذجًا أو CRUD غير موجود في العقد. يعرض `hasProtectedConnection` كمؤشر Boolean فقط. |
 | `/audit-logs` | سجل المراجعة | `ManagePlatformReports` | `/audit-logs` | بحث وقراءة | immutable؛ لا CRUD. |
 | `/invoices` | الفواتير | `ManagePlatformReports` | `/invoices` | بحث وقراءة | تصحيح بعكس مالي جديد. |
 | `/administrators` | مدراء المنصة | `ManagePlatformReports` | `/administrators` | إنشاء/تفعيل/تعطيل | أقل صلاحية؛ لا مشاركة حساب. |
