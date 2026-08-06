@@ -201,6 +201,16 @@ export const ADMIN_ASSISTANT_GUIDES: AssistantGuide[] = [
     ],
   },
   {
+    route: '/database-resources', title: 'موارد قواعد البيانات', icon: 'pi pi-server', permissions: backups,
+    summary: 'مراجعة موارد قواعد البيانات وحالة الاتصال المحمي دون كشف أسرار.',
+    keywords: ['موارد قواعد البيانات', 'database resources', 'connection missing', 'اتصال محمي', 'resource pool'],
+    overview: 'تعرض الشاشة الحالة والتخصيص والصحة ومؤشر وجود قيمة اتصال محمية محفوظة. قيمة الاتصال نفسها لا تعود من الخادم ولا تظهر في الواجهة.',
+    steps: ['حدّث القائمة واقرأ حالة المورد.', 'استخدم مؤشر الاتصال المحمي كدليل وجود فقط.', 'عالج المورد من المسار التشغيلي المناسب إذا كان غير مضبوطاً.', 'راجع Logs الخادم عند ظهور 500 أو 503 دون نسخ أي secret.'],
+    warnings: ['عدم وجود المؤشر يعني أن الاتصال المحمي غير مضبوط لهذا المورد، وليس تصريحاً بإدخال connection string في Issue أو log.', 'لا تعتمد على اسم قاعدة البيانات أو TenantId لتحديد المورد.'],
+    buttons: [{ label: 'تحديث الحالة', description: 'يعيد قراءة موارد قواعد البيانات من الخادم.' }],
+    quickActions: [refresh('/database-resources', backups, 'تحديث موارد قواعد البيانات')],
+  },
+  {
     route: '/backups', title: 'النسخ الاحتياطية', icon: 'pi pi-database', permissions: backups,
     summary: 'إنشاء ومتابعة وتنزيل نسخ قاعدة البيانات المحكومة بالصلاحية.',
     keywords: ['باك اب', 'نسخة احتياطية', 'backup', 'تنزيل bacpac', 'استعادة'],

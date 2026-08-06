@@ -42,6 +42,16 @@ interface PagedResult<T> {
 | طلبات الدفع | موافقة أو رفض فقط |
 | الفواتير والتدقيق والنسخ والـOutbox والـJobs والتنبيهات | قراءة/تشغيل آمن فقط؛ لا تعديل أو حذف للسجل |
 
+## مركز النسخ الاحتياطي
+
+- `/backups` يستخدم صلاحية `ManagePlatformBackups` ويظل Platform API هو مصدر scope والعزل.
+- `FullSystem` يطلب من الخادم نسخة مستقلة لقاعدة المنصة ولكل Tenant mapping نشط؛ لا ترسل الواجهة
+  connection string أو اسم قاعدة البيانات.
+- يعرض batch history والـartifacts وحالتها وحجمها و`SHA-256` وmanifest. الإنشاء وretry يحتاجان
+  تأكيدًا، والـretry محصور في `Failed` أو `Partial`.
+- restore capability معلوماتية فقط؛ عندما تكون `ManualOnly` لا تعرض الشاشة mutation. بدء/انتهاء
+  الـbatch يسجلان في Audit Log على الخادم.
+
 ## التحقق المحلي
 
 ```powershell

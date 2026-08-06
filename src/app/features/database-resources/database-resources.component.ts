@@ -70,7 +70,7 @@ interface ResourceEditor {
             <td>
               <div class="font-bold text-slate-800" dir="ltr">{{ row.resourceCode }}</div>
               <div class="mt-1 text-xs text-slate-500" dir="ltr">{{ row.provider }}</div>
-              <div class="mt-1 text-[11px] text-slate-400">{{ row.hasConnectionString ? 'Protected connection saved' : 'Connection missing' }}</div>
+              <div class="mt-1 text-[11px] text-slate-400">{{ row.hasProtectedConnection ? 'Protected connection saved' : 'Protected connection not configured' }}</div>
             </td>
             <td><span class="lf-badge" [ngClass]="statusClass(row.lifecycleStatus)">{{ row.lifecycleStatus }}</span></td>
             <td>

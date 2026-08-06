@@ -61,6 +61,19 @@ flowchart LR
 - لا تنفذ Sorting/Filtering محلياً على بيانات لم تحمل كاملة.
 - تقرأ الشاشات المالية والتدقيق والعمليات والنسخ سجلات تاريخية فقط، ولا تضيف CRUD
   عاماً إليها.
+- شاشة `/database-resources` تستخدم `GET /api/platform/database-resources` وتعرض
+  `hasProtectedConnection` كمؤشر Boolean آمن لوجود قيمة محمية؛ لا تعتمد على `DatabaseName` ولا
+  تقرأ أو تعرض connection material.
+
+## تكامل النسخ الاحتياطي
+
+شاشة `/backups` تستعمل عقود Platform API الحالية: `POST /batch` لبدء scope، و`GET /batches`
+للتاريخ، و`POST /batches/{id}/retry` للمحاولات الفاشلة أو الجزئية، و`GET /restores/capabilities`
+لعرض قدرة مزود الاستعادة. `FullSystem` و`AllTenants` يحلان أهداف Tenant في الخادم من
+`TenantDatabaseMapping`؛ لا تعتمد الواجهة على أسماء قواعد البيانات أو connection material.
+
+العقد يعيد checksum `Sha256` لكل artifact ومرجع manifest آمن. السجل immutable، وبدء/انتهاء
+الـbatch يضاف إلى Audit Log. الواجهة لا تنفذ restore؛ حالة `ManualOnly` تعني handoff للمشغل.
 
 ## معالجة الأخطاء
 
