@@ -27,7 +27,7 @@ Cookie ولا يوجد له مفتاح localStorage. اكتشاف Caps Lock مح
 
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
 |---|---|---|---|---|---|
-| `/dashboard` | لوحة المتابعة | `ManagePlatformReports` | `/dashboard` | متابعة المؤشرات والتنبيهات | لا قرار مالي من KPI فقط. |
+| `/dashboard` | لوحة القيادة التنفيذية | `ManagePlatformReports` | `/api/platform/dashboard` و`/api/platform/dashboard/tenants` | KPIs، رسوم توزيع/ضغط التشغيل، تحديث حي، وبحث الجيمات | الأرقام حقيقية أو مشتقة من DTO؛ لا قرار مالي من KPI فقط. |
 | `/tenants` | الصالات والمستأجرون | `ManageTenants` | `/tenants` | إنشاء/اعتماد/تعليق/تفعيل/أرشفة، بيانات دخول، reset، حذف مؤقت/استعادة، حذف نهائي مؤكد | لا حذف عام؛ الحذف النهائي مشروط بنسخة احتياطية وPlatformOwner. |
 | `/subscriptions` | دورات الاشتراك | `ManageTenants` | `/subscriptions` | transition/extend/preview | EndDate غير شامل، Snapshot ثابت. |
 | `/plans` | الخطط والأسعار | `ManagePlans` | `/plans` | إنشاء وتعديل قوالب الخطط | لا تعديل Snapshot مفعل. |
@@ -37,12 +37,17 @@ Cookie ولا يوجد له مفتاح localStorage. اكتشاف Caps Lock مح
 | `/feature-dependencies` | اعتماديات الميزات | `ManagePlans` | `/features/dependencies` | إضافة/إزالة علاقة إعداد | لا دوائر أو self-dependency. |
 | `/payment-methods` | طرق الدفع | `ManagePaymentRequests` | `/payment-methods` | CRUD طرق الدفع اليدوي | لا تضع أسراراً ظاهرة. |
 | `/payment-requests` | طلبات الدفع | `ManagePaymentRequests` | `/payment-requests` | موافقة/رفض سبب | قرار معتمد لا يعدل. |
-| `/backups` | النسخ الاحتياطية | `ManagePlatformBackups` | `/backups` | إنشاء/تنزيل نسخة | الملف خاص والاستعادة تختبر خارج الإنتاج. |
+| `/backups` | النسخ الاحتياطية | `ManagePlatformBackups` | `/backups`, `/batch`, `/batches`, `/restores/capabilities` | تشغيل FullSystem/AllTenants، متابعة artifacts، checksum/manifest، retry آمن | السجلات immutable؛ لا connection material؛ `ManualOnly` لا يضيف زر restore. |
+| `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `GET /database-resources` | مراجعة الحالة، الصحة، التخصيص، الترقيم، ووجود اتصال محمي | الشاشة قراءة فقط؛ لا تعرض نموذجًا أو CRUD غير موجود في العقد. يعرض `hasProtectedConnection` كمؤشر Boolean فقط. |
 | `/audit-logs` | سجل المراجعة | `ManagePlatformReports` | `/audit-logs` | بحث وقراءة | immutable؛ لا CRUD. |
 | `/invoices` | الفواتير | `ManagePlatformReports` | `/invoices` | بحث وقراءة | تصحيح بعكس مالي جديد. |
 | `/administrators` | مدراء المنصة | `ManagePlatformReports` | `/administrators` | إنشاء/تفعيل/تعطيل | أقل صلاحية؛ لا مشاركة حساب. |
 | `/roles` | الأدوار والصلاحيات | `ManagePlatformReports` | `/roles` | تحرير permissions | ManagePlatform وصول كامل. |
 | `/operations` | Jobs وOutbox | `ManagePlatformReports` | `/operations/jobs`, `/operations/outbox` | متابعة وتشخيص | لا تحذف jobs/outbox. |
+
+### Backup Center interaction contract
+
+The `/backups` screen starts a server-resolved backup batch only after the service reports `Ready` and the operator confirms the selected scope. The screen distinguishes loading, unavailable, empty, partial, failed, and completed states; it shows per-target status, size, SHA-256, manifest availability, and protected download actions. Retry is offered only for `Failed` or `Partial` batches. No connection string, database name, storage path, or provider credential is rendered.
 | `/reports` | التقارير | `ManagePlatformReports` | `/reports/overview` | قراءة المؤشرات | افتح مصدر البيانات قبل القرار. |
 | `/alerts` | التنبيهات | `ManagePlatformReports` | `/alerts` | فرز/متابعة مصدر التنبيه | 500/503 تحتاج Logs وخادم. |
 | `/documentation` | المرجع والدليل | `ManagePlatformReports` | محتوى الواجهة الموثق | بحث وفتح شاشة | لا يحل محل تحقق Backend. |

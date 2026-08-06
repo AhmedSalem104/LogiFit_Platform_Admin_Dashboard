@@ -12,6 +12,22 @@ removed. `ManualOnly` purge responses are shown as an operator-actionable error.
 
 > **Issue #60 — local implementation, not released:** OTP remains mandatory for Platform login only. No action after login opens an OTP dialog or requires a step-up header.
 
+## لوحة القيادة التنفيذية
+
+- المسار `/dashboard` محمي بـ`ManagePlatformReports` ويقرأ المؤشرات من
+  `GET /api/platform/dashboard`، بما في ذلك `operations` الخاصة بطلبات مساحات العمل،
+  المدفوعات، Database Pool، Provisioning، Backups وRestores.
+- تعرض الشاشة أرقامًا حقيقية من العقد أو نسبًا مشتقة حسابيًا منها فقط: بطاقات KPI،
+  توزيع حالات الجيمات، ضغط مراحل التشغيل، تركيب موارد قواعد البيانات، مؤشر الاعتمادية،
+  ومركز روابط للشاشات المصدرية.
+- التحديث اليدوي متاح دائمًا، والتحديث التلقائي كل 60 ثانية يمكن إيقافه من الشاشة.
+  يتم إلغاء timer عند مغادرة الشاشة، ولا يتم توليد أرقام أو اتجاهات تاريخية غير موجودة في API.
+- نطاق بيانات الاشتراكات وحالة الاشتراك يمران كـquery filters إلى الخادم؛ أما بقية أرقام التشغيل
+  فتظل لقطة حالية وفق عقد الـBackend. القرار المالي أو التشغيلي لا يُتخذ من KPI مجمع فقط؛ يجب
+  فتح السجل المصدر من الرابط المناسب.
+- جدول الجيمات يقرأ من `GET /api/platform/dashboard/tenants` مع بحث خادمي وحالات تحميل/خطأ،
+  ولا يعرض Connection Strings أو Tokens أو أي مادة حساسة.
+
 ## طابور مراجعة مساحات العمل
 
 - المسار `/workspace-applications` محمي في الواجهة بـ`ManageTenants` ومحمي بالسياسة نفسها في Platform API.
@@ -64,6 +80,26 @@ interface PagedResult<T> {
 | الجيمات والاشتراكات والمشرفون | أوامر دورة حياة؛ الحذف النهائي استثناء محمي بنسخة احتياطية وتأكيد صريح |
 | طلبات الدفع | موافقة أو رفض فقط |
 | الفواتير والتدقيق والنسخ والـOutbox والـJobs والتنبيهات | قراءة/تشغيل آمن فقط؛ لا تعديل أو حذف للسجل |
+
+## مركز النسخ الاحتياطي
+
+- `/backups` يستخدم صلاحية `ManagePlatformBackups` ويظل Platform API هو مصدر scope والعزل.
+- `FullSystem` يطلب من الخادم نسخة مستقلة لقاعدة المنصة ولكل Tenant mapping نشط؛ لا ترسل الواجهة
+  connection string أو اسم قاعدة البيانات.
+- يعرض batch history والـartifacts وحالتها وحجمها و`SHA-256` وmanifest. الإنشاء وretry يحتاجان
+  تأكيدًا، والـretry محصور في `Failed` أو `Partial`.
+- restore capability معلوماتية فقط؛ عندما تكون `ManualOnly` لا تعرض الشاشة mutation. بدء/انتهاء
+  الـbatch يسجلان في Audit Log على الخادم.
+- حالات الواجهة واضحة ومقصودة: `Ready` يسمح بالإنشاء، و`Action required` يعرض سبب عدم الجاهزية، وسجل الـbatch يوضح progress ونتيجة كل هدف. لا يظهر `Retry` إلا لـ`Failed` أو `Partial`، ولا تُطبع مفاتيح التخزين أو connection material.
+
+## موارد قواعد البيانات
+
+- `/database-resources` تستخدم `ManagePlatformBackups` وتقرأ فقط من `GET /api/platform/database-resources`.
+- تعرض الصفحة `Id` مختصراً، المزود، الحالة، مساحة العمل، آخر فحص صحة، الحجم، إصدار الـschema، ووجود
+  اتصال محمي فقط. لا تعرض اسم قاعدة البيانات أو connection string أو قيمة مشفرة.
+- الزر الوحيد الخاص بالبيانات هو `Refresh`، مع ترقيم خادمي وزر `Retry` عند فشل القراءة. الانتقال إلى
+  مركز النسخ الاحتياطي يتم برابط واضح؛ لا توجد أزرار إضافة/تعديل/إصلاح/حذف أو نموذج اتصال وهمي.
+- أي تخصيص أو إصلاح اتصال أو Migration يتم عبر مسار تشغيل محمي ومراجع، وليس من CRUD عام في هذه الشاشة.
 
 ## التحقق المحلي
 
