@@ -2,7 +2,7 @@
 
 > **Source of truth:** this document is generated from the API controllers by `Scripts/Export-ApiEndpointCatalog.ps1`. Do not edit endpoint rows manually; change the controller, rerun the script, and include the refreshed catalog in the same Pull Request.
 
-Generated: `2026-08-05 12:22 UTC`  |  Total endpoints: **384**
+Generated: `2026-08-06 15:37 UTC`  |  Total endpoints: **392**
 
 ## Contract rules
 
@@ -502,8 +502,14 @@ Generated: `2026-08-05 12:22 UTC`  |  Total endpoints: **384**
 #### `GET /api/platform/workspace-applications` - `List`
 
 - **Access:** JWT + Policy: `Permissions.ManageTenants`
-- **Inputs:** Query `applicationType`: `ApplicationType?`<br>Query `status`: `ApplicationRequestStatus?`<br>Query `page`: `int`<br>Query `pageSize`: `int`<br>Handler signature: `[FromQuery] ApplicationType? applicationType, [FromQuery] ApplicationRequestStatus? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20`
+- **Inputs:** Query `applicationType`: `ApplicationType?`<br>Query `status`: `ApplicationRequestStatus?`<br>Query `paymentStatus`: `PaymentRequestStatus?`<br>Query `workspaceStatus`: `TenantStatus?`<br>Query `subscriptionStatus`: `TenantSubscriptionStatus?`<br>Query `provisioningStatus`: `ProvisioningJobStatus?`<br>Query `page`: `int`<br>Query `pageSize`: `int`<br>Handler signature: `[FromQuery] ApplicationType? applicationType, [FromQuery] ApplicationRequestStatus? status, [FromQuery] PaymentRequestStatus? paymentStatus, [FromQuery] TenantStatus? workspaceStatus, [FromQuery] TenantSubscriptionStatus? subscriptionStatus, [FromQuery] ProvisioningJobStatus? provisioningStatus, [FromQuery] int page = 1, [FromQuery] int pageSize = 20`
 - **Declared response:** typeof(PagedResult<PlatformApplicationDto>), StatusCodes.Status200OK
+
+#### `POST /api/platform/workspace-applications` - `Create`
+
+- **Access:** JWT + Policy: `Permissions.ManageTenants`
+- **Inputs:** Body `command`: `CreatePlatformWorkspaceApplicationCommand` { `WorkspaceType`: WorkspaceType; `WorkspaceName`: string; `WorkspaceIdentifier`: string; `OwnerFullName`: string; `OwnerEmail`: string; `OwnerPhoneNumber`: string?; `PlanId`: Guid; `BillingCycle`: BillingCycle; `BrandName`: string?; `Description`: string?; `Address`: string?; `Specialization`: string?; `DeliveryMode`: string? }<br>Handler signature: `[FromBody] CreatePlatformWorkspaceApplicationCommand command`
+- **Declared response:** typeof(PlatformWorkspaceApplicationCreatedDto), StatusCodes.Status201Created
 
 #### `POST /api/platform/workspace-applications/{id:guid}/approve-freelance` - `ApproveFreelance`
 
@@ -512,6 +518,12 @@ Generated: `2026-08-05 12:22 UTC`  |  Total endpoints: **384**
 - **Declared response:** Task<ActionResult<PlatformApplicationDto>>
 
 #### `POST /api/platform/workspace-applications/{id:guid}/approve-membership` - `ApproveMembership`
+
+- **Access:** JWT + Policy: `Permissions.ManageTenants`
+- **Inputs:** Body `request`: `ConcurrencyRequest`<br>Handler signature: `Guid id, [FromBody] ConcurrencyRequest request`
+- **Declared response:** Task<ActionResult<PlatformApplicationDto>>
+
+#### `POST /api/platform/workspace-applications/{id:guid}/approve-workspace` - `ApproveWorkspace`
 
 - **Access:** JWT + Policy: `Permissions.ManageTenants`
 - **Inputs:** Body `request`: `ConcurrencyRequest`<br>Handler signature: `Guid id, [FromBody] ConcurrencyRequest request`
@@ -2480,3 +2492,41 @@ Generated: `2026-08-05 12:22 UTC`  |  Total endpoints: **384**
 - **Access:** Anonymous (no token required)
 - **Inputs:** Body `command`: `PreviewWorkspaceInviteCommand` { `Token`: string }<br>Handler signature: `[FromBody] PreviewWorkspaceInviteCommand command`
 - **Declared response:** typeof(WorkspaceInvitePreviewDto), StatusCodes.Status200OK
+
+### WorkspaceMembers
+
+#### `GET /api/workspace-members` - `List`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Query `role`: `UserRole?`<br>Query `accessStatus`: `string?`<br>Query `searchTerm`: `string?`<br>Handler signature: `[FromQuery] UserRole? role, [FromQuery] string? accessStatus, [FromQuery] string? searchTerm`
+- **Declared response:** typeof(IReadOnlyList<WorkspaceMemberDto>), StatusCodes.Status200OK
+
+#### `POST /api/workspace-members` - `Create`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Body `command`: `CreateWorkspaceMemberCommand` { `Email`: string; `PhoneNumber`: string?; `FullName`: string; `Role`: UserRole }<br>Handler signature: `[FromBody] CreateWorkspaceMemberCommand command`
+- **Declared response:** typeof(WorkspaceMemberCreatedDto), StatusCodes.Status201Created
+
+#### `POST /api/workspace-members/{membershipId:guid}/activate` - `Activate`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Handler signature: `Guid membershipId`
+- **Declared response:** Task<ActionResult<WorkspaceMemberDto>>
+
+#### `POST /api/workspace-members/{membershipId:guid}/remove` - `Remove`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Handler signature: `Guid membershipId`
+- **Declared response:** Task<ActionResult<WorkspaceMemberDto>>
+
+#### `POST /api/workspace-members/{membershipId:guid}/reset-password` - `ResetPassword`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Handler signature: `Guid membershipId`
+- **Declared response:** typeof(WorkspaceMemberCreatedDto), StatusCodes.Status200OK
+
+#### `POST /api/workspace-members/{membershipId:guid}/suspend` - `Suspend`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Handler signature: `Guid membershipId`
+- **Declared response:** Task<ActionResult<WorkspaceMemberDto>>

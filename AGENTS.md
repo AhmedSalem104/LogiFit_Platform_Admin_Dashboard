@@ -31,3 +31,8 @@ production verification; never describe one state as another.
 - Keep immutable operational and financial history read-only. Use explicit
   lifecycle actions rather than generic edit/delete controls.
 - Run `npm run build` before handing off dashboard changes.
+- After every modification, verify the affected server health before continuing: call the applicable
+  `/health` endpoint and require HTTP 200 with the expected healthy response, never HTTP 500/503 or
+  `Unhealthy`. For local-only UI changes, run the local health check when the API can be started and
+  record the exact verification or environment blocker in the Issue; a build or test pass alone
+  never proves server health.

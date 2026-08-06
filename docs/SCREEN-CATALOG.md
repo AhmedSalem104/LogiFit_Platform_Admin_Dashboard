@@ -12,7 +12,7 @@ database purge/resource release; it also states that the owner's Global Identity
 
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
 |---|---|---|---|---|---|
-| `/workspace-applications` | طابور طلبات مساحات العمل | `ManageTenants` | `/api/platform/workspace-applications` | بدء مراجعة / طلب استكمال / اعتماد / رفض | القرار نهائي ومدقق بـ`rowVersion`، ولا تظهر بيانات صحية أو تدريبية؛ تعارض تهيئة دور المدرب الحر يوضح Migration المطلوبة ثم يعيد قراءة الصف. |
+| `/workspace-applications` | طابور طلبات مساحات العمل وإنشاء Gym/FreelanceCoach | `ManageTenants` | `GET/POST /api/platform/workspace-applications` وعمليات lifecycle | إنشاء مساحة، فلاتر lifecycle، Timeline، بدء مراجعة / طلب استكمال / اعتماد / رفض / إعادة تجهيز | يميز الجيم والمدرب الحر بالأيقونة والـBadge واللون؛ المدرب الحر مساحة مستقلة؛ لا تظهر Connection Material؛ كلمة المرور المؤقتة تظهر مرة واحدة فقط؛ كل قرار محمي بـ`rowVersion`. |
 
 كل Route أدناه lazy-loaded ومحمٍ على مستوى الواجهة والخادم. القائمة الجانبية والمساعد
 يخفيان ما لا يملكه المستخدم، لكن الـPlatform API هو الحاجز الأمني النهائي.

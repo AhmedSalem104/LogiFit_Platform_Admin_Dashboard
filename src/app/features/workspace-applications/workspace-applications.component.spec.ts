@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { NotifyService } from '../../shared/ui/notify.service';
+import { PlansService } from '../plans/plans.service';
 import {
   PlatformApplicationStatus,
   PlatformApplicationType,
@@ -28,18 +29,34 @@ describe('WorkspaceApplicationsComponent information request', () => {
     reviewedAt: null,
     reviewedBy: null,
     provisionedWorkspaceId: null,
+    workspaceType: 2,
+    paymentStatus: null,
+    workspaceStatus: null,
+    subscriptionStatus: null,
+    databaseStatus: null,
+    databaseStatusCode: 'Unassigned',
+    provisioningStatus: null,
+    canAccessDashboard: false,
+    requiredAction: null,
+    nextStep: null,
+    userMessage: null,
+    lastUpdatedAtUtc: null,
+    provisioningErrorCode: null,
     rowVersion: 'AQIDBA=='
   };
 
   beforeEach(() => {
     service = jasmine.createSpyObj<WorkspaceApplicationsService>('WorkspaceApplicationsService', [
       'requestInformation',
+      'list',
     ]);
     service.requestInformation.and.returnValue(of(freelanceApplication));
+    service.list.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 20, totalPages: 0, hasPreviousPage: false, hasNextPage: false }));
 
     TestBed.configureTestingModule({
       providers: [
         { provide: WorkspaceApplicationsService, useValue: service },
+        { provide: PlansService, useValue: jasmine.createSpyObj<PlansService>('PlansService', ['list']) },
         { provide: NotifyService, useValue: jasmine.createSpyObj<NotifyService>('NotifyService', ['success', 'error']) },
       ],
     });
