@@ -145,7 +145,9 @@ flowchart LR
 
 ## تكامل مراجعة طلبات مساحة العمل
 
-`WorkspaceApplicationsService` يتصل فقط بـ`/api/platform/workspace-applications` عبر interceptor منصة الإدارة. لا يرسل `TenantId` من المتصفح ولا يحاول تنفيذ قرارات محلية. يمرر كل mutation `rowVersion` الذي أعاده الخادم، ويعتمد حالة الصف الجديدة من الاستجابة. أما مقدم الطلب فيستخدم Tenant API العامة `/api/identity` و`/api/workspace-applications` مع Tracking Token قصير العمر، لا Platform JWT.
+`WorkspaceApplicationsService` يتصل فقط بـ`/api/platform/workspace-applications` عبر interceptor منصة الإدارة. لا يرسل `TenantId` من المتصفح ولا يحاول تنفيذ قرارات محلية. يمرر كل mutation `rowVersion` الذي أعاده الخادم، ويعتمد حالة الصف الجديدة من الاستجابة. إنشاء الجيم والمدرب الحر يستخدم `POST /api/platform/workspace-applications` بعقد واحد مع `workspaceType`; الاعتماد يستخدم `approve-workspace`، بينما `approve-membership` محجوز لطلبات العضوية. أما مقدم الطلب فيستخدم Tenant API العامة `/api/identity` و`/api/workspace-applications` مع Tracking Token قصير العمر، لا Platform JWT.
+
+الاستجابة تعرض حقول lifecycle منفصلة: `applicationStatus`, `paymentStatus`, `workspaceStatus`, `subscriptionStatus`, `databaseStatus`, `provisioningStatus`, `canAccessDashboard`, `requiredAction`, `nextStep`, و`userMessage`. لا تفسر الواجهة `Active` منفردة على أنها جاهزية؛ رسالة blocked أو provisioning أو unavailable لها حالة مرئية بدل صفحة فارغة. كلمة المرور المؤقتة لا تأتي إلا من استجابة الإنشاء للهوية الجديدة، وتُمسح من حالة الواجهة بعد إغلاق نافذة العرض.
 
 ## الكتالوج الكامل لعقود API
 
