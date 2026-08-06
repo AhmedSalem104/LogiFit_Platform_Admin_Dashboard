@@ -9,7 +9,7 @@
 
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
 |---|---|---|---|---|---|
-| `/dashboard` | لوحة المتابعة | `ManagePlatformReports` | `/dashboard` | متابعة المؤشرات والتنبيهات | لا قرار مالي من KPI فقط. |
+| `/dashboard` | لوحة القيادة التنفيذية | `ManagePlatformReports` | `/api/platform/dashboard` و`/api/platform/dashboard/tenants` | KPIs، رسوم توزيع/ضغط التشغيل، تحديث حي، وبحث الجيمات | الأرقام حقيقية أو مشتقة من DTO؛ لا قرار مالي من KPI فقط. |
 | `/tenants` | الصالات والمستأجرون | `ManageTenants` | `/tenants` | إنشاء/اعتماد/تعليق/تفعيل/أرشفة | لا حذف لصالة ذات تاريخ. |
 | `/subscriptions` | دورات الاشتراك | `ManageTenants` | `/subscriptions` | transition/extend/preview | EndDate غير شامل، Snapshot ثابت. |
 | `/plans` | الخطط والأسعار | `ManagePlans` | `/plans` | إنشاء وتعديل قوالب الخطط | لا تعديل Snapshot مفعل. |
