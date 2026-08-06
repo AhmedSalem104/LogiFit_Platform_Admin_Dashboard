@@ -63,7 +63,9 @@ flowchart LR
   عاماً إليها.
 - شاشة `/database-resources` تستخدم `GET /api/platform/database-resources` وتعرض
   `hasProtectedConnection` كمؤشر Boolean آمن لوجود قيمة محمية؛ لا تعتمد على `DatabaseName` ولا
-  تقرأ أو تعرض connection material.
+  تقرأ أو تعرض connection material. الشاشة قراءة فقط: لا تستدعي مسارات create/update/delete,
+  connection-test, migrations أو per-resource backup لأن هذه المسارات ليست جزءاً من عقد Platform
+  API الحالي؛ التخصيص والتزويد والنسخ تبقى في تدفقات الخادم المحمية.
 
 ## تكامل النسخ الاحتياطي
 
