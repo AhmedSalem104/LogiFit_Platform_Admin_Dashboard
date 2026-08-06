@@ -1,39 +1,59 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
+import { ServerPaginatorComponent, PageChange } from '../../shared/ui/server-paginator.component';
 import {
   DatabaseResource,
   DatabaseResourceStatus,
   DatabaseResourcesService,
 } from './database-resources.service';
 
-interface ResourceEditor {
-  provider: string;
-  databaseName: string;
-  serverKey: string;
-  connectionString: string;
-}
-
 @Component({
   selector: 'app-database-resources',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ButtonModule, DialogModule, TableModule, PageHeaderComponent],
+  imports: [CommonModule, RouterLink, ButtonModule, TableModule, PageHeaderComponent, ServerPaginatorComponent],
   template: `
     <app-page-header
       title="Database Resources"
-      subtitle="Manage the four pre-created databases used by gyms and freelance workspaces."
+      subtitle="Review the protected workspace database pool and its server-owned lifecycle state."
       icon="pi pi-database">
-      <button pButton type="button" label="Refresh" icon="pi pi-refresh" class="p-button-text" [loading]="loading()" (click)="load()"></button>
-      <button pButton type="button" label="Add database" icon="pi pi-plus" (click)="openCreate()"></button>
+      <button
+        pButton
+        type="button"
+        label="Refresh"
+        icon="pi pi-refresh"
+        class="p-button-text"
+        aria-label="Refresh database resources"
+        [loading]="loading()"
+        (click)="load()"></button>
     </app-page-header>
 
-    <div class="grid grid-cols-2 gap-3 md:grid-cols-4 mb-6">
+    @if (loadError(); as message) {
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800" role="alert">
+        <span><i class="pi pi-exclamation-circle me-2"></i>{{ message }}</span>
+        <button pButton type="button" label="Retry" icon="pi pi-refresh" class="p-button-sm p-button-danger p-button-outlined" (click)="load()"></button>
+      </div>
+    }
+
+    <div class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+      <div class="flex items-start gap-3">
+        <i class="pi pi-info-circle mt-1"></i>
+        <div>
+          <p class="m-0 font-extrabold">Read-only resource view</p>
+          <p class="mb-0 mt-1">Resource creation, connection replacement, migrations, deletion, and backups are protected server workflows. This screen intentionally exposes no connection form or mutation button, and never displays database names or connection material.</p>
+          <a routerLink="/backups" class="mt-2 inline-flex items-center gap-2 font-bold text-blue-700 hover:underline">
+            Open Backup Center <i class="pi pi-arrow-right text-xs"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
       @for (card of summaryCards(); track card.label) {
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between gap-2">
@@ -51,122 +71,50 @@ interface ResourceEditor {
           <h2 class="m-0 text-base font-extrabold text-slate-800">Registered workspace databases</h2>
           <p class="mb-0 mt-1 text-xs text-slate-500">Connection strings are encrypted in DatabaseResources and never displayed here.</p>
         </div>
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ rows().length }} resources</span>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ totalCount }} resources</span>
       </div>
 
       <p-table [value]="rows()" [loading]="loading()" styleClass="p-datatable-sm" [scrollable]="true">
         <ng-template pTemplate="header">
           <tr>
-            <th>Database</th>
+            <th>Resource</th>
             <th>Status</th>
             <th>Workspace</th>
-            <th>Provisioning / subscription</th>
-            <th>Backups</th>
-            <th class="text-center">Actions</th>
+            <th>Health</th>
+            <th>Schema</th>
+            <th class="text-center">Scope</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-row>
           <tr>
             <td>
-              <div class="font-bold text-slate-800" dir="ltr">{{ row.resourceCode }}</div>
+              <div class="font-bold text-slate-800" dir="ltr">{{ shortId(row.id) }}</div>
               <div class="mt-1 text-xs text-slate-500" dir="ltr">{{ row.provider }}</div>
-              <div class="mt-1 text-[11px] text-slate-400">{{ row.hasConnectionString ? 'Protected connection saved' : 'Connection missing' }}</div>
+              <div class="mt-1 text-[11px] text-slate-400">{{ row.hasProtectedConnection ? 'Protected connection saved' : 'Protected connection not configured' }}</div>
             </td>
-            <td><span class="lf-badge" [ngClass]="statusClass(row.lifecycleStatus)">{{ row.lifecycleStatus }}</span></td>
+            <td><span class="lf-badge" [ngClass]="statusClass(row.status)">{{ statusLabel(row.status) }}</span></td>
             <td>
               @if (row.tenantName) {
                 <div class="font-semibold text-slate-700">{{ row.tenantName }}</div>
-                <div class="text-xs text-slate-500">{{ workspaceLabel(row) }}</div>
+                <div class="text-xs text-slate-500">Assigned workspace</div>
               } @else {
                 <span class="text-sm text-slate-400">Not allocated</span>
               }
             </td>
             <td>
-              <div class="text-sm text-slate-700">{{ provisioningLabel(row) }}</div>
-              @if (row.subscriptionStatus) { <div class="text-xs text-slate-500">Subscription status: {{ row.subscriptionStatus }}</div> }
-              @if (row.provisioningError) { <div class="text-xs font-semibold text-rose-600">{{ row.provisioningError }}</div> }
+              <div class="text-sm text-slate-700">{{ row.lastHealthCheckAtUtc ? formatDate(row.lastHealthCheckAtUtc) : 'Not checked' }}</div>
+              @if (row.sizeBytes !== null) { <div class="text-xs text-slate-500">{{ formatSize(row.sizeBytes) }}</div> }
             </td>
-            <td>
-              <div class="font-semibold text-slate-700">{{ row.backupCount }} backup(s)</div>
-              <div class="text-xs text-slate-500">{{ row.lastBackupStatus || 'No backup yet' }}</div>
-            </td>
-            <td class="whitespace-nowrap text-center">
-              <button pButton type="button" icon="pi pi-pencil" class="p-button-text p-button-sm" title="Edit" (click)="openEdit(row)"></button>
-              @if (row.lifecycleStatus === 'Allocated' || row.lifecycleStatus === 'Failed') {
-                <button pButton type="button" icon="pi pi-wrench" class="p-button-text p-button-sm p-button-warning" title="Repair protected connection" (click)="openRepair(row)"></button>
-              }
-              <button pButton type="button" icon="pi pi-sync" class="p-button-text p-button-sm" title="Run migrations" [loading]="busyId() === row.id && busyAction() === 'migrations'" (click)="runMigrations(row)"></button>
-              @if (row.lifecycleStatus === 'Allocated') {
-                <button pButton type="button" icon="pi pi-save" class="p-button-text p-button-sm" title="Create backup" [loading]="busyId() === row.id && busyAction() === 'backup'" (click)="createBackup(row)"></button>
-              }
-              @if (row.lifecycleStatus === 'Available' || row.lifecycleStatus === 'Failed') {
-                <button pButton type="button" icon="pi pi-ban" class="p-button-text p-button-sm p-button-warning" title="Disable" [loading]="busyId() === row.id && busyAction() === 'status'" (click)="setStatus(row, 'Disabled')"></button>
-              }
-              @if (row.lifecycleStatus === 'Disabled') {
-                <button pButton type="button" icon="pi pi-check" class="p-button-text p-button-sm p-button-success" title="Enable" [loading]="busyId() === row.id && busyAction() === 'status'" (click)="setStatus(row, 'Available')"></button>
-              }
-              @if (row.lifecycleStatus !== 'Allocated' && row.lifecycleStatus !== 'Provisioning') {
-                <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-sm p-button-danger" title="Delete" [loading]="busyId() === row.id && busyAction() === 'delete'" (click)="remove(row)"></button>
-              }
-            </td>
+            <td><span class="text-sm text-slate-700" dir="ltr">{{ row.schemaVersion || 'Not recorded' }}</span></td>
+            <td class="text-center"><span class="lf-badge lf-badge-gray">Server-managed</span></td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
-          <tr><td colspan="6" class="py-14 text-center text-slate-400"><i class="pi pi-database mb-2 block text-3xl opacity-40"></i>No database resources registered. Add the four connection strings from this screen.</td></tr>
+          <tr><td colspan="6" class="py-14 text-center text-slate-400"><i class="pi pi-database mb-2 block text-3xl opacity-40"></i>No database resources registered.</td></tr>
         </ng-template>
       </p-table>
+      <app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator>
     </section>
-
-    <p-dialog
-      [(visible)]="dialogVisible"
-      [modal]="true"
-      [draggable]="false"
-      [dismissableMask]="true"
-      [style]="{ width: '650px', maxWidth: '94vw' }"
-      [header]="repairMode ? 'Repair allocated database connection' : editingId ? 'Edit database resource' : 'Add database resource'">
-      <form #resourceForm="ngForm" (ngSubmit)="save()" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label class="lf-label">Provider *</label>
-          <input class="lf-input" name="provider" [(ngModel)]="editor.provider" required />
-        </div>
-        <div>
-          <label class="lf-label">Database name {{ editingId ? '(only for connection test)' : '*' }}</label>
-          <input class="lf-input" name="databaseName" [(ngModel)]="editor.databaseName" dir="ltr" [required]="!editingId" [placeholder]="editingId ? 'Leave blank to keep the current database' : ''" />
-        </div>
-        <div class="sm:col-span-2">
-          <label class="lf-label">Server key (optional)</label>
-          <input class="lf-input" name="serverKey" [(ngModel)]="editor.serverKey" dir="ltr" placeholder="Host or server label" />
-        </div>
-        <div class="sm:col-span-2">
-          <label class="lf-label">Connection string {{ repairMode ? '*' : editingId ? '(leave blank to keep the current one)' : '*' }}</label>
-          <textarea class="lf-input min-h-28 font-mono text-xs" name="connectionString" [(ngModel)]="editor.connectionString" dir="ltr" [required]="!editingId" autocomplete="new-password"></textarea>
-          <p class="mt-1 text-xs text-slate-500">It is tested first, then encrypted and stored in the central database. It is never returned by the API.</p>
-          @if (repairMode) {
-            <p class="mt-1 text-xs font-semibold text-amber-700">
-              @if (repairAllocated) {
-                This repairs the allocated workspace mapping and replaces only the protected value.
-              } @else {
-                This repairs the failed pool resource and returns it to Available for a new workspace.
-              }
-              The current connection is never displayed.
-            </p>
-          }
-        </div>
-        @if (lastTest(); as test) {
-          <div class="sm:col-span-2 rounded-xl p-3 text-sm" [class.bg-emerald-50]="test.succeeded" [class.text-emerald-700]="test.succeeded" [class.bg-rose-50]="!test.succeeded" [class.text-rose-700]="!test.succeeded">
-            <i [class]="test.succeeded ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
-            {{ test.message }}
-          </div>
-        }
-      </form>
-      <ng-template pTemplate="footer">
-        <button pButton type="button" label="Cancel" class="p-button-text p-button-secondary" (click)="dialogVisible = false"></button>
-        @if (!repairMode) {
-          <button pButton type="button" label="Test connection" icon="pi pi-link" class="p-button-outlined" [loading]="testing()" [disabled]="!editor.databaseName || !editor.connectionString" (click)="testConnection()"></button>
-        }
-        <button pButton type="button" [label]="repairMode ? 'Repair and protect' : 'Save'" icon="pi pi-check" [loading]="saving()" [disabled]="!editor.provider || (repairMode && !editor.connectionString) || (!editingId && !editor.databaseName) || (!editingId && !editor.connectionString)" (click)="save()"></button>
-      </ng-template>
-    </p-dialog>
   `,
 })
 export class DatabaseResourcesComponent implements OnInit {
@@ -175,186 +123,84 @@ export class DatabaseResourcesComponent implements OnInit {
 
   readonly rows = signal<DatabaseResource[]>([]);
   readonly loading = signal(false);
-  readonly saving = signal(false);
-  readonly testing = signal(false);
-  readonly busyId = signal<string | null>(null);
-  readonly busyAction = signal<string | null>(null);
-  readonly lastTest = signal<{ succeeded: boolean; message: string } | null>(null);
+  readonly loadError = signal<string | null>(null);
   readonly summaryCards = computed(() => [
-    { label: 'Available', value: this.count('Available'), icon: 'pi pi-check-circle', color: 'text-emerald-500' },
-    { label: 'Allocated', value: this.count('Allocated'), icon: 'pi pi-link', color: 'text-blue-500' },
-    { label: 'Disabled', value: this.count('Disabled'), icon: 'pi pi-ban', color: 'text-slate-400' },
-    { label: 'Failed', value: this.count('Failed'), icon: 'pi pi-exclamation-triangle', color: 'text-rose-500' },
+    { label: 'Available', value: this.count(DatabaseResourceStatus.Available), icon: 'pi pi-check-circle', color: 'text-emerald-500' },
+    { label: 'Assigned', value: this.count(DatabaseResourceStatus.Assigned), icon: 'pi pi-link', color: 'text-blue-500' },
+    { label: 'In progress', value: this.rows().filter(row => [DatabaseResourceStatus.Reserved, DatabaseResourceStatus.Provisioning, DatabaseResourceStatus.RestorePending].includes(row.status)).length, icon: 'pi pi-spin pi-spinner', color: 'text-amber-500' },
+    { label: 'Needs review', value: this.rows().filter(row => [DatabaseResourceStatus.Maintenance, DatabaseResourceStatus.Faulted, DatabaseResourceStatus.Retired].includes(row.status)).length, icon: 'pi pi-exclamation-triangle', color: 'text-rose-500' },
   ]);
 
-  dialogVisible = false;
-  editingId: string | null = null;
-  repairMode = false;
-  repairAllocated = false;
-  editor: ResourceEditor = this.emptyEditor();
+  page = 1;
+  pageSize = 20;
+  totalCount = 0;
 
   ngOnInit(): void { this.load(); }
 
-  load(): void {
+  load(page = this.page, pageSize = this.pageSize): void {
     this.loading.set(true);
-    this.service.list().subscribe({
-      next: result => { this.rows.set(result.items); this.loading.set(false); },
-      error: error => { this.loading.set(false); this.notify.error(errMsg(error)); },
-    });
-  }
-
-  openCreate(): void {
-    this.editingId = null;
-    this.repairMode = false;
-    this.repairAllocated = false;
-    this.editor = this.emptyEditor();
-    this.lastTest.set(null);
-    this.dialogVisible = true;
-  }
-
-  openEdit(row: DatabaseResource): void {
-    this.editingId = row.id;
-    this.repairMode = false;
-    this.repairAllocated = false;
-    this.editor = { provider: row.provider, databaseName: '', serverKey: '', connectionString: '' };
-    this.lastTest.set(null);
-    this.dialogVisible = true;
-  }
-
-  async openRepair(row: DatabaseResource): Promise<void> {
-    const allocated = row.lifecycleStatus === 'Allocated';
-    if (!await this.notify.confirm({
-      header: 'Repair protected connection',
-      message: allocated
-        ? `The new connection will be tested and then applied to ${row.resourceCode} and its active workspace mapping. Continue?`
-        : `The new connection will be tested and then ${row.resourceCode} will be returned to the Available pool. Continue?`,
-      acceptLabel: 'Continue',
-    })) return;
-
-    this.editingId = row.id;
-    this.repairMode = true;
-    this.repairAllocated = allocated;
-    this.editor = { provider: row.provider, databaseName: '', serverKey: '', connectionString: '' };
-    this.lastTest.set(null);
-    this.dialogVisible = true;
-  }
-
-  testConnection(): void {
-    this.testing.set(true);
-    this.lastTest.set(null);
-    this.service.testConnection(this.editor.databaseName.trim(), this.editor.connectionString).subscribe({
-      next: result => { this.testing.set(false); this.lastTest.set(result); result.succeeded ? this.notify.success('Connection test succeeded.') : this.notify.error(result.message); },
-      error: error => { this.testing.set(false); this.notify.error(errMsg(error)); },
-    });
-  }
-
-  save(): void {
-    if (this.repairMode && this.editingId) {
-      if (!this.editor.connectionString.trim()) {
-        this.notify.error('A new connection string is required for repair.');
-        return;
-      }
-      this.saving.set(true);
-      this.service.repairConnection(this.editingId, this.editor.connectionString.trim()).subscribe({
-        next: result => {
-          this.saving.set(false);
-          this.dialogVisible = false;
-          this.repairMode = false;
-          this.repairAllocated = false;
-          this.editor.connectionString = '';
-          this.notify.success(result.message);
-          this.load();
-        },
-        error: error => { this.saving.set(false); this.notify.error(errMsg(error)); },
-      });
-      return;
-    }
-
-    if (!this.editor.provider.trim() || (!this.editingId && !this.editor.databaseName.trim()) || (!this.editingId && !this.editor.connectionString.trim())) {
-      this.notify.error('Provider, database name, and a connection string are required for a new resource.');
-      return;
-    }
-    this.saving.set(true);
-    const request = {
-      provider: this.editor.provider.trim(),
-      databaseName: this.editor.databaseName.trim() || undefined,
-      serverKey: this.editor.serverKey.trim() || undefined,
-      connectionString: this.editor.connectionString.trim() || undefined,
-    };
-    const operation = this.editingId ? this.service.update(this.editingId, request) : this.service.create(request);
-    operation.subscribe({
-      next: row => {
-        this.saving.set(false);
-        this.dialogVisible = false;
-        this.editor.connectionString = '';
-        this.rows.update(rows => this.editingId ? rows.map(item => item.id === row.id ? row : item) : [row, ...rows]);
-        this.notify.success('Database resource saved in DatabaseResources.');
+    this.loadError.set(null);
+    this.page = page;
+    this.pageSize = pageSize;
+    this.service.list(page, pageSize).subscribe({
+      next: result => {
+        this.rows.set(result.items);
+        this.totalCount = result.totalCount;
+        this.page = result.page;
+        this.pageSize = result.pageSize;
+        this.loading.set(false);
       },
-      error: error => { this.saving.set(false); this.notify.error(errMsg(error)); },
+      error: error => {
+        this.loading.set(false);
+        this.loadError.set(errMsg(error));
+        this.notify.error(errMsg(error));
+      },
     });
   }
 
-  async setStatus(row: DatabaseResource, status: DatabaseResourceStatus): Promise<void> {
-    const confirmed = await this.notify.confirm({
-      header: `${status} resource`,
-      message: status === 'Disabled' ? `Disable ${row.resourceCode}? It will not be selected for a new workspace.` : `Enable ${row.resourceCode} for workspace allocation?`,
-      acceptLabel: status === 'Disabled' ? 'Disable' : 'Enable',
-      danger: status === 'Disabled',
-    });
-    if (!confirmed) return;
-    this.startBusy(row.id, 'status');
-    this.service.setStatus(row.id, status).subscribe({
-      next: updated => { this.finishBusy(); this.replace(updated); this.notify.success(`Resource marked ${status}.`); },
-      error: error => { this.finishBusy(); this.notify.error(errMsg(error)); },
-    });
-  }
+  onPageChange(change: PageChange): void { this.load(change.page, change.pageSize); }
 
-  async runMigrations(row: DatabaseResource): Promise<void> {
-    if (!await this.notify.confirm({ header: 'Run tenant migrations', message: `Run the tenant schema migrations on ${row.resourceCode}?`, acceptLabel: 'Run migrations' })) return;
-    this.startBusy(row.id, 'migrations');
-    this.service.runMigrations(row.id).subscribe({
-      next: result => { this.finishBusy(); this.notify.success(result.message); this.load(); },
-      error: error => { this.finishBusy(); this.notify.error(errMsg(error)); this.load(); },
-    });
-  }
-
-  async createBackup(row: DatabaseResource): Promise<void> {
-    if (!await this.notify.confirm({ header: 'Create database backup', message: `Create a BACPAC backup for ${row.resourceCode}?`, acceptLabel: 'Create backup' })) return;
-    this.startBusy(row.id, 'backup');
-    this.service.backup(row.id).subscribe({
-      next: () => { this.finishBusy(); this.notify.success('Backup batch started.'); this.load(); },
-      error: error => { this.finishBusy(); this.notify.error(errMsg(error)); },
-    });
-  }
-
-  async remove(row: DatabaseResource): Promise<void> {
-    if (!await this.notify.confirm({ header: 'Delete database resource', message: `Delete ${row.resourceCode}? Linked or historical resources are rejected by the API.`, acceptLabel: 'Delete', danger: true })) return;
-    this.startBusy(row.id, 'delete');
-    this.service.remove(row.id).subscribe({
-      next: () => { this.finishBusy(); this.rows.update(rows => rows.filter(item => item.id !== row.id)); this.notify.success('Database resource deleted.'); },
-      error: error => { this.finishBusy(); this.notify.error(errMsg(error)); },
-    });
+  statusLabel(status: DatabaseResourceStatus): string {
+    return {
+      [DatabaseResourceStatus.Available]: 'Available',
+      [DatabaseResourceStatus.Reserved]: 'Reserved',
+      [DatabaseResourceStatus.Provisioning]: 'Provisioning',
+      [DatabaseResourceStatus.Assigned]: 'Assigned',
+      [DatabaseResourceStatus.Maintenance]: 'Maintenance',
+      [DatabaseResourceStatus.RestorePending]: 'Restore pending',
+      [DatabaseResourceStatus.Faulted]: 'Faulted',
+      [DatabaseResourceStatus.Retired]: 'Retired',
+    }[status] || 'Unknown';
   }
 
   statusClass(status: DatabaseResourceStatus): string {
-    return status === 'Available' ? 'lf-badge-green' : status === 'Allocated' ? 'lf-badge-blue' : status === 'Failed' ? 'lf-badge-red' : status === 'Provisioning' ? 'lf-badge-yellow' : 'lf-badge-gray';
+    if (status === DatabaseResourceStatus.Available) return 'lf-badge-green';
+    if (status === DatabaseResourceStatus.Assigned) return 'lf-badge-blue';
+    if ([DatabaseResourceStatus.Reserved, DatabaseResourceStatus.Provisioning, DatabaseResourceStatus.RestorePending].includes(status)) return 'lf-badge-yellow';
+    if (status === DatabaseResourceStatus.Faulted) return 'lf-badge-red';
+    return 'lf-badge-gray';
   }
 
-  workspaceLabel(row: DatabaseResource): string {
-    return row.workspaceType === 'FreelanceCoach' ? 'Freelance coach workspace' : 'Gym workspace';
+  shortId(id: string): string { return id.length > 12 ? `${id.slice(0, 8)}…${id.slice(-4)}` : id; }
+
+  formatDate(value: string): string {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 'Invalid timestamp' : date.toLocaleString();
   }
 
-  provisioningLabel(row: DatabaseResource): string {
-    if (!row.tenantId) return 'Waiting for allocation';
-    if (row.provisioningStatus === 4) return 'Provisioning completed';
-    if (row.provisioningStatus === 2) return 'Waiting for database capacity';
-    if (row.provisioningStatus === 5) return 'Provisioning failed';
-    return 'Provisioning in progress';
+  formatSize(value: number | null): string {
+    if (value === null || value < 0) return '—';
+    if (value < 1024) return `${value} B`;
+    const units = ['KB', 'MB', 'GB', 'TB'];
+    let size = value;
+    let unit = 'B';
+    for (const candidate of units) {
+      size /= 1024;
+      unit = candidate;
+      if (size < 1024 || candidate === 'TB') break;
+    }
+    return `${size.toFixed(size >= 10 ? 0 : 1)} ${unit}`;
   }
 
-  private count(status: DatabaseResourceStatus): number { return this.rows().filter(row => row.lifecycleStatus === status).length; }
-  private replace(updated: DatabaseResource): void { this.rows.update(rows => rows.map(row => row.id === updated.id ? updated : row)); }
-  private startBusy(id: string, action: string): void { this.busyId.set(id); this.busyAction.set(action); }
-  private finishBusy(): void { this.busyId.set(null); this.busyAction.set(null); }
-  private emptyEditor(): ResourceEditor { return { provider: 'ManualMonster', databaseName: '', serverKey: '', connectionString: '' }; }
+  private count(status: DatabaseResourceStatus): number { return this.rows().filter(row => row.status === status).length; }
 }

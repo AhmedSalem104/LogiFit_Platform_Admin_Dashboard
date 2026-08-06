@@ -77,6 +77,17 @@ flowchart LR
 التشغيلي للخادم موجود في `platformApiUrl` للمرجع، بينما الطلبات الفعلية تبقى relative
 لتستفيد من proxy/rewrite.
 
+## لوحة القيادة التنفيذية
+
+`DashboardComponent` يستهلك `GET /api/platform/dashboard` بعقد `PlatformDashboardDto`
+وبنية `operations` التي تلخص العمل الجاري دون أسماء قواعد بيانات أو connection material.
+ويقرأ جدول الجيمات من `/api/platform/dashboard/tenants`. الفلاتر الزمنية وحالة الاشتراك
+تصل إلى الخادم كـquery parameters وتخص بيانات الاشتراكات؛ بقية الملخص لقطة تشغيل حالية.
+
+الرسوم في الواجهة SVG/CSS ومبنية على القيم الحالية: لا توجد أرقام تجريبية ولا مكتبة رسوم
+خارجية ولا ادعاء بوجود تاريخ زمني غير متوفر في العقد. التحديث التلقائي كل 60 ثانية يوقفه
+المشغل، ويتم إلغاء الاشتراك عند تدمير المكون حتى لا تتكرر الطلبات أو يتسرب timer.
+
 ## قواعد البيانات في الواجهة
 
 - كل قائمة API تستقبل `page` و`pageSize` وتعرض `PagedResult<T>`.
@@ -84,6 +95,21 @@ flowchart LR
 - لا تنفذ Sorting/Filtering محلياً على بيانات لم تحمل كاملة.
 - تقرأ الشاشات المالية والتدقيق والعمليات والنسخ سجلات تاريخية فقط، ولا تضيف CRUD
   عاماً إليها.
+- شاشة `/database-resources` تستخدم `GET /api/platform/database-resources` وتعرض
+  `hasProtectedConnection` كمؤشر Boolean آمن لوجود قيمة محمية؛ لا تعتمد على `DatabaseName` ولا
+  تقرأ أو تعرض connection material. الشاشة قراءة فقط: لا تستدعي مسارات create/update/delete,
+  connection-test, migrations أو per-resource backup لأن هذه المسارات ليست جزءاً من عقد Platform
+  API الحالي؛ التخصيص والتزويد والنسخ تبقى في تدفقات الخادم المحمية.
+
+## تكامل النسخ الاحتياطي
+
+شاشة `/backups` تستعمل عقود Platform API الحالية: `POST /batch` لبدء scope، و`GET /batches`
+للتاريخ، و`POST /batches/{id}/retry` للمحاولات الفاشلة أو الجزئية، و`GET /restores/capabilities`
+لعرض قدرة مزود الاستعادة. `FullSystem` و`AllTenants` يحلان أهداف Tenant في الخادم من
+`TenantDatabaseMapping`؛ لا تعتمد الواجهة على أسماء قواعد البيانات أو connection material.
+
+العقد يعيد checksum `Sha256` لكل artifact ومرجع manifest آمن. السجل immutable، وبدء/انتهاء
+الـbatch يضاف إلى Audit Log. الواجهة لا تنفذ restore؛ حالة `ManualOnly` تعني handoff للمشغل.
 
 ## معالجة الأخطاء
 
