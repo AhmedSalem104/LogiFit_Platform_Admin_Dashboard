@@ -26,6 +26,10 @@
 | `/administrators` | مدراء المنصة | `ManagePlatformReports` | `/administrators` | إنشاء/تفعيل/تعطيل | أقل صلاحية؛ لا مشاركة حساب. |
 | `/roles` | الأدوار والصلاحيات | `ManagePlatformReports` | `/roles` | تحرير permissions | ManagePlatform وصول كامل. |
 | `/operations` | Jobs وOutbox | `ManagePlatformReports` | `/operations/jobs`, `/operations/outbox` | متابعة وتشخيص | لا تحذف jobs/outbox. |
+
+### Backup Center interaction contract
+
+The `/backups` screen starts a server-resolved backup batch only after the service reports `Ready` and the operator confirms the selected scope. The screen distinguishes loading, unavailable, empty, partial, failed, and completed states; it shows per-target status, size, SHA-256, manifest availability, and protected download actions. Retry is offered only for `Failed` or `Partial` batches. No connection string, database name, storage path, or provider credential is rendered.
 | `/reports` | التقارير | `ManagePlatformReports` | `/reports/overview` | قراءة المؤشرات | افتح مصدر البيانات قبل القرار. |
 | `/alerts` | التنبيهات | `ManagePlatformReports` | `/alerts` | فرز/متابعة مصدر التنبيه | 500/503 تحتاج Logs وخادم. |
 | `/documentation` | المرجع والدليل | `ManagePlatformReports` | محتوى الواجهة الموثق | بحث وفتح شاشة | لا يحل محل تحقق Backend. |

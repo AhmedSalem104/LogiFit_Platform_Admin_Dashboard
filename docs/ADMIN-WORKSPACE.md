@@ -51,6 +51,7 @@ interface PagedResult<T> {
   تأكيدًا، والـretry محصور في `Failed` أو `Partial`.
 - restore capability معلوماتية فقط؛ عندما تكون `ManualOnly` لا تعرض الشاشة mutation. بدء/انتهاء
   الـbatch يسجلان في Audit Log على الخادم.
+- حالات الواجهة واضحة ومقصودة: `Ready` يسمح بالإنشاء، و`Action required` يعرض سبب عدم الجاهزية، وسجل الـbatch يوضح progress ونتيجة كل هدف. لا يظهر `Retry` إلا لـ`Failed` أو `Partial`، ولا تُطبع مفاتيح التخزين أو connection material.
 
 ## التحقق المحلي
 
