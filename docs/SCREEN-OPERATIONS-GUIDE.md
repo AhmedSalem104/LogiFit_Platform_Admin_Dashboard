@@ -193,6 +193,8 @@
 | **الإجراءات** | اختيار scope (FullSystem افتراضيًا)، تأكيد الإنشاء، تنزيل artifact أو manifest، وإعادة المحاولة فقط لـ`Failed` أو`Partial`. |
 | **الضوابط** | السجل immutable ولا يوجد edit/delete. لا تعرض الواجهة connection strings أو أسماء قواعد البيانات أو أسرارًا أو مسارات خادم. `ManualOnly` لا يظهر كزر restore؛ `503` يعالج في الخادم (`Backup:Enabled` وإعداد الأداة/المسار). |
 
+**تدفق التشغيل في الشاشة:** لا يبدأ زر `Create backup` إلا عند ظهور `Ready`. يختار المشغّل scope، يؤكد الطلب، ثم يراجع progress وعدد الأهداف وحالة كل artifact والحجم و`SHA-256`. يتم تنزيل الـartifact أو manifest من endpoint محمي. إذا كانت النتيجة `Partial` أو `Failed` يظهر `Retry failed targets` فقط، بينما تظل artifacts المكتملة محفوظة. حالات فشل status أو batches أو الملفات تظهر داخل الشاشة برسالة قابلة للتشخيص، ولا تُعرض أي connection material أو storage path.
+
 ### `/audit-logs` — سجل المراجعة غير القابل للتعديل
 
 | جانب | الوصف |
