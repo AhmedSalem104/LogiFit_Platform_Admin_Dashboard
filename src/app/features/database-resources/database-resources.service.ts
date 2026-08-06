@@ -29,7 +29,7 @@ export interface DatabaseResource {
   backupCount: number;
   lastBackupStatus: string | null;
   lastBackupCompletedAtUtc: string | null;
-  hasConnectionString: boolean;
+  hasProtectedConnection: boolean;
 }
 
 export interface SaveDatabaseResourceRequest {

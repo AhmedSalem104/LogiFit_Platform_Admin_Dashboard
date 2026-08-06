@@ -61,6 +61,9 @@ flowchart LR
 - لا تنفذ Sorting/Filtering محلياً على بيانات لم تحمل كاملة.
 - تقرأ الشاشات المالية والتدقيق والعمليات والنسخ سجلات تاريخية فقط، ولا تضيف CRUD
   عاماً إليها.
+- شاشة `/database-resources` تستخدم `GET /api/platform/database-resources` وتعرض
+  `hasProtectedConnection` كمؤشر Boolean آمن لوجود قيمة محمية؛ لا تعتمد على `DatabaseName` ولا
+  تقرأ أو تعرض connection material.
 
 ## تكامل النسخ الاحتياطي
 
