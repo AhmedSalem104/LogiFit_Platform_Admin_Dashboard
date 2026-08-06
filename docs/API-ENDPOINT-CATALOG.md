@@ -2,7 +2,7 @@
 
 > **Source of truth:** this document is generated from the API controllers by `Scripts/Export-ApiEndpointCatalog.ps1`. Do not edit endpoint rows manually; change the controller, rerun the script, and include the refreshed catalog in the same Pull Request.
 
-Generated: `2026-08-06 15:10 UTC`  |  Total endpoints: **386**
+Generated: `2026-08-06 15:37 UTC`  |  Total endpoints: **392**
 
 ## Contract rules
 
@@ -2492,3 +2492,41 @@ Generated: `2026-08-06 15:10 UTC`  |  Total endpoints: **386**
 - **Access:** Anonymous (no token required)
 - **Inputs:** Body `command`: `PreviewWorkspaceInviteCommand` { `Token`: string }<br>Handler signature: `[FromBody] PreviewWorkspaceInviteCommand command`
 - **Declared response:** typeof(WorkspaceInvitePreviewDto), StatusCodes.Status200OK
+
+### WorkspaceMembers
+
+#### `GET /api/workspace-members` - `List`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Query `role`: `UserRole?`<br>Query `accessStatus`: `string?`<br>Query `searchTerm`: `string?`<br>Handler signature: `[FromQuery] UserRole? role, [FromQuery] string? accessStatus, [FromQuery] string? searchTerm`
+- **Declared response:** typeof(IReadOnlyList<WorkspaceMemberDto>), StatusCodes.Status200OK
+
+#### `POST /api/workspace-members` - `Create`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Body `command`: `CreateWorkspaceMemberCommand` { `Email`: string; `PhoneNumber`: string?; `FullName`: string; `Role`: UserRole }<br>Handler signature: `[FromBody] CreateWorkspaceMemberCommand command`
+- **Declared response:** typeof(WorkspaceMemberCreatedDto), StatusCodes.Status201Created
+
+#### `POST /api/workspace-members/{membershipId:guid}/activate` - `Activate`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Handler signature: `Guid membershipId`
+- **Declared response:** Task<ActionResult<WorkspaceMemberDto>>
+
+#### `POST /api/workspace-members/{membershipId:guid}/remove` - `Remove`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Handler signature: `Guid membershipId`
+- **Declared response:** Task<ActionResult<WorkspaceMemberDto>>
+
+#### `POST /api/workspace-members/{membershipId:guid}/reset-password` - `ResetPassword`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Handler signature: `Guid membershipId`
+- **Declared response:** typeof(WorkspaceMemberCreatedDto), StatusCodes.Status200OK
+
+#### `POST /api/workspace-members/{membershipId:guid}/suspend` - `Suspend`
+
+- **Access:** JWT + Policy: `Permissions.ManageEmployees`
+- **Inputs:** Handler signature: `Guid membershipId`
+- **Declared response:** Task<ActionResult<WorkspaceMemberDto>>
