@@ -106,7 +106,7 @@ const EMPTY_OPERATIONS: PlatformOperationsSummaryDto = {
       <section class="lf-card lf-dashboard-filters p-4 sm:p-5">
         <div class="flex flex-wrap items-end gap-3">
           <div class="min-w-44 flex-1">
-            <label class="lf-label" for="dashboard-period">نطاق المؤشرات</label>
+            <label class="lf-label" for="dashboard-period">نطاق بيانات الاشتراكات</label>
             <select id="dashboard-period" class="lf-input" [(ngModel)]="period" (ngModelChange)="onFilterChange()">
               <option [ngValue]="'all'">كل البيانات</option>
               <option [ngValue]="'90'">آخر 90 يومًا</option>
@@ -126,7 +126,7 @@ const EMPTY_OPERATIONS: PlatformOperationsSummaryDto = {
           </div>
           <div class="flex items-center gap-2 pb-0.5 text-xs text-slate-500">
             <i class="pi pi-shield text-emerald-600"></i>
-            <span>الأرقام مجمّعة ومقيدة بصلاحيتك</span>
+            <span>الفلاتر تخص الاشتراكات؛ التشغيل الحالي دائمًا محدث</span>
           </div>
           @if (period !== 'all' || subscriptionStatus !== null) {
             <button type="button" class="lf-btn lf-btn-secondary" (click)="clearFilters()"><i class="pi pi-filter-slash"></i> مسح الفلاتر</button>

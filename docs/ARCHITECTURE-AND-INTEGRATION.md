@@ -59,7 +59,7 @@ flowchart LR
 `DashboardComponent` يستهلك `GET /api/platform/dashboard` بعقد `PlatformDashboardDto`
 وبنية `operations` التي تلخص العمل الجاري دون أسماء قواعد بيانات أو connection material.
 ويقرأ جدول الجيمات من `/api/platform/dashboard/tenants`. الفلاتر الزمنية وحالة الاشتراك
-تصل إلى الخادم كـquery parameters.
+تصل إلى الخادم كـquery parameters وتخص بيانات الاشتراكات؛ بقية الملخص لقطة تشغيل حالية.
 
 الرسوم في الواجهة SVG/CSS ومبنية على القيم الحالية: لا توجد أرقام تجريبية ولا مكتبة رسوم
 خارجية ولا ادعاء بوجود تاريخ زمني غير متوفر في العقد. التحديث التلقائي كل 60 ثانية يوقفه
