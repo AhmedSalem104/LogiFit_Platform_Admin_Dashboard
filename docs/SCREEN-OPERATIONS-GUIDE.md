@@ -198,10 +198,11 @@ must be completed through the separately reviewed operator workflow.
 | جانب | الوصف |
 |---|---|
 | **الصلاحية** | `ManagePlatformBackups`. |
-| **الغرض والفائدة** | مراجعة موارد قواعد البيانات المدارة وحالتها من المصدر `/api/platform/database-resources`. هذه الشاشة قراءة فقط؛ التخصيص وprovisioning والنسخ تتم من تدفقات الخادم المحمية. |
-| **ما يعرض** | المعرّف التشغيلي للمورد، المزود، الحالة، مساحة العمل، آخر فحص صحة، الحجم، إصدار الـschema، ومؤشر `hasProtectedConnection` الآمن. المؤشر يوضح وجود قيمة محمية محفوظة فقط؛ لا يعرض القيمة نفسها. |
-| **الإجراءات** | تحديث القائمة، تغيير الصفحة، والانتقال إلى مركز النسخ الاحتياطي. لا يوجد نموذج اتصال أو زر CRUD لأن عقد Platform API الحالي لا يعرّف هذه العمليات على الشاشة. |
-| **الضوابط** | لا تعرض الواجهة اسم قاعدة البيانات أو connection strings أو `EncryptedConnectionString`. إذا ظهر المؤشر غير مضبوط أو الحالة `Faulted`، استخدم مسار التشغيل/التزويد المحمي ولا تنسخ أي secret إلى Issue أو log. |
+| **الغرض والفائدة** | إدارة Pool قواعد البيانات من خلال عمليات صريحة ومراجعة من الخادم، مع عرض الحالة والتخصيص والصحة والنسخ دون كشف أسرار. |
+| **ما يعرض** | `ResourceCode`، المزود، lifecycle status، مساحة العمل ونوعها، provisioning/health، schema، backup count، ومؤشر `hasProtectedConnection`. لا يعرض اسم قاعدة البيانات أو قيمة الاتصال. |
+| **الأزرار** | `Refresh/Retry`: إعادة القراءة. `Register database`: نموذج إضافة provider/database label/server note/connection string؛ يرسل `POST /database-resources`. `Repair`: يظهر لـ`Available`/`Allocated`/`Failed` ويطلب تأكيداً ثم يرسل `POST /{id}/repair-connection`. `Migrations`: يرسل `POST /{id}/migrations` لتشغيل migrations وCanConnect. `Backup`: يظهر لـ`Allocated` ويرسل `POST /{id}/backup`. `Disable/Enable`: يرسل status lifecycle المسموح. |
+| **الحالات** | Loading، Empty، Error/Retry، Connection missing، Available، Provisioning، Allocated، Failed، Disabled. عند الخطأ تظهر رسالة API واضحة ولا تختفي الأزرار دون تفسير. |
+| **الضوابط** | الـAPI يفرض `ManagePlatformBackups` وTenant isolation وlifecycle locks. الاتصال write-only؛ لا يظهر في الجدول أو بعد الحفظ. لا يوجد generic edit/delete للمورد المخصص. كل إصلاح يسجل Audit Log، والواجهة لا تفك التشفير. |
 
 ### `/backups` — مركز النسخ الاحتياطي
 
