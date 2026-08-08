@@ -102,12 +102,18 @@ interface PagedResult<T> {
 
 ## موارد قواعد البيانات
 
-- `/database-resources` تستخدم `ManagePlatformBackups` وتقرأ فقط من `GET /api/platform/database-resources`.
-- تعرض الصفحة `Id` مختصراً، المزود، الحالة، مساحة العمل، آخر فحص صحة، الحجم، إصدار الـschema، ووجود
-  اتصال محمي فقط. لا تعرض اسم قاعدة البيانات أو connection string أو قيمة مشفرة.
-- الزر الوحيد الخاص بالبيانات هو `Refresh`، مع ترقيم خادمي وزر `Retry` عند فشل القراءة. الانتقال إلى
-  مركز النسخ الاحتياطي يتم برابط واضح؛ لا توجد أزرار إضافة/تعديل/إصلاح/حذف أو نموذج اتصال وهمي.
-- أي تخصيص أو إصلاح اتصال أو Migration يتم عبر مسار تشغيل محمي ومراجع، وليس من CRUD عام في هذه الشاشة.
+- `/database-resources` تستخدم `ManagePlatformBackups` وتقرأ من `GET /api/platform/database-resources`.
+- تعرض الصفحة `ResourceCode` مختصراً، المزود، الحالة، مساحة العمل، provisioning/health، سجل النسخ، ووجود
+  اتصال محمي فقط. لا تعرض اسم قاعدة البيانات أو connection string أو القيمة المشفرة.
+- `Refresh` و`Retry` يعيدان تحميل القائمة. `Register database` يرسل قيمة جديدة مرة واحدة إلى
+  `POST /api/platform/database-resources`؛ الخادم يختبرها ويشفرها ولا يعيدها.
+- `Repair` يظهر للمورد `Available` أو `Allocated` أو `Failed`، ويستدعي
+  `POST /api/platform/database-resources/{id}/repair-connection` بعد تأكيد صريح. للمورد المخصص يصلح
+  الـactive mapping نفسه؛ للمورد الفاشل يعيده إلى `Available`.
+- `Migrations` يستدعي `POST /api/platform/database-resources/{id}/migrations` ويشغل migrations وCanConnect
+  من الخادم. `Backup` يظهر للمورد `Allocated` فقط ويستدعي endpoint النسخ الخاص به؛ النتائج التفصيلية تظهر
+  في Backup Center. Disable/Enable تستخدمان `POST /api/platform/database-resources/{id}/status`.
+- لا يوجد generic edit أو delete للمورد المخصص؛ قرارات lifecycle والـTenant isolation يفرضها الخادم.
 
 ## التحقق المحلي
 

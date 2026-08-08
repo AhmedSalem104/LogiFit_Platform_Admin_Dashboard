@@ -38,7 +38,7 @@ Cookie ولا يوجد له مفتاح localStorage. اكتشاف Caps Lock مح
 | `/payment-methods` | طرق الدفع | `ManagePaymentRequests` | `/payment-methods` | CRUD طرق الدفع اليدوي | لا تضع أسراراً ظاهرة. |
 | `/payment-requests` | طلبات الدفع | `ManagePaymentRequests` | `/payment-requests` | موافقة/رفض سبب | قرار معتمد لا يعدل. |
 | `/backups` | النسخ الاحتياطية | `ManagePlatformBackups` | `/backups`, `/batch`, `/batches`, `/restores/capabilities` | تشغيل FullSystem/AllTenants، متابعة artifacts، checksum/manifest، retry آمن | السجلات immutable؛ لا connection material؛ `ManualOnly` لا يضيف زر restore. |
-| `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `GET /database-resources` | مراجعة الحالة، الصحة، التخصيص، الترقيم، ووجود اتصال محمي | الشاشة قراءة فقط؛ لا تعرض نموذجًا أو CRUD غير موجود في العقد. يعرض `hasProtectedConnection` كمؤشر Boolean فقط. |
+| `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `GET/POST /database-resources`, `POST /database-resources/{id}/repair-connection`, `POST /{id}/migrations`, `POST /{id}/backup`, `POST /{id}/status` | تسجيل وإصلاح اتصال محمي، migrations/health، backup للمورد المخصص، وعرض lifecycle | connection write-only؛ لا generic edit/delete للمخصص؛ الخادم يفرض الاختبار والتشفير والـmapping والـAudit Log. |
 | `/audit-logs` | سجل المراجعة | `ManagePlatformReports` | `/audit-logs` | بحث وقراءة | immutable؛ لا CRUD. |
 | `/invoices` | الفواتير | `ManagePlatformReports` | `/invoices` | بحث وقراءة | تصحيح بعكس مالي جديد. |
 | `/administrators` | مدراء المنصة | `ManagePlatformReports` | `/administrators` | إنشاء/تفعيل/تعطيل | أقل صلاحية؛ لا مشاركة حساب. |

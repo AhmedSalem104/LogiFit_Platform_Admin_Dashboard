@@ -206,10 +206,14 @@ export const ADMIN_ASSISTANT_GUIDES: AssistantGuide[] = [
     route: '/database-resources', title: 'موارد قواعد البيانات', icon: 'pi pi-server', permissions: backups,
     summary: 'مراجعة موارد قواعد البيانات وحالة الاتصال المحمي دون كشف أسرار.',
     keywords: ['موارد قواعد البيانات', 'database resources', 'connection missing', 'اتصال محمي', 'resource pool'],
-    overview: 'تعرض الشاشة الحالة والتخصيص والصحة ومؤشر وجود قيمة اتصال محمية محفوظة. قيمة الاتصال نفسها لا تعود من الخادم ولا تظهر في الواجهة.',
-    steps: ['حدّث القائمة واقرأ حالة المورد.', 'استخدم مؤشر الاتصال المحمي كدليل وجود فقط.', 'عالج المورد من المسار التشغيلي المناسب إذا كان غير مضبوطاً.', 'راجع Logs الخادم عند ظهور 500 أو 503 دون نسخ أي secret.'],
-    warnings: ['عدم وجود المؤشر يعني أن الاتصال المحمي غير مضبوط لهذا المورد، وليس تصريحاً بإدخال connection string في Issue أو log.', 'لا تعتمد على اسم قاعدة البيانات أو TenantId لتحديد المورد.'],
-    buttons: [{ label: 'تحديث الحالة', description: 'يعيد قراءة موارد قواعد البيانات من الخادم.' }],
+    overview: 'تعرض الشاشة الحالة والتخصيص والصحة ومؤشر وجود قيمة اتصال محمية محفوظة، وتوفر عمليات صريحة للتسجيل والإصلاح والترحيل والنسخ حسب حالة المورد. قيمة الاتصال نفسها لا تعود من الخادم ولا تظهر في الواجهة.',
+    steps: ['حدّث القائمة واقرأ حالة المورد.', 'استخدم Register database لإضافة مورد جديد؛ الخادم يختبر الاتصال ويشفره.', 'استخدم Repair للمورد Available أو Allocated أو Failed بعد التأكيد؛ لا تعيد استخدام اتصال قاعدة أخرى.', 'استخدم Migrations لتشغيل schema وCanConnect، وBackup للمورد Allocated فقط.', 'راجع Logs الخادم عند ظهور 500 أو 503 دون نسخ أي secret.'],
+    warnings: ['الاتصال write-only ولا يظهر بعد الحفظ. لا تنسخ connection string إلى Issue أو log.', 'المورد Allocated لا يستخدم generic edit؛ Repair هو المسار المسموح ويحدث الـactive mapping.', 'لا تعتمد على اسم قاعدة البيانات أو TenantId كحد أمني؛ الـBackend هو مصدر الصلاحيات والعزل.'],
+    buttons: [
+      { label: 'تسجيل قاعدة بيانات', description: 'يفتح النموذج ويرسل connection string إلى endpoint محمي مرة واحدة.' },
+      { label: 'إصلاح الاتصال', description: 'يظهر حسب lifecycle status ويستبدل القيمة المحمية بعد اختبارها وتأكيد العملية.' },
+      { label: 'Migrations / Backup', description: 'يشغل عمليات الخادم المناسبة للحالة ويعيد نتيجة واضحة داخل الشاشة.' },
+    ],
     quickActions: [refresh('/database-resources', backups, 'تحديث موارد قواعد البيانات')],
   },
   {
