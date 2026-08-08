@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { NotifyService, errMsg } from '../../shared/ui/notify.service';
@@ -10,13 +12,14 @@ import {
   DatabaseResource,
   DatabaseResourceStatus,
   DatabaseResourcesService,
+  RegisterDatabaseResourceCommand,
 } from './database-resources.service';
 
 @Component({
   selector: 'app-database-resources',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, ButtonModule, TableModule, PageHeaderComponent, ServerPaginatorComponent],
+  imports: [CommonModule, RouterLink, FormsModule, ButtonModule, DialogModule, TableModule, PageHeaderComponent, ServerPaginatorComponent],
   template: `
     <app-page-header
       title="Database Resources"
@@ -31,6 +34,7 @@ import {
         aria-label="Refresh database resources"
         [loading]="loading()"
         (click)="load()"></button>
+      <button pButton type="button" label="Register database" icon="pi pi-plus" (click)="openRegister()"></button>
     </app-page-header>
 
     @if (loadError(); as message) {
@@ -44,8 +48,8 @@ import {
       <div class="flex items-start gap-3">
         <i class="pi pi-info-circle mt-1"></i>
         <div>
-          <p class="m-0 font-extrabold">Read-only resource view</p>
-          <p class="mb-0 mt-1">Resource creation, connection replacement, migrations, deletion, and backups are protected server workflows. This screen intentionally exposes no connection form or mutation button, and never displays database names or connection material.</p>
+          <p class="m-0 font-extrabold">Protected resource pool</p>
+          <p class="mb-0 mt-1">Registering accepts the connection string only over the protected server API. The value is encrypted immediately, never returned, and never displayed in this screen. Migrations, health checks, assignment, and backups remain server-managed.</p>
           <a routerLink="/backups" class="mt-2 inline-flex items-center gap-2 font-bold text-blue-700 hover:underline">
             Open Backup Center <i class="pi pi-arrow-right text-xs"></i>
           </a>
@@ -115,6 +119,17 @@ import {
       </p-table>
       <app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator>
     </section>
+
+    <p-dialog header="Register database resource" [(visible)]="showRegister" [modal]="true" [style]="{ width: '620px', maxWidth: '95vw' }" [draggable]="false">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label class="lf-label">Provider<select class="lf-input" [(ngModel)]="registerProvider"><option value="ManualMonster">ManualMonster</option><option value="LocalSql">LocalSql</option></select></label>
+        <label class="lf-label">Database label *<input class="lf-input" [(ngModel)]="registerDatabaseName" placeholder="tenant-db-01" /></label>
+        <label class="lf-label sm:col-span-2">Server key / note<input class="lf-input" [(ngModel)]="registerServerKey" placeholder="Optional operator reference" /></label>
+        <label class="lf-label sm:col-span-2">Connection string *<textarea class="lf-input" rows="4" [(ngModel)]="registerConnectionString" autocomplete="off" placeholder="Entered once; never displayed after save"></textarea></label>
+      </div>
+      <p class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800"><i class="pi pi-lock me-1"></i> The server encrypts this value before persistence. It is used only inside provisioning/health/backup services.</p>
+      <ng-template pTemplate="footer"><button pButton label="Cancel" class="p-button-text p-button-secondary" (click)="showRegister = false"></button><button pButton label="Register securely" icon="pi pi-lock" [loading]="registering()" [disabled]="registering()" (click)="register()"></button></ng-template>
+    </p-dialog>
   `,
 })
 export class DatabaseResourcesComponent implements OnInit {
@@ -130,12 +145,46 @@ export class DatabaseResourcesComponent implements OnInit {
     { label: 'In progress', value: this.rows().filter(row => [DatabaseResourceStatus.Reserved, DatabaseResourceStatus.Provisioning, DatabaseResourceStatus.RestorePending].includes(row.status)).length, icon: 'pi pi-spin pi-spinner', color: 'text-amber-500' },
     { label: 'Needs review', value: this.rows().filter(row => [DatabaseResourceStatus.Maintenance, DatabaseResourceStatus.Faulted, DatabaseResourceStatus.Retired].includes(row.status)).length, icon: 'pi pi-exclamation-triangle', color: 'text-rose-500' },
   ]);
+  readonly registering = signal(false);
+  showRegister = false;
+  registerProvider: 'ManualMonster' | 'LocalSql' = 'ManualMonster';
+  registerDatabaseName = '';
+  registerServerKey = '';
+  registerConnectionString = '';
 
   page = 1;
   pageSize = 20;
   totalCount = 0;
 
   ngOnInit(): void { this.load(); }
+
+  openRegister(): void { this.showRegister = true; }
+
+  register(): void {
+    if (!this.registerDatabaseName.trim() || !this.registerConnectionString.trim()) {
+      this.notify.error('Provider, database label, and connection string are required.');
+      return;
+    }
+    const command: RegisterDatabaseResourceCommand = {
+      provider: this.registerProvider,
+      databaseName: this.registerDatabaseName.trim(),
+      serverKey: this.registerServerKey.trim() || undefined,
+      connectionString: this.registerConnectionString.trim(),
+    };
+    this.registering.set(true);
+    this.service.register(command).subscribe({
+      next: () => {
+        this.registering.set(false);
+        this.showRegister = false;
+        this.registerDatabaseName = '';
+        this.registerServerKey = '';
+        this.registerConnectionString = '';
+        this.notify.success('Database resource registered securely.');
+        this.load();
+      },
+      error: error => { this.registering.set(false); this.notify.error(errMsg(error)); },
+    });
+  }
 
   load(page = this.page, pageSize = this.pageSize): void {
     this.loading.set(true);

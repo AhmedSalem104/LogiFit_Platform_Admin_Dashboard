@@ -55,12 +55,22 @@ interface PagedResult<T> {
 
 ## موارد قواعد البيانات
 
-- `/database-resources` تستخدم `ManagePlatformBackups` وتقرأ فقط من `GET /api/platform/database-resources`.
+- `/database-resources` تستخدم `ManagePlatformBackups` وتقرأ من `GET /api/platform/database-resources`،
+  وتوفر تسجيل مورد جديد من خلال `POST /api/platform/database-resources`.
 - تعرض الصفحة `Id` مختصراً، المزود، الحالة، مساحة العمل، آخر فحص صحة، الحجم، إصدار الـschema، ووجود
   اتصال محمي فقط. لا تعرض اسم قاعدة البيانات أو connection string أو قيمة مشفرة.
-- الزر الوحيد الخاص بالبيانات هو `Refresh`، مع ترقيم خادمي وزر `Retry` عند فشل القراءة. الانتقال إلى
-  مركز النسخ الاحتياطي يتم برابط واضح؛ لا توجد أزرار إضافة/تعديل/إصلاح/حذف أو نموذج اتصال وهمي.
-- أي تخصيص أو إصلاح اتصال أو Migration يتم عبر مسار تشغيل محمي ومراجع، وليس من CRUD عام في هذه الشاشة.
+- زر `Register database` يرسل اسمًا وصِفَة المورد والـconnection string إلى الخادم عبر TLS؛ الخادم
+  يشفر القيمة فورًا ولا يعيدها. بعد الحفظ تختفي القيمة من النموذج ولا توجد edit/delete أو كشف للمادة.
+- `Refresh` يعيد قراءة الحالة، مع ترقيم خادمي وحالة Loading/Empty/Error. أي تخصيص أو Migration أو
+  health check يتم عبر الـprovisioning saga المحمي، وليس من CRUD عام في المتصفح.
+
+## Issue #248 — طابور إنشاء المساحات
+
+شاشة `/workspace-applications` تعرض Gym بلون أزرق وأيقونة مبنى، وFreelanceCoach بلون بنفسجي
+وأيقونة مدرب. الفلاتر تشمل النوع وحالة الطلب والدفع والتجهيز. الأزرار مرتبطة بالعقود التالية:
+`start-review`, payment approve/reject, request-information, approve-workspace, reject, و
+`retry-provisioning`. يمنع الزر نفسه الضغط المزدوج أثناء الطلب، ويُحدّث الصف من استجابة الخادم
+لا من حالة محلية مفترضة. لا يظهر زر Dashboard قبل `canAccessDashboard=true`.
 
 ## التحقق المحلي
 

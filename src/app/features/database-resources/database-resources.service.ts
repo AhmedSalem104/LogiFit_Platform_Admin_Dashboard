@@ -30,6 +30,13 @@ export interface DatabaseResource {
   schemaVersion: string | null;
 }
 
+export interface RegisterDatabaseResourceCommand {
+  provider: 'ManualMonster' | 'LocalSql';
+  databaseName: string;
+  serverKey?: string;
+  connectionString: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DatabaseResourcesService {
   private readonly http = inject(HttpClient);
@@ -38,5 +45,9 @@ export class DatabaseResourcesService {
   list(page = 1, pageSize = 100): Observable<PagedResult<DatabaseResource>> {
     const params = new HttpParams().set('page', page).set('pageSize', pageSize);
     return this.http.get<PagedResult<DatabaseResource>>(this.base, { params });
+  }
+
+  register(command: RegisterDatabaseResourceCommand): Observable<DatabaseResource> {
+    return this.http.post<DatabaseResource>(this.base, command);
   }
 }
