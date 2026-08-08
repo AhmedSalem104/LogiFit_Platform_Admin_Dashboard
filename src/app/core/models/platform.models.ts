@@ -35,6 +35,14 @@ export enum PaymentRequestStatus {
   Expired = 5,
 }
 
+export enum ProvisioningJobStatus {
+  Pending = 1,
+  AwaitingDatabaseCapacity = 2,
+  Provisioning = 3,
+  Completed = 4,
+  Failed = 5,
+}
+
 export enum PaymentRequestOperation {
   NewSubscription = 1,
   Renew = 2,
