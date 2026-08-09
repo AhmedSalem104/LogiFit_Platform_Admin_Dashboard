@@ -66,7 +66,25 @@ interface ResourceEditor {
       </div>
     </div>
 
-    <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div class="mb-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] md:items-end">
+        <label class="lf-label m-0">
+          Lifecycle status
+          <select class="lf-input mt-1" [ngModel]="statusFilter()" (ngModelChange)="selectStatus($event)">
+            <option [ngValue]="null">All statuses</option>
+            @for (option of statusOptions; track option.value) {
+              <option [ngValue]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="lf-label m-0">
+          Tenant ID (optional)
+          <input class="lf-input mt-1" [ngModel]="tenantIdFilter()" (ngModelChange)="tenantIdFilter.set($event)" dir="ltr" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+        </label>
+        <button pButton type="button" label="Apply filters" icon="pi pi-filter" class="p-button-outlined" [loading]="loading()" (click)="applyFilters()"></button>
+        <button pButton type="button" label="Clear" icon="pi pi-times" class="p-button-text p-button-secondary" [disabled]="!hasFilters()" (click)="clearFilters()"></button>
+      </div>
+
+      <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
       @for (card of summaryCards(); track card.label) {
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between gap-2">
@@ -77,6 +95,7 @@ interface ResourceEditor {
         </div>
       }
     </div>
+    <p class="-mt-4 mb-6 text-xs text-slate-500">Summary counts describe the currently loaded page. The table total is {{ totalCount }} resource(s).</p>
 
     <section class="lf-card overflow-hidden">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
@@ -231,10 +250,10 @@ export class DatabaseResourcesComponent implements OnInit {
   readonly busyAction = signal<string | null>(null);
   readonly lastTest = signal<ConnectionTestResult | null>(null);
   readonly summaryCards = computed(() => [
-    { label: 'Available', value: this.count('Available'), icon: 'pi pi-check-circle', color: 'text-emerald-500' },
-    { label: 'Allocated', value: this.count('Allocated'), icon: 'pi pi-link', color: 'text-blue-500' },
-    { label: 'In progress', value: this.rows().filter(row => ['Provisioning', 'RestorePending'].includes(this.lifecycleLabel(row))).length, icon: 'pi pi-spin pi-spinner', color: 'text-amber-500' },
-    { label: 'Needs review', value: this.rows().filter(row => ['Failed', 'Disabled'].includes(this.lifecycleLabel(row))).length, icon: 'pi pi-exclamation-triangle', color: 'text-rose-500' },
+    { label: 'Available on page', value: this.count('Available'), icon: 'pi pi-check-circle', color: 'text-emerald-500' },
+    { label: 'Allocated on page', value: this.count('Allocated'), icon: 'pi pi-link', color: 'text-blue-500' },
+    { label: 'In progress on page', value: this.rows().filter(row => ['Provisioning', 'RestorePending'].includes(this.lifecycleLabel(row))).length, icon: 'pi pi-spin pi-spinner', color: 'text-amber-500' },
+    { label: 'Needs review on page', value: this.rows().filter(row => ['Failed', 'Disabled'].includes(this.lifecycleLabel(row))).length, icon: 'pi pi-exclamation-triangle', color: 'text-rose-500' },
   ]);
 
   dialogVisible = false;
@@ -245,15 +264,33 @@ export class DatabaseResourcesComponent implements OnInit {
   page = 1;
   pageSize = 20;
   totalCount = 0;
+  statusFilter = signal<DatabaseResourceStatus | null>(null);
+  tenantIdFilter = signal('');
+
+  readonly statusOptions = [
+    { value: DatabaseResourceStatus.Available, label: 'Available' },
+    { value: DatabaseResourceStatus.Reserved, label: 'Reserved' },
+    { value: DatabaseResourceStatus.Provisioning, label: 'Provisioning' },
+    { value: DatabaseResourceStatus.Assigned, label: 'Assigned' },
+    { value: DatabaseResourceStatus.Maintenance, label: 'Maintenance / Disabled' },
+    { value: DatabaseResourceStatus.RestorePending, label: 'Restore pending' },
+    { value: DatabaseResourceStatus.Faulted, label: 'Faulted / Failed' },
+    { value: DatabaseResourceStatus.Retired, label: 'Retired' },
+  ];
 
   ngOnInit(): void { this.load(); }
 
-  load(page = this.page, pageSize = this.pageSize): void {
+  load(
+    page = this.page,
+    pageSize = this.pageSize,
+    status = this.statusFilter(),
+    tenantId = this.tenantIdFilter().trim() || null,
+  ): void {
     this.loading.set(true);
     this.loadError.set(null);
     this.page = page;
     this.pageSize = pageSize;
-    this.service.list(page, pageSize).subscribe({
+    this.service.list(page, pageSize, status, tenantId).subscribe({
       next: result => {
         this.rows.set(result.items ?? []);
         this.totalCount = result.totalCount ?? 0;
@@ -270,6 +307,27 @@ export class DatabaseResourcesComponent implements OnInit {
   }
 
   onPageChange(change: PageChange): void { this.load(change.page, change.pageSize); }
+
+  selectStatus(value: DatabaseResourceStatus | string | null): void {
+    this.statusFilter.set(value === null || value === '' ? null : Number(value) as DatabaseResourceStatus);
+  }
+
+  applyFilters(): void {
+    const tenantId = this.tenantIdFilter().trim();
+    if (tenantId && !this.isGuid(tenantId)) {
+      this.notify.error('Tenant ID must be a valid GUID.');
+      return;
+    }
+    this.load(1, this.pageSize, this.statusFilter(), tenantId || null);
+  }
+
+  clearFilters(): void {
+    this.statusFilter.set(null);
+    this.tenantIdFilter.set('');
+    this.load(1, this.pageSize, null, null);
+  }
+
+  hasFilters(): boolean { return this.statusFilter() !== null || !!this.tenantIdFilter().trim(); }
 
   openRegister(): void {
     this.editingId = null;
@@ -433,7 +491,9 @@ export class DatabaseResourcesComponent implements OnInit {
   }
 
   canRepair(row: DatabaseResource): boolean {
-    return ['Available', 'Allocated', 'Failed'].includes(this.lifecycleLabel(row));
+    const lifecycle = this.lifecycleLabel(row);
+    return ['Available', 'Allocated', 'Failed'].includes(lifecycle)
+      || (lifecycle === 'Disabled' && row.status === DatabaseResourceStatus.Maintenance);
   }
 
   canRunMigrations(row: DatabaseResource): boolean {
@@ -484,6 +544,10 @@ export class DatabaseResourcesComponent implements OnInit {
 
   private count(status: DatabaseResourceLifecycleStatus): number {
     return this.rows().filter(row => this.lifecycleLabel(row) === status).length;
+  }
+
+  private isGuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   }
 
   private startBusy(id: string, action: string): void {

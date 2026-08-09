@@ -200,6 +200,7 @@ flowchart LR
 | [Screen catalog](docs/SCREEN-CATALOG.md) | Every dashboard route, permission, endpoint and action. |
 | [Complete screen operations guide](docs/SCREEN-OPERATIONS-GUIDE.md) | The operational purpose, data, controls, permissions and business safeguards for every dashboard screen. |
 | [Architecture and integration](docs/ARCHITECTURE-AND-INTEGRATION.md) | Auth, routing, API proxy, errors, assistant and development rules. |
+| [Backup and resource hardening](docs/BACKUP-RESOURCE-HARDENING-2026-08-09.md) | Selected-tenant backups, idempotency, safe downloads, retry targeting, resource filters and verification evidence. |
 | [Style guide](docs/STYLE-GUIDE.md) | Tailwind/PrimeNG design contract, components and accessibility. |
 | [Complete API endpoint catalog](docs/API-ENDPOINT-CATALOG.md) | All Tenant and Platform routes, access, inputs and declared responses, mirrored from the backend controller generator. |
 | [Backend product documentation](../LogicFit/docs/README.md) | Product flows, Domain, full API, data, permissions and operations. |

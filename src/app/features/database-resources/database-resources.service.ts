@@ -78,8 +78,15 @@ export class DatabaseResourcesService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/database-resources`;
 
-  list(page = 1, pageSize = 20): Observable<PagedResult<DatabaseResource>> {
-    const params = new HttpParams().set('page', page).set('pageSize', pageSize);
+  list(
+    page = 1,
+    pageSize = 20,
+    status: DatabaseResourceStatus | null = null,
+    tenantId: string | null = null,
+  ): Observable<PagedResult<DatabaseResource>> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    if (status !== null) params = params.set('status', status);
+    if (tenantId?.trim()) params = params.set('tenantId', tenantId.trim());
     return this.http.get<PagedResult<DatabaseResource>>(this.base, { params });
   }
 
