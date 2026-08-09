@@ -15,6 +15,8 @@ import {
   RestoreCapabilities,
 } from './backups.service';
 import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assistant.service';
+import { PlatformTenantDto, TenantStatus } from '../../core/models/platform.models';
+import { TenantsService } from '../tenants/tenants.service';
 
 @Component({
   selector: 'app-backups',
@@ -62,6 +64,19 @@ import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assi
               </select>
             </label>
             <p class="m-0 max-w-xs text-xs leading-5 text-slate-300">{{ scopeDescription(selectedScope()) }}</p>
+            <label *ngIf="selectedScope() === BackupScope.SelectedTenants" for="backup-tenants" class="flex min-w-64 flex-col gap-1 text-xs font-semibold text-slate-200">
+              Specific active tenants
+              <select
+                id="backup-tenants"
+                multiple
+                size="4"
+                [disabled]="tenantLoading()"
+                (change)="selectTenants($any($event.target))"
+                class="rounded-xl border border-white/20 bg-slate-900/70 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-cyan-300">
+                <option *ngFor="let tenant of tenants()" [value]="tenant.id" [selected]="selectedTenantIds().includes(tenant.id)">{{ tenant.name }} ({{ tenant.subdomain }})</option>
+              </select>
+              <span class="font-normal text-slate-300">{{ tenantLoading() ? 'Loading active tenants…' : selectedTenantIds().length + ' selected' }}</span>
+            </label>
             <button
               pButton
               type="button"
@@ -90,6 +105,10 @@ import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assi
             <p class="m-0 font-bold">Backup creation is unavailable</p>
             <p class="mb-0 mt-1 leading-5">{{ backupStatus.unavailableReason || 'Enable and configure the server backup provider before creating a backup.' }}</p>
           </div>
+        </div>
+        <div *ngIf="backupStatus.isReady" class="relative mt-6 flex items-start gap-3 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm text-cyan-100">
+          <i class="pi pi-info-circle mt-0.5 text-cyan-300"></i>
+          <p class="m-0 leading-5">Ready confirms the private server storage and backup configuration. Each selected database is still decrypted, connected, exported, and checksummed by the server; a failed target is reported instead of being marked complete.</p>
         </div>
 
         <div class="relative mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -228,7 +247,7 @@ import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assi
           </div>
           <div class="flex flex-wrap gap-2">
             <button *ngIf="batch.manifestStorageKey" pButton type="button" label="Download manifest" icon="pi pi-file-export" [loading]="downloadingFile() === batch.manifestStorageKey" (click)="downloadManifest(batch)" class="!border-slate-200 !bg-slate-50 !text-slate-700 hover:!bg-slate-100"></button>
-            <button *ngIf="isRetryable(batch)" pButton type="button" label="Retry failed targets" icon="pi pi-refresh" [loading]="batchAction() === batch.id" (click)="retry(batch)" class="!border-amber-200 !bg-amber-50 !text-amber-800 hover:!bg-amber-100"></button>
+            <button *ngIf="isRetryable(batch)" pButton type="button" label="Retry failed targets" icon="pi pi-refresh" [loading]="batchAction() === batch.id" [disabled]="batchAction() !== null" (click)="retry(batch)" class="!border-amber-200 !bg-amber-50 !text-amber-800 hover:!bg-amber-100"></button>
           </div>
         </div>
 
@@ -279,6 +298,7 @@ export class BackupsComponent implements OnInit {
   }
 
   private readonly service = inject(BackupsService);
+  private readonly tenantsService = inject(TenantsService);
   private readonly notify = inject(NotifyService);
 
   rows = signal<BackupRecord[]>([]);
@@ -300,6 +320,10 @@ export class BackupsComponent implements OnInit {
   restoreError = signal<string | null>(null);
   lastCreatedBatch = signal<BackupBatch | null>(null);
   selectedScope = signal<BackupScope>(BackupScope.FullSystem);
+  readonly BackupScope = BackupScope;
+  tenants = signal<PlatformTenantDto[]>([]);
+  tenantLoading = signal(false);
+  selectedTenantIds = signal<string[]>([]);
 
   scopeOptions = [
     { value: BackupScope.FullSystem, label: 'Full system (platform + all active tenants)' },
@@ -307,6 +331,7 @@ export class BackupsComponent implements OnInit {
     { value: BackupScope.AllGyms, label: 'All active gym databases' },
     { value: BackupScope.AllFreelance, label: 'All active freelance databases' },
     { value: BackupScope.Platform, label: 'Platform database only' },
+    { value: BackupScope.SelectedTenants, label: 'Selected active tenant databases' },
   ];
 
   ngOnInit(): void {
@@ -379,7 +404,28 @@ export class BackupsComponent implements OnInit {
 
   selectScope(value: string | number): void {
     const scope = Number(value) as BackupScope;
-    if (this.scopeOptions.some(option => option.value === scope)) this.selectedScope.set(scope);
+    if (!this.scopeOptions.some(option => option.value === scope)) return;
+    this.selectedScope.set(scope);
+    if (scope === BackupScope.SelectedTenants && this.tenants().length === 0) this.loadTenants();
+  }
+
+  selectTenants(select: HTMLSelectElement): void {
+    this.selectedTenantIds.set(Array.from(select.selectedOptions).map(option => option.value));
+  }
+
+  private loadTenants(): void {
+    this.tenantLoading.set(true);
+    this.tenantsService.list(TenantStatus.Active, 1, 100).subscribe({
+      next: result => {
+        this.tenants.set(result.items ?? []);
+        this.tenantLoading.set(false);
+      },
+      error: error => {
+        this.tenants.set([]);
+        this.tenantLoading.set(false);
+        this.notify.error(this.readError(error, 'Active tenants could not be loaded for a selected backup.'));
+      },
+    });
   }
 
   load(): void {
@@ -414,6 +460,13 @@ export class BackupsComponent implements OnInit {
     }
 
     const scope = this.selectedScope();
+    const tenantIds = this.selectedTenantIds();
+    if (scope === BackupScope.SelectedTenants && tenantIds.length === 0) {
+      this.notify.error('Select at least one active tenant before creating this backup.', 'Tenants required');
+      return;
+    }
+    if (this.creating()) return;
+    this.creating.set(true);
     void this.notify.confirm({
       header: 'Create backup now?',
       message: `The server will create a ${this.scopeLabel(scope)} batch and return per-target status, size, SHA-256, and manifest evidence.`,
@@ -421,9 +474,15 @@ export class BackupsComponent implements OnInit {
       rejectLabel: 'Cancel',
       icon: 'pi pi-shield',
     }).then(confirmed => {
-      if (!confirmed) return;
-      this.creating.set(true);
-      this.service.createBatch({ scope }).subscribe({
+      if (!confirmed) {
+        this.creating.set(false);
+        return;
+      }
+      this.service.createBatch({
+        scope,
+        tenantIds: scope === BackupScope.SelectedTenants ? tenantIds : undefined,
+        idempotencyKey: this.createIdempotencyKey(scope),
+      }).subscribe({
         next: batch => {
           this.lastCreatedBatch.set(batch);
           this.creating.set(false);
@@ -436,11 +495,12 @@ export class BackupsComponent implements OnInit {
           this.loadStatus();
         },
       });
-    });
+    }).catch(() => this.creating.set(false));
   }
 
   retry(batch: BackupBatch): void {
-    if (!this.isRetryable(batch)) return;
+    if (!this.isRetryable(batch) || this.batchAction() !== null) return;
+    this.batchAction.set(batch.id);
     void this.notify.confirm({
       header: 'Retry failed targets?',
       message: `The server will retry the failed or incomplete targets in batch ${batch.id}. Completed artifacts will remain recorded.`,
@@ -448,8 +508,10 @@ export class BackupsComponent implements OnInit {
       rejectLabel: 'Cancel',
       icon: 'pi pi-refresh',
     }).then(confirmed => {
-      if (!confirmed) return;
-      this.batchAction.set(batch.id);
+      if (!confirmed) {
+        this.batchAction.set(null);
+        return;
+      }
       this.service.retryBatch(batch.id).subscribe({
         next: updated => {
           this.batches.update(items => items.map(item => item.id === updated.id ? updated : item));
@@ -463,7 +525,7 @@ export class BackupsComponent implements OnInit {
           this.loadBatches();
         },
       });
-    });
+    }).catch(() => this.batchAction.set(null));
   }
 
   download(row: BackupRecord): void {
@@ -507,7 +569,7 @@ export class BackupsComponent implements OnInit {
 
   readinessMessage(status: BackupStatus): string {
     if (!status.isReady) return status.unavailableReason || 'Enable and configure the server backup provider before creating a backup.';
-    return 'Create a scoped BACPAC batch, then verify each artifact, checksum, and manifest before downloading it.';
+    return 'Create a scoped BACPAC batch, then verify each artifact, checksum, and manifest before downloading it. Target connection and export failures remain visible per artifact.';
   }
 
   scopeLabel(scope: BackupScope | number): string {
@@ -521,6 +583,7 @@ export class BackupsComponent implements OnInit {
       case BackupScope.AllGyms: return 'Every active gym workspace database.';
       case BackupScope.AllFreelance: return 'Every active freelance workspace database.';
       case BackupScope.Platform: return 'The platform database only.';
+      case BackupScope.SelectedTenants: return 'Only the active tenants selected below; the server still validates their mappings and access.';
       default: return 'The server resolves targets from the selected scope.';
     }
   }
@@ -601,6 +664,13 @@ export class BackupsComponent implements OnInit {
   private readError(error: unknown, fallback: string): string {
     const message = errMsg(error);
     return message && !message.includes('غير متوقع') ? message : fallback;
+  }
+
+  private createIdempotencyKey(scope: BackupScope): string {
+    const randomUuid = typeof globalThis.crypto?.randomUUID === 'function'
+      ? globalThis.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    return `dashboard:${scope}:${randomUuid}`;
   }
 }
 

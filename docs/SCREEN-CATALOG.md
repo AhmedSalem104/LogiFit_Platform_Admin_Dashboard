@@ -47,7 +47,13 @@ Cookie ولا يوجد له مفتاح localStorage. اكتشاف Caps Lock مح
 
 ### Backup Center interaction contract
 
-The `/backups` screen starts a server-resolved backup batch only after the service reports `Ready` and the operator confirms the selected scope. The screen distinguishes loading, unavailable, empty, partial, failed, and completed states; it shows per-target status, size, SHA-256, manifest availability, and protected download actions. Retry is offered only for `Failed` or `Partial` batches. No connection string, database name, storage path, or provider credential is rendered.
+The `/backups` screen starts a server-resolved backup batch only after the service reports `Ready` and the operator confirms the selected scope. Supported scopes are `Platform`, `SelectedTenants`, `AllGyms`, `AllFreelance`, `AllTenants`, and `FullSystem`; selected tenants are loaded as safe labels and only their IDs are submitted. The screen distinguishes loading, unavailable, empty, partial, failed, and completed states; it shows per-target status, size, SHA-256, manifest availability, and protected download actions. Confirmation and in-flight locks plus a manual idempotency key prevent duplicate clicks. Retry is offered only for `Failed` or `Partial` batches and is target-scoped by the Backend. No connection string, database name, storage path, or provider credential is rendered.
+
+The `/database-resources` screen supports server-side lifecycle and Tenant ID filters. Its summary
+cards are explicitly page-scoped because the table is paginated. `Repair` is available for
+`Available`, `Allocated`, `Failed`, and `Disabled` rows; the server validates and protects the
+replacement value and updates an allocated mapping transactionally. The UI never renders the
+protected value or database metadata.
 | `/reports` | التقارير | `ManagePlatformReports` | `/reports/overview` | قراءة المؤشرات | افتح مصدر البيانات قبل القرار. |
 | `/alerts` | التنبيهات | `ManagePlatformReports` | `/alerts` | فرز/متابعة مصدر التنبيه | 500/503 تحتاج Logs وخادم. |
 | `/documentation` | المرجع والدليل | `ManagePlatformReports` | محتوى الواجهة الموثق | بحث وفتح شاشة | لا يحل محل تحقق Backend. |
