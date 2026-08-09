@@ -11,17 +11,18 @@ import { AuthService } from '../services/auth.service';
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
 
+  const credentialed = req.clone({ withCredentials: true });
   if (req.url.includes('/auth/')) {
-    return next(req);
+    return next(credentialed);
   }
 
   return auth.getValidAccessToken().pipe(
     switchMap((token) => {
       if (!token) {
-        return next(req);
+        return next(credentialed);
       }
 
-      return next(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
+      return next(credentialed.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
     }),
   );
 };

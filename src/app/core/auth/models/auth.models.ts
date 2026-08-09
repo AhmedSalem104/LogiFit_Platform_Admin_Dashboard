@@ -26,10 +26,6 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface RefreshRequest {
-  refreshToken: string;
-}
-
 // AuthResponseDto from the Platform API
 export interface AuthResponse {
   userId: string;
@@ -41,7 +37,6 @@ export interface AuthResponse {
   permissions: Permission[];
   tenantId: string;
   accessToken: string;
-  refreshToken: string;
   expiresAt: string;
 }
 

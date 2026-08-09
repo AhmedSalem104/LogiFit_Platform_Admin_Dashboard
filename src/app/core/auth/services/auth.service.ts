@@ -33,18 +33,14 @@ export class AuthService {
   // ------------------------------- Auth API --------------------------------
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
+    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials, { withCredentials: true }).pipe(
       tap((res) => this.handleAuthSuccess(res)),
     );
   }
 
   /** Refresh the access token (rotation). Returns the new access token. */
   refreshToken(): Observable<string> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      return throwError(() => new Error('No refresh token available'));
-    }
-    return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, { refreshToken }).pipe(
+    return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, {}, { withCredentials: true }).pipe(
       tap((res) => this.handleAuthSuccess(res)),
       map((res) => res.accessToken),
       catchError((err) => {
@@ -65,11 +61,6 @@ export class AuthService {
     const token = this.getToken();
     if (!token || !this.isTokenExpired(token)) {
       return of(token);
-    }
-
-    if (!this.getRefreshToken()) {
-      this.clearSession();
-      return of(null);
     }
 
     return this.refreshTokenOnce();
@@ -111,10 +102,6 @@ export class AuthService {
     return this.token();
   }
 
-  getRefreshToken(): string | null {
-    return this.storage.getString(environment.refreshTokenKey);
-  }
-
   getUser(): UserInfo | null {
     return this.currentUser();
   }
@@ -137,10 +124,6 @@ export class AuthService {
   private handleAuthSuccess(res: AuthResponse): void {
     this.storage.setString(environment.tokenKey, res.accessToken);
     this.token.set(res.accessToken);
-    if (res.refreshToken) {
-      this.storage.setString(environment.refreshTokenKey, res.refreshToken);
-    }
-
     const permissions = res.permissions ?? [];
     this.storage.setItem(environment.permissionsKey, permissions);
     this.permissionsSig.set(permissions);
@@ -159,7 +142,6 @@ export class AuthService {
 
   private clearSession(): void {
     this.storage.removeItem(environment.tokenKey);
-    this.storage.removeItem(environment.refreshTokenKey);
     this.storage.removeItem(environment.userKey);
     this.storage.removeItem(environment.permissionsKey);
     this.token.set(null);
@@ -171,9 +153,7 @@ export class AuthService {
   private checkTokenExpiration(): void {
     const token = this.token();
     if (!token) return;
-    if (this.isTokenExpired(token) && !this.getRefreshToken()) {
-      this.clearSession();
-    }
+    if (this.isTokenExpired(token)) this.refreshTokenOnce().subscribe({ error: () => this.clearSession() });
   }
 
   private isTokenExpired(token: string): boolean {

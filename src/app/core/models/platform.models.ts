@@ -127,6 +127,82 @@ export interface PlatformDashboardDto {
   quotaDefinitionCount: number;
   failedJobs: number;
   failedOutbox: number;
+  operations?: PlatformOperationsSummaryDto;
+}
+
+export interface PlatformOperationsSummaryDto {
+  applications: ApplicationReviewSummaryDto;
+  payments: PaymentReviewSummaryDto;
+  databasePool: DatabasePoolSummaryDto;
+  provisioning: ProvisioningSummaryDto;
+  backups: BackupSummaryDto;
+  restores: RestoreSummaryDto;
+}
+
+export interface ApplicationReviewSummaryDto {
+  draft: number;
+  submitted: number;
+  underReview: number;
+  needsMoreInformation: number;
+  approved: number;
+  rejected: number;
+  gymWorkspaceCreation: number;
+  freelanceWorkspaceCreation: number;
+  membership: number;
+}
+
+export interface PaymentReviewSummaryDto {
+  pendingReview: number;
+  approved: number;
+  rejected: number;
+  pendingAmount: number;
+}
+
+export interface DatabasePoolSummaryDto {
+  total: number;
+  available: number;
+  reserved: number;
+  provisioning: number;
+  assigned: number;
+  maintenance: number;
+  restorePending: number;
+  faulted: number;
+  retired: number;
+  activeMappings: number;
+}
+
+export interface ProvisioningSummaryDto {
+  pending: number;
+  awaitingDatabaseCapacity: number;
+  provisioning: number;
+  completed: number;
+  failed: number;
+}
+
+export interface BackupSummaryDto {
+  totalBatches: number;
+  runningBatches: number;
+  completedBatches: number;
+  failedBatches: number;
+  failedArtifacts: number;
+  lastCompletedAtUtc: string | null;
+}
+
+export interface RestoreSummaryDto {
+  totalJobs: number;
+  pendingJobs: number;
+  runningJobs: number;
+  completedJobs: number;
+  failedJobs: number;
+  capabilities: DatabaseRestoreCapabilitiesDto;
+}
+
+export interface DatabaseRestoreCapabilitiesDto {
+  enabled: boolean;
+  mode: string;
+  supportsBacpacImport: boolean;
+  supportsMappingSwitch: boolean;
+  unavailableReason: string | null;
 }
 
 export interface PlatformTenantDto {
@@ -138,6 +214,44 @@ export interface PlatformTenantDto {
   phoneNumber: string;
   membersCount: number;
   createdAt: string;
+  isDeleted: boolean;
+  deletedAt: string | null;
+}
+
+export interface PlatformTenantCredentialsDto {
+  tenantId: string;
+  tenantName: string;
+  ownerEmail: string | null;
+  identityLinked: boolean;
+  identityActive: boolean;
+  emailVerifiedAtUtc: string | null;
+  ownerAccountActive: boolean;
+  membershipStatus: number | null;
+  lastLoginAtUtc: string | null;
+  lockoutEndUtc: string | null;
+  passwordResetAvailable: boolean;
+}
+
+export interface PlatformTenantPasswordResetDto {
+  tenantId: string;
+  ownerEmail: string | null;
+  resetEmailAccepted: boolean;
+  expiresInMinutes: number;
+}
+
+export interface PlatformTenantDeleteRequest {
+  tenantNameConfirmation: string;
+  preserveGlobalIdentity: boolean;
+}
+
+export interface PlatformTenantPermanentDeleteDto {
+  tenantId: string;
+  tenantName: string;
+  status: string;
+  backupBatchId: string;
+  backupArtifactId: string;
+  databaseResourceId: string;
+  globalIdentityPreserved: boolean;
 }
 
 export interface CreateTenantWithOwnerCommand {
