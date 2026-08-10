@@ -2,7 +2,7 @@
 
 > **Source of truth:** this document is generated from the API controllers by `Scripts/Export-ApiEndpointCatalog.ps1`. Do not edit endpoint rows manually; change the controller, rerun the script, and include the refreshed catalog in the same Pull Request.
 
-Generated: `2026-08-08 16:15 UTC`  |  Total endpoints: **403**
+Generated: `2026-08-05 12:22 UTC`  |  Total endpoints: **384**
 
 ## Contract rules
 
@@ -134,60 +134,6 @@ Generated: `2026-08-08 16:15 UTC`  |  Total endpoints: **403**
 - **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
 - **Inputs:** Query `status`: `DatabaseResourceStatus?`<br>Query `tenantId`: `Guid?`<br>Query `page`: `int`<br>Query `pageSize`: `int`<br>Handler signature: `[FromQuery] DatabaseResourceStatus? status = null, [FromQuery] Guid? tenantId = null, [FromQuery] int page = 1, [FromQuery] int pageSize = PlatformPaging.DefaultPageSize`
 - **Declared response:** Task<ActionResult<PlatformPage<PlatformDatabaseResourceDto>>>
-
-#### `POST /api/platform/database-resources` - `Create`
-
-- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
-- **Inputs:** Body `request`: `CreateDatabaseResourceRequest`<br>Handler signature: `[FromBody] CreateDatabaseResourceRequest request`
-- **Declared response:** Task<ActionResult<PlatformDatabaseResourceDto>>
-
-#### `DELETE /api/platform/database-resources/{id:guid}` - `Delete`
-
-- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
-- **Inputs:** Handler signature: `Guid id`
-- **Declared response:** Task<IActionResult>
-
-#### `GET /api/platform/database-resources/{id:guid}` - `Get`
-
-- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
-- **Inputs:** Handler signature: `Guid id`
-- **Declared response:** Task<ActionResult<PlatformDatabaseResourceDto>>
-
-#### `PUT /api/platform/database-resources/{id:guid}` - `Update`
-
-- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
-- **Inputs:** Body `request`: `UpdateDatabaseResourceRequest`<br>Handler signature: `Guid id, [FromBody] UpdateDatabaseResourceRequest request`
-- **Declared response:** Task<ActionResult<PlatformDatabaseResourceDto>>
-
-#### `POST /api/platform/database-resources/{id:guid}/backup` - `Backup`
-
-- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
-- **Inputs:** Handler signature: `Guid id`
-- **Declared response:** Task<ActionResult<BackupBatchDto>>
-
-#### `POST /api/platform/database-resources/{id:guid}/migrations` - `RunMigrations`
-
-- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
-- **Inputs:** Handler signature: `Guid id`
-- **Declared response:** Task<ActionResult<DatabaseResourceOperationDto>>
-
-#### `POST /api/platform/database-resources/{id:guid}/repair-connection` - `RepairConnection`
-
-- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
-- **Inputs:** Body `request`: `RepairDatabaseResourceConnectionRequest`<br>Handler signature: `Guid id, [FromBody] RepairDatabaseResourceConnectionRequest request`
-- **Declared response:** Task<ActionResult<DatabaseResourceOperationDto>>
-
-#### `POST /api/platform/database-resources/{id:guid}/status` - `SetStatus`
-
-- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
-- **Inputs:** Body `request`: `SetDatabaseResourceStatusRequest`<br>Handler signature: `Guid id, [FromBody] SetDatabaseResourceStatusRequest request`
-- **Declared response:** Task<ActionResult<PlatformDatabaseResourceDto>>
-
-#### `POST /api/platform/database-resources/test-connection` - `TestConnection`
-
-- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
-- **Inputs:** Body `request`: `DatabaseConnectionTestRequest`<br>Handler signature: `[FromBody] DatabaseConnectionTestRequest request`
-- **Declared response:** Task<ActionResult<DatabaseConnectionTestDto>>
 
 ### PlatformDiagnostics
 
@@ -494,8 +440,8 @@ Generated: `2026-08-08 16:15 UTC`  |  Total endpoints: **403**
 #### `POST /api/platform/tenants` - `CreateTenant`
 
 - **Access:** JWT + Policy: `Permissions.ManageTenants`
-- **Inputs:** Body `command`: `CreateTenantWithOwnerCommand` { `Name`: string; `Subdomain`: string?; `Email`: string?; `PhoneNumber`: string?; `OwnerEmail`: string; `OwnerPhoneNumber`: string?; `OwnerPassword`: string; `OwnerFullName`: string; `IdempotencyKey`: string? }<br>Handler signature: `[FromHeader(Name = "Idempotency-Key")] string? idempotencyKey, [FromBody] CreateTenantWithOwnerCommand command`
-- **Declared response:** typeof(PlatformTenantDto), StatusCodes.Status201Created<br>StatusCodes.Status400BadRequest<br>StatusCodes.Status409Conflict<br>StatusCodes.Status503ServiceUnavailable
+- **Inputs:** Body `command`: `CreateTenantWithOwnerCommand` { `Name`: string; `Subdomain`: string?; `Email`: string?; `PhoneNumber`: string?; `OwnerEmail`: string; `OwnerPhoneNumber`: string?; `OwnerPassword`: string; `OwnerFullName`: string }<br>Handler signature: `[FromBody] CreateTenantWithOwnerCommand command`
+- **Declared response:** typeof(PlatformTenantDto), StatusCodes.Status201Created
 
 #### `POST /api/platform/tenants/{id:guid}/activate` - `Activate`
 
@@ -556,14 +502,8 @@ Generated: `2026-08-08 16:15 UTC`  |  Total endpoints: **403**
 #### `GET /api/platform/workspace-applications` - `List`
 
 - **Access:** JWT + Policy: `Permissions.ManageTenants`
-- **Inputs:** Query `applicationType`: `ApplicationType?`<br>Query `status`: `ApplicationRequestStatus?`<br>Query `paymentStatus`: `PaymentRequestStatus?`<br>Query `workspaceStatus`: `TenantStatus?`<br>Query `subscriptionStatus`: `TenantSubscriptionStatus?`<br>Query `provisioningStatus`: `ProvisioningJobStatus?`<br>Query `page`: `int`<br>Query `pageSize`: `int`<br>Handler signature: `[FromQuery] ApplicationType? applicationType, [FromQuery] ApplicationRequestStatus? status, [FromQuery] PaymentRequestStatus? paymentStatus, [FromQuery] TenantStatus? workspaceStatus, [FromQuery] TenantSubscriptionStatus? subscriptionStatus, [FromQuery] ProvisioningJobStatus? provisioningStatus, [FromQuery] int page = 1, [FromQuery] int pageSize = 20`
+- **Inputs:** Query `applicationType`: `ApplicationType?`<br>Query `status`: `ApplicationRequestStatus?`<br>Query `page`: `int`<br>Query `pageSize`: `int`<br>Handler signature: `[FromQuery] ApplicationType? applicationType, [FromQuery] ApplicationRequestStatus? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20`
 - **Declared response:** typeof(PagedResult<PlatformApplicationDto>), StatusCodes.Status200OK
-
-#### `POST /api/platform/workspace-applications` - `Create`
-
-- **Access:** JWT + Policy: `Permissions.ManageTenants`
-- **Inputs:** Body `command`: `CreatePlatformWorkspaceApplicationCommand` { `WorkspaceType`: WorkspaceType; `WorkspaceName`: string; `WorkspaceIdentifier`: string; `OwnerFullName`: string; `OwnerEmail`: string; `OwnerPhoneNumber`: string?; `PlanId`: Guid; `BillingCycle`: BillingCycle; `BrandName`: string?; `Description`: string?; `Address`: string?; `Specialization`: string?; `DeliveryMode`: string? }<br>Handler signature: `[FromBody] CreatePlatformWorkspaceApplicationCommand command`
-- **Declared response:** typeof(PlatformWorkspaceApplicationCreatedDto), StatusCodes.Status201Created
 
 #### `POST /api/platform/workspace-applications/{id:guid}/approve-freelance` - `ApproveFreelance`
 
@@ -572,12 +512,6 @@ Generated: `2026-08-08 16:15 UTC`  |  Total endpoints: **403**
 - **Declared response:** Task<ActionResult<PlatformApplicationDto>>
 
 #### `POST /api/platform/workspace-applications/{id:guid}/approve-membership` - `ApproveMembership`
-
-- **Access:** JWT + Policy: `Permissions.ManageTenants`
-- **Inputs:** Body `request`: `ConcurrencyRequest`<br>Handler signature: `Guid id, [FromBody] ConcurrencyRequest request`
-- **Declared response:** Task<ActionResult<PlatformApplicationDto>>
-
-#### `POST /api/platform/workspace-applications/{id:guid}/approve-workspace` - `ApproveWorkspace`
 
 - **Access:** JWT + Policy: `Permissions.ManageTenants`
 - **Inputs:** Body `request`: `ConcurrencyRequest`<br>Handler signature: `Guid id, [FromBody] ConcurrencyRequest request`
@@ -2483,23 +2417,11 @@ Generated: `2026-08-08 16:15 UTC`  |  Total endpoints: **403**
 
 ### WorkspaceApplications
 
-#### `POST /api/workspace-applications` - `Submit`
-
-- **Access:** Server default (not declared explicitly)
-- **Inputs:** Form `form`: `SubmitWorkspaceApplicationForm`<br>Handler signature: `[FromForm] SubmitWorkspaceApplicationForm form, [FromForm(Name = "proof")] IFormFile? proof`
-- **Declared response:** typeof(ApplicationTrackingSessionDto), StatusCodes.Status201Created
-
 #### `POST /api/workspace-applications/freelance` - `SubmitFreelance`
 
 - **Access:** Server default (not declared explicitly)
-- **Inputs:** Body `command`: `SubmitFreelanceWorkspaceApplicationCommand` { `WorkspaceType`: WorkspaceType; `Email`: string; `PhoneNumber`: string?; `Password`: string; `WorkspaceName`: string; `WorkspaceIdentifier`: string; `OwnerFullName`: string; `BrandName`: string?; `LogoUrl`: string?; `PhotoUrl`: string?; `CoverImageUrl`: string?; `BackgroundImageUrl`: string?; `PrimaryColor`: string?; `SecondaryColor`: string?; `Bio`: string?; `DeliveryMode`: string?; `Specialties`: IReadOnlyList<string>?; `Certifications`: IReadOnlyList<string>?; `WelcomeMessage`: string?; `BookingSettings`: System.Text.Json.JsonElement?; `PlanId`: Guid; `BillingCycle`: BillingCycle?; `PaymentAmount`: decimal?; `PaymentTransactionNumber`: string? }<br>Handler signature: `[FromBody] SubmitFreelanceWorkspaceApplicationCommand command`
+- **Inputs:** Body `command`: `SubmitFreelanceWorkspaceApplicationCommand` { `Email`: string; `PhoneNumber`: string?; `Password`: string; `WorkspaceName`: string; `WorkspaceIdentifier`: string; `OwnerFullName`: string; `BrandName`: string?; `LogoUrl`: string?; `PhotoUrl`: string?; `CoverImageUrl`: string?; `BackgroundImageUrl`: string?; `PrimaryColor`: string?; `SecondaryColor`: string?; `Bio`: string?; `Specialties`: IReadOnlyList<string>?; `Certifications`: IReadOnlyList<string>?; `WelcomeMessage`: string?; `BookingSettings`: System.Text.Json.JsonElement?; `PlanId`: Guid; `BillingCycle`: BillingCycle; `PaymentAmount`: decimal; `PaymentTransactionNumber`: string?; `PaymentDate`: DateTime?; `ProofStorageKey`: string }<br>Handler signature: `[FromBody] SubmitFreelanceWorkspaceApplicationCommand command`
 - **Declared response:** typeof(ApplicationTrackingSessionDto), StatusCodes.Status201Created
-
-#### `GET /api/workspace-applications/plans` - `GetPlans`
-
-- **Access:** Server default (not declared explicitly)
-- **Inputs:** No request input.
-- **Declared response:** typeof(List<PlanDto>), StatusCodes.Status200OK
 
 #### `GET /api/workspace-applications/tracking` - `GetTrackingStatus`
 
@@ -2558,41 +2480,3 @@ Generated: `2026-08-08 16:15 UTC`  |  Total endpoints: **403**
 - **Access:** Anonymous (no token required)
 - **Inputs:** Body `command`: `PreviewWorkspaceInviteCommand` { `Token`: string }<br>Handler signature: `[FromBody] PreviewWorkspaceInviteCommand command`
 - **Declared response:** typeof(WorkspaceInvitePreviewDto), StatusCodes.Status200OK
-
-### WorkspaceMembers
-
-#### `GET /api/workspace-members` - `List`
-
-- **Access:** JWT + Policy: `Permissions.ManageEmployees`
-- **Inputs:** Query `role`: `UserRole?`<br>Query `accessStatus`: `string?`<br>Query `searchTerm`: `string?`<br>Handler signature: `[FromQuery] UserRole? role, [FromQuery] string? accessStatus, [FromQuery] string? searchTerm`
-- **Declared response:** typeof(IReadOnlyList<WorkspaceMemberDto>), StatusCodes.Status200OK
-
-#### `POST /api/workspace-members` - `Create`
-
-- **Access:** JWT + Policy: `Permissions.ManageEmployees`
-- **Inputs:** Body `command`: `CreateWorkspaceMemberCommand` { `Email`: string; `PhoneNumber`: string?; `FullName`: string; `Role`: UserRole }<br>Handler signature: `[FromBody] CreateWorkspaceMemberCommand command`
-- **Declared response:** typeof(WorkspaceMemberCreatedDto), StatusCodes.Status201Created
-
-#### `POST /api/workspace-members/{membershipId:guid}/activate` - `Activate`
-
-- **Access:** JWT + Policy: `Permissions.ManageEmployees`
-- **Inputs:** Handler signature: `Guid membershipId`
-- **Declared response:** Task<ActionResult<WorkspaceMemberDto>>
-
-#### `POST /api/workspace-members/{membershipId:guid}/remove` - `Remove`
-
-- **Access:** JWT + Policy: `Permissions.ManageEmployees`
-- **Inputs:** Handler signature: `Guid membershipId`
-- **Declared response:** Task<ActionResult<WorkspaceMemberDto>>
-
-#### `POST /api/workspace-members/{membershipId:guid}/reset-password` - `ResetPassword`
-
-- **Access:** JWT + Policy: `Permissions.ManageEmployees`
-- **Inputs:** Handler signature: `Guid membershipId`
-- **Declared response:** typeof(WorkspaceMemberCreatedDto), StatusCodes.Status200OK
-
-#### `POST /api/workspace-members/{membershipId:guid}/suspend` - `Suspend`
-
-- **Access:** JWT + Policy: `Permissions.ManageEmployees`
-- **Inputs:** Handler signature: `Guid membershipId`
-- **Declared response:** Task<ActionResult<WorkspaceMemberDto>>

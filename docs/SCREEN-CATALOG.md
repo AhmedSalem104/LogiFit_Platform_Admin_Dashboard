@@ -1,34 +1,16 @@
 # كتالوج شاشات لوحة المنصة
 
-## `/tenants` lifecycle additions (Issue #214)
-
-The tenant row now has explicit **بيانات الدخول**, reset-link, soft-delete, restore, and permanent
-delete actions. The credentials dialog is metadata-only: owner email, identity/membership state,
-and account activity are safe to display; passwords and hashes are never present in the response.
-Permanent delete uses a typed gym-name confirmation and explains that backup must succeed before
-database purge/resource release; it also states that the owner's Global Identity is preserved.
-
-> **Issue #60 — local implementation, not released:** the two-step OTP experience exists on `/auth/login` only. All screens call authorized operations directly without a post-login OTP dialog.
-
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
 |---|---|---|---|---|---|
-| `/workspace-applications` | طابور طلبات مساحات العمل وإنشاء Gym/FreelanceCoach | `ManageTenants` | `GET/POST /api/platform/workspace-applications` وعمليات lifecycle | إنشاء مساحة، فلاتر lifecycle، Timeline، بدء مراجعة / طلب استكمال / اعتماد / رفض / إعادة تجهيز | يميز الجيم والمدرب الحر بالأيقونة والـBadge واللون؛ المدرب الحر مساحة مستقلة؛ لا تظهر Connection Material؛ كلمة المرور المؤقتة تظهر مرة واحدة فقط؛ كل قرار محمي بـ`rowVersion`. |
+| `/workspace-applications` | طابور طلبات مساحات العمل | `ManageTenants` | `/api/platform/workspace-applications` | بدء مراجعة / طلب استكمال / اعتماد / رفض | القرار نهائي ومدقق بـ`rowVersion`، ولا تظهر بيانات صحية أو تدريبية. |
 
 كل Route أدناه lazy-loaded ومحمٍ على مستوى الواجهة والخادم. القائمة الجانبية والمساعد
 يخفيان ما لا يملكه المستخدم، لكن الـPlatform API هو الحاجز الأمني النهائي.
 
-الدخول `/auth/login` شاشة من مرحلتين: Email + Password ثم OTP إلزامي. بعد الدخول تعتمد العمليات
-على JWT والصلاحيات بدون OTP إضافي؛ Refresh Token داخل HttpOnly
-Cookie ولا يوجد له مفتاح localStorage. اكتشاف Caps Lock محمي من أحداث الهاتف والملء التلقائي
-غير المتوافقة ولا يعطل إرسال النموذج.
-
-تعرض مرحلة OTP الخاصة بالدخول مؤقتًا عبارة اختبار Issue #127 (`1234`) في النسخة المستضافة حتى
-يتوفر مزود الإرسال. لا تعتمد أي صلاحية على العبارة؛ التحقق والحالة والانتهاء كلها من الـBackend.
-
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
 |---|---|---|---|---|---|
-| `/dashboard` | لوحة القيادة التنفيذية | `ManagePlatformReports` | `/api/platform/dashboard` و`/api/platform/dashboard/tenants` | KPIs، رسوم توزيع/ضغط التشغيل، تحديث حي، وبحث الجيمات | الأرقام حقيقية أو مشتقة من DTO؛ لا قرار مالي من KPI فقط. |
-| `/tenants` | الصالات والمستأجرون | `ManageTenants` | `/tenants` | إنشاء/اعتماد/تعليق/تفعيل/أرشفة، بيانات دخول، reset، حذف مؤقت/استعادة، حذف نهائي مؤكد | لا حذف عام؛ الحذف النهائي مشروط بنسخة احتياطية وPlatformOwner. |
+| `/dashboard` | لوحة المتابعة | `ManagePlatformReports` | `/dashboard` | متابعة المؤشرات والتنبيهات | لا قرار مالي من KPI فقط. |
+| `/tenants` | الصالات والمستأجرون | `ManageTenants` | `/tenants` | إنشاء/اعتماد/تعليق/تفعيل/أرشفة | لا حذف لصالة ذات تاريخ. |
 | `/subscriptions` | دورات الاشتراك | `ManageTenants` | `/subscriptions` | transition/extend/preview | EndDate غير شامل، Snapshot ثابت. |
 | `/plans` | الخطط والأسعار | `ManagePlans` | `/plans` | إنشاء وتعديل قوالب الخطط | لا تعديل Snapshot مفعل. |
 | `/features` | كتالوج الميزات | `ManagePlans` | `/features` | تعريف/تعديل/أرشفة | FeatureKey ثابت. |
@@ -38,22 +20,18 @@ Cookie ولا يوجد له مفتاح localStorage. اكتشاف Caps Lock مح
 | `/payment-methods` | طرق الدفع | `ManagePaymentRequests` | `/payment-methods` | CRUD طرق الدفع اليدوي | لا تضع أسراراً ظاهرة. |
 | `/payment-requests` | طلبات الدفع | `ManagePaymentRequests` | `/payment-requests` | موافقة/رفض سبب | قرار معتمد لا يعدل. |
 | `/backups` | النسخ الاحتياطية | `ManagePlatformBackups` | `/backups`, `/batch`, `/batches`, `/restores/capabilities` | تشغيل FullSystem/AllTenants، متابعة artifacts، checksum/manifest، retry آمن | السجلات immutable؛ لا connection material؛ `ManualOnly` لا يضيف زر restore. |
-| `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `GET/POST /database-resources`, `POST /database-resources/{id}/repair-connection`, `POST /{id}/migrations`, `POST /{id}/backup`, `POST /{id}/status` | تسجيل وإصلاح اتصال محمي، migrations/health، backup للمورد المخصص، وعرض lifecycle | connection write-only؛ لا generic edit/delete للمخصص؛ الخادم يفرض الاختبار والتشفير والـmapping والـAudit Log. |
+| `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `GET/POST /api/platform/database-resources` | مراجعة Pool وتسجيل مورد مشفر، مع عرض الحالة والصحة والتخصيص | لا تعرض connection string أو اسم قاعدة البيانات أو القيمة المشفرة؛ التسجيل write-once من الخادم ويعرض `hasProtectedConnection` فقط. |
 | `/audit-logs` | سجل المراجعة | `ManagePlatformReports` | `/audit-logs` | بحث وقراءة | immutable؛ لا CRUD. |
 | `/invoices` | الفواتير | `ManagePlatformReports` | `/invoices` | بحث وقراءة | تصحيح بعكس مالي جديد. |
 | `/administrators` | مدراء المنصة | `ManagePlatformReports` | `/administrators` | إنشاء/تفعيل/تعطيل | أقل صلاحية؛ لا مشاركة حساب. |
 | `/roles` | الأدوار والصلاحيات | `ManagePlatformReports` | `/roles` | تحرير permissions | ManagePlatform وصول كامل. |
 | `/operations` | Jobs وOutbox | `ManagePlatformReports` | `/operations/jobs`, `/operations/outbox` | متابعة وتشخيص | لا تحذف jobs/outbox. |
 
-### Backup Center interaction contract
+### عقد التفاعل مع شاشة النسخ الاحتياطية
 
-The `/backups` screen starts a server-resolved backup batch only after the service reports `Ready` and the operator confirms the selected scope. Supported scopes are `Platform`, `SelectedTenants`, `AllGyms`, `AllFreelance`, `AllTenants`, and `FullSystem`; selected tenants are loaded as safe labels and only their IDs are submitted. The screen distinguishes loading, unavailable, empty, partial, failed, and completed states; it shows per-target status, size, SHA-256, manifest availability, and protected download actions. Confirmation and in-flight locks plus a manual idempotency key prevent duplicate clicks. Retry is offered only for `Failed` or `Partial` batches and is target-scoped by the Backend. No connection string, database name, storage path, or provider credential is rendered.
+تبدأ شاشة `/backups` دفعة نسخ يحددها الخادم فقط بعد إعلان الخدمة حالة `Ready` وبعد تأكيد المشغّل للنطاق المختار. تدعم النطاقات `Platform` و`SelectedTenants` و`AllGyms` و`AllFreelance` و`AllTenants` و`FullSystem`؛ وتحمّل المساحات المحددة كأسماء آمنة ولا ترسل إلا معرّفاتها. تميز الشاشة حالات التحميل وعدم الإتاحة والفراغ والاكتمال الجزئي والفشل والاكتمال؛ وتعرض حالة كل هدف وحجمه وبصمة SHA-256 وتوفر البيان وإجراءات التنزيل المحمية. تمنع أقفال التأكيد والتنفيذ ومفتاح idempotency اليدوي النقرات المكررة. تتاح إعادة المحاولة لدفعات `Failed` أو `Partial` فقط وبنطاق الأهداف الذي يحدده الخادم. ولا تعرض الشاشة سلسلة اتصال أو اسم قاعدة بيانات أو مسار تخزين أو بيانات اعتماد للمزود.
 
-The `/database-resources` screen supports server-side lifecycle and Tenant ID filters. Its summary
-cards are explicitly page-scoped because the table is paginated. `Repair` is available for
-`Available`, `Allocated`, `Failed`, and `Disabled` rows; the server validates and protects the
-replacement value and updates an allocated mapping transactionally. The UI never renders the
-protected value or database metadata.
+تدعم شاشة `/database-resources` فلاتر دورة الحياة ومعرّف مساحة العمل من الخادم. أرقام الملخص مرتبطة بالصفحة الحالية لأن الجدول يستخدم الترقيم. يتاح `إصلاح` للصفوف `Available` و`Allocated` و`Failed` و`Disabled`؛ ويتحقق الخادم من القيمة البديلة ويحميها ويحدّث الربط المخصص داخل معاملة. لا تعرض الواجهة القيمة المحمية أو بيانات تعريف قاعدة البيانات.
 | `/reports` | التقارير | `ManagePlatformReports` | `/reports/overview` | قراءة المؤشرات | افتح مصدر البيانات قبل القرار. |
 | `/alerts` | التنبيهات | `ManagePlatformReports` | `/alerts` | فرز/متابعة مصدر التنبيه | 500/503 تحتاج Logs وخادم. |
 | `/documentation` | المرجع والدليل | `ManagePlatformReports` | محتوى الواجهة الموثق | بحث وفتح شاشة | لا يحل محل تحقق Backend. |

@@ -1,13 +1,5 @@
 # نظام التصميم — لوحة إدارة LogicFit
 
-## Sensitive tenant lifecycle actions (Issue #214)
-
-Use icon buttons with tooltips for **بيانات الدخول**, reset, soft-delete, restore, and permanent
-delete. Credentials use a modal card with status labels and no password field. Reset and lifecycle
-mutations use `NotifyService` confirmations; permanent delete uses bounded typed-name input and a
-danger treatment. Always explain the backup-before-purge rule and Global Identity preservation in
-the confirmation copy, and route all errors through the shared notification service.
-
 هذا الملف هو العقد البصري للوحة الإدارة. الهدف: واجهة عربية RTL متناسقة، غنية
 بالمعلومات دون ازدحام، قابلة للوصول، وسهلة الصيانة باستخدام Tailwind مع PrimeNG.
 لا تضف CSS محلياً أو لوناً/زرّاً جديداً قبل محاولة استخدام الـtokens والـprimitives
@@ -66,17 +58,6 @@ the confirmation copy, and route all errors through the shared notification serv
 في الشاشات التنفيذية استخدم KPI cards (`lf-kpi-card`) ثم جدول أو قائمة ذات معنى.
 لا تملأ الصفحة ببطاقات زخرفية أو أكثر من إجراء أساسي متنافس في أعلى الشاشة.
 
-### نمط المصادقة وOTP
-
-- يجب حماية تحسينات لوحة المفاتيح مثل Caps Lock من الأحداث التي لا تنفذ
-  `getModifierState`، خصوصًا على الهاتف والملء التلقائي وتقنيات الوصول.
-
-- `/auth/login` Card واحدة بمنتصف الصفحة وstepper واضح لمرحلتي كلمة المرور وOTP.
-- OTP input في اتجاه LTR، كبير وواضح، مع masked phone وعداد انتهاء/إعادة إرسال.
-- خطأ الكود يظهر بجوار الحقل، والزر يحمل loading/disabled لمنع الضغط المكرر.
-- عبارة `1234` تظهر في Development، ومؤقتًا في Production أثناء استثناء Issue #127 فقط.
-  يجب حذفها من Production build عند تشغيل مزود الإرسال الخارجي، ولا تعاملها الواجهة كإثبات.
-
 ## 5. الأزرار والإجراءات
 
 | النوع | كيف يبنى؟ | متى يستخدم؟ |
@@ -132,7 +113,7 @@ the confirmation copy, and route all errors through the shared notification serv
 
 ## 10. تطبيق الشاشة الجديدة
 
-صف طلبات مساحات العمل يستخدم `PageHeaderComponent` و`ServerPaginatorComponent` و`NotifyService` الحاليين، مع Tooltip لكل زر أيقونة. حالة القرار تظهر بنص ولون معًا. مربع طلب الاستكمال يشرح الحد الأمني ويعرض خيارات حقول مقيدة بنوع الطلب بدل إدخال نصي حر؛ لا يقبل طلب حقول صحية أو تدريبية، بينما التحقق النهائي دائمًا في الخادم. عند 409 تعرض الواجهة رسالة قرار قابلة للتنفيذ ثم تعيد تحديث الصف، ولا تعرض نص استثناء الخادم الخام.
+صف طلبات مساحات العمل يستخدم `PageHeaderComponent` و`ServerPaginatorComponent` و`NotifyService` الحاليين، مع Tooltip لكل زر أيقونة. حالة القرار تظهر بنص ولون معًا. مربع طلب الاستكمال يشرح الحد الأمني ولا يقبل طلب حقول صحية أو تدريبية؛ التحقق النهائي دائمًا في الخادم.
 
 ## 11. قائمة مراجعة قبل الدمج
 
@@ -144,14 +125,3 @@ the confirmation copy, and route all errors through the shared notification serv
 6. الصفحات الحساسة لا تضيف delete/edit لسجل مالي أو Audit أو Outbox أو Jobs.
 7. أضف/حدّث دليل المساعد و`docs/ADMIN-WORKSPACE.md`.
 8. شغّل `npm run build` قبل تسليم التغيير.
-
-## 12. أسلوب لوحة القيادة التنفيذية
-
-- استخدم `lf-dashboard-hero` للسياق والحالة الحية، و`lf-kpi-card`/`lf-executive-kpi`
-  للأرقام الأساسية مع وصف مختصر ومؤشر لوني ونصي.
-- الرسوم يجب أن تحمل عنوانًا يوضح أنها توزيع أو ضغط حالي عندما لا يوفر الـBackend سلسلة
-  زمنية. لا تستخدم أرقامًا ثابتة أو حركة بصرية توحي بتغير بيانات غير حقيقي.
-- كل رسم يجب أن يظل مفهومًا بالأرقام والنص، لا باللون وحده، وأن يكون قابلًا للعرض على الهاتف.
-- مؤشرات التشغيل روابط إلى الشاشة المصدرية؛ لا تحول لوحة القيادة إلى مكان لتنفيذ mutation مالي
-  أو تشغيلي مباشر.
-- التحديث التلقائي يحتاج حالة Live/Paused، وقت آخر نجاح، ومنع تكرار الاشتراكات عند مغادرة الصفحة.

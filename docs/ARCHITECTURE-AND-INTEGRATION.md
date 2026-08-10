@@ -1,20 +1,5 @@
 # معمارية وربط لوحة إدارة LogicFit
 
-## Gym lifecycle API integration (Issue #214)
-
-`TenantsService` maps the explicit Backend routes under `/api/platform/tenants/{id}` for credentials,
-reset, soft-delete, restore, and permanent-delete. The UI uses `NotifyService` for confirmation and
-bounded typed-name input; it never accepts a database name, connection string, password hash, or
-current password from the API. Backend authorization is `ManageTenants` for ordinary lifecycle
-operations and `PlatformOwner` for irreversible deletion. The response refreshes the server-side
-list after mutations, including the `Deleted` filter used for restore.
-
-> **Issue #60 — local implementation, not released:** the dashboard keeps password + OTP login and removes all post-login OTP step-up services, dialogs, interceptors, headers, and retries.
-
-> **حالة Issue #118:** تم الدمج في فروع `develop` للـBackend وTenant UI وPlatform UI بتاريخ 2026-08-01. لم تُصدر أو تُنشر أو تُتحقق على Production بعد.
-
-> **Production API routing:** both `/api/*` and `/uploads/*` are rewritten by Vercel to the verified unified RunASP host `https://logicfit-saas-model.runasp.net`. The similarly named `logicfit-saas.runasp.net` host is not a valid production target and must not be reintroduced.
-
 ## الغرض والنطاق
 
 هذه الواجهة مخصصة فقط لإدارة منصة LogicFit SaaS من قبل `PlatformOwner` و
@@ -25,8 +10,7 @@ list after mutations, including the `Deleted` filter used for restore.
 flowchart LR
     User[Platform Owner / Admin] --> Angular[Angular 18 Admin Dashboard]
     Angular --> Auth[AuthService + Guards]
-    Auth --> Otp[Password + mandatory OTP]
-    Otp --> Interceptor[JWT / HttpOnly refresh single-flight]
+    Auth --> Interceptor[JWT / Refresh single-flight]
     Interceptor --> Proxy[/api/platform rewrite or dev proxy/]
     Proxy --> API[LogicFit.Platform.API]
     API --> Domain[Application / Domain / Infrastructure]
@@ -47,21 +31,14 @@ flowchart LR
 
 ## المصادقة والجلسة
 
-1. `POST /api/platform/auth/login` يفحص البريد وكلمة المرور ثم يعيد OTP challenge فقط.
-   أحداث الإدخال التي لا تدعم `getModifierState` لا توقف إرسال الطلب؛ Caps Lock تحسين واجهة فقط.
-2. الواجهة ترسل `challengeId + code + sessionBinding` إلى
-   `POST /api/platform/auth/otp/verify`. لا تصدر جلسة Platform قبل نجاح الخطوتين.
-3. تحفظ الواجهة Access Token وبيانات المستخدم والصلاحيات فقط. Refresh Token يكتبه
-   الخادم في Cookie آمنة `HttpOnly; Secure; SameSite=None` ولا يقرأها JavaScript.
-4. `jwt.interceptor` يضيف Bearer Token ويرسل credentials مع طلبات API.
-5. عند انتهاء Access Token تشارك الطلبات المتزامنة عملية refresh واحدة (`single-flight`).
-6. فشل refresh يمسح الجلسة ويعيد إلى `/auth/login`.
-7. بعد نجاح الدخول ترسل كل عملية طلبًا واحدًا عاديًا مع JWT؛ لا يوجد step-up interceptor أو
-   OTP dialog أو headers إضافية. تعني `403` أن الدور أو الصلاحية لا تسمح بالعملية.
-8. `authGuard` يحمي الـshell و`permissionGuard` يحمي كل Route؛ API يكرر التحقق كحاجز
+1. `POST /api/platform/auth/login` بالبريد وكلمة المرور.
+2. تحفظ الواجهة Access Token وRefresh Token وبيانات المستخدم والصلاحيات في التخزين
+   المحلي بأسماء `logifit_platform_*`.
+3. `jwt.interceptor` يضيف Bearer Token لكل API محمي.
+4. عند انتهاء Access Token تشارك الطلبات المتزامنة عملية refresh واحدة (`single-flight`).
+5. فشل refresh يمسح الجلسة ويعيد إلى `/auth/login`.
+6. `authGuard` يحمي الـshell و`permissionGuard` يحمي كل Route؛ API يكرر التحقق كحاجز
    أمني فعلي.
-9. Issue #127 يضيف وضع اختبار مستضاف مؤقتًا بكود `1234`. الواجهة تعرض تلميحًا فقط؛ الخادم
-   ينشئ challenge حقيقيًا ويطبّق الـHash والحدود والاستهلاك الذري وتاريخ انتهاء الاستثناء.
 
 `ManagePlatform` يمنح كل الصلاحيات؛ غيره يرى فقط الشاشات التي تحقق
 `AuthService.hasAnyPermission`.
@@ -77,17 +54,6 @@ flowchart LR
 التشغيلي للخادم موجود في `platformApiUrl` للمرجع، بينما الطلبات الفعلية تبقى relative
 لتستفيد من proxy/rewrite.
 
-## لوحة القيادة التنفيذية
-
-`DashboardComponent` يستهلك `GET /api/platform/dashboard` بعقد `PlatformDashboardDto`
-وبنية `operations` التي تلخص العمل الجاري دون أسماء قواعد بيانات أو connection material.
-ويقرأ جدول الجيمات من `/api/platform/dashboard/tenants`. الفلاتر الزمنية وحالة الاشتراك
-تصل إلى الخادم كـquery parameters وتخص بيانات الاشتراكات؛ بقية الملخص لقطة تشغيل حالية.
-
-الرسوم في الواجهة SVG/CSS ومبنية على القيم الحالية: لا توجد أرقام تجريبية ولا مكتبة رسوم
-خارجية ولا ادعاء بوجود تاريخ زمني غير متوفر في العقد. التحديث التلقائي كل 60 ثانية يوقفه
-المشغل، ويتم إلغاء الاشتراك عند تدمير المكون حتى لا تتكرر الطلبات أو يتسرب timer.
-
 ## قواعد البيانات في الواجهة
 
 - كل قائمة API تستقبل `page` و`pageSize` وتعرض `PagedResult<T>`.
@@ -97,11 +63,10 @@ flowchart LR
   عاماً إليها.
 - شاشة `/database-resources` تستخدم `GET /api/platform/database-resources` وتعرض
   `hasProtectedConnection` كمؤشر Boolean آمن لوجود قيمة محمية؛ لا تعتمد على `DatabaseName` ولا
-  تقرأ أو تعرض connection material. أزرار التسجيل والإصلاح والترحيل والنسخ تستدعي عقود Platform API
-  المحمية فقط: `POST /database-resources`, `POST /database-resources/{id}/repair-connection`,
-  `POST /database-resources/{id}/migrations`, و`POST /database-resources/{id}/backup`.
-  الواجهة لا تفك التشفير ولا تسمح بتجاوز lifecycle lock؛ الخادم يختبر الاتصال ويشفره ويحدث الـmapping
-  والـAudit Log.
+  تقرأ أو تعرض مادة الاتصال. يستدعي التسجيل `POST /api/platform/database-resources`، ويستدعي اختبار
+  الاتصال `POST /api/platform/database-resources/test-connection`، بينما يستدعي الإصلاح والترحيلات
+  وفحص الصحة والنسخ نقاط الخادم المحمية. يشفر الخادم القيمة ولا يعيدها؛ ولا توجد edit/delete عامة،
+  ويظل التخصيص والنسخ تحت سلطة الخادم.
 
 ## تكامل النسخ الاحتياطي
 
@@ -119,9 +84,9 @@ flowchart LR
 |---|---|---|
 | 400 | عرض رسالة تحقق مفهومة. | صحح مدخلات النموذج. |
 | 401 | محاولة refresh ثم logout عند الفشل. | تحقق من الجلسة والصلاحيات. |
-| 403 | الجلسة لا تملك الدور أو الصلاحية اللازمة للعملية. | راجع صلاحيات الحساب؛ لا يبدأ OTP بعد تسجيل الدخول. |
+| 403 | رسالة عدم صلاحية. | راجع الدور من شاشة الأدوار. |
 | 404 | المورد/الـEndpoint غير موجود. | تحقق من اسم المورد أو إصدار API المنشور. |
-| 409 | تعارض عمل مثل حذف خطة مستخدمة أو نسخة طلب قديمة. | أعد قراءة السجل واتبع دورة الحياة. في اعتماد المدرب الحر، رسالة تهيئة الأدوار تعني تطبيق Migration `SeedFreelanceSystemRoles` وليس إعادة المحاولة العشوائية. |
+| 409 | تعارض عمل مثل حذف خطة مستخدمة. | أعد قراءة السجل واتبع دورة الحياة. |
 | 500/503 | رسالة عامة بلا كشف تفاصيل. | راجع Logs وإعدادات API/الخدمة. |
 
 ## المساعد التشغيلي
@@ -147,9 +112,7 @@ flowchart LR
 
 ## تكامل مراجعة طلبات مساحة العمل
 
-`WorkspaceApplicationsService` يتصل فقط بـ`/api/platform/workspace-applications` عبر interceptor منصة الإدارة. لا يرسل `TenantId` من المتصفح ولا يحاول تنفيذ قرارات محلية. يمرر كل mutation `rowVersion` الذي أعاده الخادم، ويعتمد حالة الصف الجديدة من الاستجابة. إنشاء الجيم والمدرب الحر يستخدم `POST /api/platform/workspace-applications` بعقد واحد مع `workspaceType`; الاعتماد يستخدم `approve-workspace`، بينما `approve-membership` محجوز لطلبات العضوية. أما مقدم الطلب فيستخدم Tenant API العامة `/api/identity` و`/api/workspace-applications` مع Tracking Token قصير العمر، لا Platform JWT.
-
-الاستجابة تعرض حقول lifecycle منفصلة: `applicationStatus`, `paymentStatus`, `workspaceStatus`, `subscriptionStatus`, `databaseStatus`, `provisioningStatus`, `canAccessDashboard`, `requiredAction`, `nextStep`, و`userMessage`. لا تفسر الواجهة `Active` منفردة على أنها جاهزية؛ رسالة blocked أو provisioning أو unavailable لها حالة مرئية بدل صفحة فارغة. كلمة المرور المؤقتة لا تأتي إلا من استجابة الإنشاء للهوية الجديدة، وتُمسح من حالة الواجهة بعد إغلاق نافذة العرض.
+`WorkspaceApplicationsService` يتصل فقط بـ`/api/platform/workspace-applications` عبر interceptor منصة الإدارة. لا يرسل `TenantId` من المتصفح ولا يحاول تنفيذ قرارات محلية. يمرر كل mutation `rowVersion` الذي أعاده الخادم، ويعتمد حالة الصف الجديدة من الاستجابة. أما مقدم الطلب فيستخدم Tenant API العامة `/api/identity` و`/api/workspace-applications` مع Tracking Token قصير العمر، لا Platform JWT.
 
 ## الكتالوج الكامل لعقود API
 

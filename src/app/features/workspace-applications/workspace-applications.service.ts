@@ -2,7 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PagedResult } from '../../core/models/platform.models';
+import {
+  BillingCycle,
+  PaymentRequestStatus,
+  PagedResult,
+  ProvisioningJobStatus,
+  TenantStatus,
+  TenantSubscriptionStatus,
+} from '../../core/models/platform.models';
 
 export enum PlatformApplicationType {
   GymWorkspaceCreation = 1,
@@ -23,58 +30,9 @@ export enum PlatformApplicationStatus {
   Expired = 8,
 }
 
-export enum PlatformPaymentStatus {
-  Pending = 1,
-  Approved = 2,
-  Rejected = 3,
-  Cancelled = 4,
-  Expired = 5,
-}
-
-export enum PlatformWorkspaceStatus {
-  Active = 1,
-  Suspended = 2,
-  Trial = 3,
-  PastDue = 4,
-  Cancelled = 5,
-  PendingApproval = 6,
-  Archived = 7,
-  Deleted = 8,
-  Provisioning = 9,
-  ProvisioningFailed = 10,
-  PendingSubscription = 11,
-  AwaitingDatabaseCapacity = 12,
-}
-
-export enum PlatformSubscriptionStatus {
-  PendingPayment = 1,
-  Trial = 2,
-  Active = 3,
-  PastDue = 4,
-  Suspended = 5,
-  Cancelled = 6,
-  Expired = 7,
-  GracePeriod = 8,
-  PendingActivation = 9,
-}
-
-export enum PlatformProvisioningStatus {
-  Pending = 1,
-  AwaitingDatabaseCapacity = 2,
-  Provisioning = 3,
-  Completed = 4,
-  Failed = 5,
-}
-
-export enum PlatformDatabaseStatus {
-  Available = 1,
-  Reserved = 2,
-  Provisioning = 3,
-  Assigned = 4,
-  Maintenance = 5,
-  RestorePending = 6,
-  Faulted = 7,
-  Retired = 8,
+export enum PlatformWorkspaceType {
+  Gym = 1,
+  FreelanceCoach = 2,
 }
 
 export interface PlatformWorkspaceApplication {
@@ -92,13 +50,15 @@ export interface PlatformWorkspaceApplication {
   reviewedAt: string | null;
   reviewedBy: string | null;
   provisionedWorkspaceId: string | null;
-  workspaceType: number | null;
-  paymentStatus: PlatformPaymentStatus | null;
-  workspaceStatus: PlatformWorkspaceStatus | null;
-  subscriptionStatus: PlatformSubscriptionStatus | null;
-  databaseStatus: PlatformDatabaseStatus | null;
-  databaseStatusCode: 'Unassigned' | 'Provisioning' | 'Ready' | 'Unavailable' | 'Failed' | 'Released' | null;
-  provisioningStatus: PlatformProvisioningStatus | null;
+  workspaceType: PlatformWorkspaceType | null;
+  paymentRequestId: string | null;
+  paymentStatus: PaymentRequestStatus | null;
+  workspaceStatus: TenantStatus | null;
+  subscriptionStatus: TenantSubscriptionStatus | null;
+  databaseStatus: number | null;
+  databaseStatusCode: string | null;
+  provisioningStatus: ProvisioningJobStatus | null;
+  userJourneyStage: string;
   canAccessDashboard: boolean;
   requiredAction: string | null;
   nextStep: string | null;
@@ -108,24 +68,24 @@ export interface PlatformWorkspaceApplication {
   rowVersion: string;
 }
 
-export interface WorkspaceApplicationsFilters {
-  applicationType?: PlatformApplicationType;
+export interface WorkspaceApplicationFilters {
   status?: PlatformApplicationStatus;
-  paymentStatus?: PlatformPaymentStatus;
-  workspaceStatus?: PlatformWorkspaceStatus;
-  subscriptionStatus?: PlatformSubscriptionStatus;
-  provisioningStatus?: PlatformProvisioningStatus;
+  type?: PlatformApplicationType;
+  paymentStatus?: PaymentRequestStatus;
+  workspaceStatus?: TenantStatus;
+  subscriptionStatus?: TenantSubscriptionStatus;
+  provisioningStatus?: ProvisioningJobStatus;
 }
 
 export interface CreatePlatformWorkspaceApplicationCommand {
-  workspaceType: 1 | 2;
+  workspaceType: PlatformWorkspaceType;
   workspaceName: string;
   workspaceIdentifier: string;
   ownerFullName: string;
   ownerEmail: string;
-  ownerPhoneNumber: string;
+  ownerPhoneNumber?: string;
   planId: string;
-  billingCycle: number;
+  billingCycle: BillingCycle;
   brandName?: string;
   description?: string;
   address?: string;
@@ -133,16 +93,10 @@ export interface CreatePlatformWorkspaceApplicationCommand {
   deliveryMode?: string;
 }
 
-export interface OneTimeOwnerCredentials {
-  email: string;
-  temporaryPassword: string;
-  mustChangePassword: boolean;
-}
-
 export interface PlatformWorkspaceApplicationCreated {
   application: PlatformWorkspaceApplication;
   newIdentity: boolean;
-  oneTimeCredentials: OneTimeOwnerCredentials | null;
+  oneTimeCredentials: { email: string; temporaryPassword: string; mustChangePassword: boolean } | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -150,10 +104,10 @@ export class WorkspaceApplicationsService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/workspace-applications`;
 
-  list(filters: WorkspaceApplicationsFilters = {}, page = 1, pageSize = 20): Observable<PagedResult<PlatformWorkspaceApplication>> {
+  list(filters: WorkspaceApplicationFilters = {}, page = 1, pageSize = 20): Observable<PagedResult<PlatformWorkspaceApplication>> {
     let params = new HttpParams().set('page', page).set('pageSize', pageSize);
-    if (filters.applicationType != null) params = params.set('applicationType', filters.applicationType);
     if (filters.status != null) params = params.set('status', filters.status);
+    if (filters.type != null) params = params.set('applicationType', filters.type);
     if (filters.paymentStatus != null) params = params.set('paymentStatus', filters.paymentStatus);
     if (filters.workspaceStatus != null) params = params.set('workspaceStatus', filters.workspaceStatus);
     if (filters.subscriptionStatus != null) params = params.set('subscriptionStatus', filters.subscriptionStatus);
@@ -175,8 +129,11 @@ export class WorkspaceApplicationsService {
     });
   }
 
-  approveWorkspace(application: PlatformWorkspaceApplication): Observable<PlatformWorkspaceApplication> {
-    return this.http.post<PlatformWorkspaceApplication>(`${this.base}/${application.id}/approve-workspace`, { rowVersion: application.rowVersion });
+  approve(application: PlatformWorkspaceApplication): Observable<PlatformWorkspaceApplication> {
+    const action = [PlatformApplicationType.GymWorkspaceCreation, PlatformApplicationType.FreelanceWorkspaceCreation].includes(application.applicationType)
+      ? 'approve-workspace'
+      : 'approve-membership';
+    return this.http.post<PlatformWorkspaceApplication>(`${this.base}/${application.id}/${action}`, { rowVersion: application.rowVersion });
   }
 
   retryProvisioning(application: PlatformWorkspaceApplication): Observable<PlatformWorkspaceApplication> {

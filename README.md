@@ -161,13 +161,11 @@ npm run build
 
 ## Authentication and API connection
 
-1. Platform login uses **email + password then mandatory phone OTP**, never a gym subdomain.
+1. Platform login uses **email + password**, never a gym subdomain.
 2. `AuthService` stores the Access Token, profile and permissions. The Refresh Token exists
    only in a server-issued HttpOnly, Secure cookie.
 3. The JWT interceptor attaches Bearer authentication and sends credentials.
 4. A 401 triggers one shared cookie-based token refresh; failure clears the session.
-5. Sensitive Platform mutations open a five-minute OTP step-up dialog and retry once only
-   after the backend issues a session-bound proof.
 5. `environment.prod.ts` keeps `apiUrl: '/api/platform'`; Vercel rewrites `/api/*`
    to `https://logicfit-saas-model.runasp.net` through `vercel.json`.
 

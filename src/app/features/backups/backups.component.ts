@@ -25,8 +25,8 @@ import { TenantsService } from '../tenants/tenants.service';
   imports: [CommonModule, TableModule, ButtonModule, PageHeaderComponent, ServerPaginatorComponent],
   template: `
     <app-page-header
-      title="Backup Center"
-      subtitle="Create, verify, and securely download platform backup evidence."
+      title="مركز النسخ الاحتياطية"
+      subtitle="أنشئ النسخ الاحتياطية وتحقق منها ونزّل أدلتها بأمان."
       icon="pi pi-database">
     </app-page-header>
 
@@ -54,7 +54,7 @@ import { TenantsService } from '../tenants/tenants.service';
 
           <div class="flex flex-col gap-3 sm:flex-row xl:flex-col">
             <label for="backup-scope" class="flex min-w-64 flex-col gap-1 text-xs font-semibold text-slate-200">
-              Backup scope
+              نطاق النسخة الاحتياطية
               <select
                 id="backup-scope"
                 [value]="selectedScope()"
@@ -65,7 +65,7 @@ import { TenantsService } from '../tenants/tenants.service';
             </label>
             <p class="m-0 max-w-xs text-xs leading-5 text-slate-300">{{ scopeDescription(selectedScope()) }}</p>
             <label *ngIf="selectedScope() === BackupScope.SelectedTenants" for="backup-tenants" class="flex min-w-64 flex-col gap-1 text-xs font-semibold text-slate-200">
-              Specific active tenants
+              مساحات العمل النشطة المحددة
               <select
                 id="backup-tenants"
                 multiple
@@ -75,12 +75,12 @@ import { TenantsService } from '../tenants/tenants.service';
                 class="rounded-xl border border-white/20 bg-slate-900/70 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-cyan-300">
                 <option *ngFor="let tenant of tenants()" [value]="tenant.id" [selected]="selectedTenantIds().includes(tenant.id)">{{ tenant.name }} ({{ tenant.subdomain }})</option>
               </select>
-              <span class="font-normal text-slate-300">{{ tenantLoading() ? 'Loading active tenants…' : selectedTenantIds().length + ' selected' }}</span>
+              <span class="font-normal text-slate-300">{{ tenantLoading() ? 'جارٍ تحميل مساحات العمل النشطة…' : 'تم اختيار ' + selectedTenantIds().length }}</span>
             </label>
             <button
               pButton
               type="button"
-              label="Create backup"
+              label="إنشاء نسخة احتياطية"
               icon="pi pi-shield"
               [loading]="creating()"
               [disabled]="!backupStatus.isReady || creating()"
@@ -90,7 +90,7 @@ import { TenantsService } from '../tenants/tenants.service';
             <button
               pButton
               type="button"
-              label="Refresh"
+              label="تحديث"
               icon="pi pi-refresh"
               [loading]="refreshing()"
               [attr.aria-busy]="refreshing()"
@@ -102,35 +102,35 @@ import { TenantsService } from '../tenants/tenants.service';
         <div *ngIf="!backupStatus.isReady" class="relative mt-6 flex items-start gap-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-100">
           <i class="pi pi-exclamation-triangle mt-0.5 text-amber-300"></i>
           <div>
-            <p class="m-0 font-bold">Backup creation is unavailable</p>
-            <p class="mb-0 mt-1 leading-5">{{ backupStatus.unavailableReason || 'Enable and configure the server backup provider before creating a backup.' }}</p>
+            <p class="m-0 font-bold">إنشاء النسخ الاحتياطية غير متاح</p>
+            <p class="mb-0 mt-1 leading-5">{{ backupStatus.unavailableReason || 'فعّل مزود النسخ الاحتياطية على الخادم واضبطه قبل إنشاء نسخة.' }}</p>
           </div>
         </div>
         <div *ngIf="backupStatus.isReady" class="relative mt-6 flex items-start gap-3 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm text-cyan-100">
           <i class="pi pi-info-circle mt-0.5 text-cyan-300"></i>
-          <p class="m-0 leading-5">Ready confirms the private server storage and backup configuration. Each selected database is still decrypted, connected, exported, and checksummed by the server; a failed target is reported instead of being marked complete.</p>
+          <p class="m-0 leading-5">تؤكد الجاهزية إعداد التخزين الخاص على الخادم ومزود النسخ الاحتياطية. يفك الخادم تشفير كل قاعدة بيانات محددة ويتصل بها ويصدرها ويتحقق من بصمتها؛ ويُبلغ عن أي هدف فاشل بدلًا من اعتباره مكتملًا.</p>
         </div>
 
         <div class="relative mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <div class="rounded-2xl border border-white/10 bg-white/[0.07] p-4 backdrop-blur-sm">
-            <p class="m-0 text-xs text-slate-400">Export format</p>
+            <p class="m-0 text-xs text-slate-400">صيغة التصدير</p>
             <p class="mb-0 mt-2 text-lg font-extrabold">{{ backupStatus.format || '—' }}</p>
-            <span class="text-xs text-cyan-200">Schema + data</span>
+            <span class="text-xs text-cyan-200">المخطط + البيانات</span>
           </div>
           <div class="rounded-2xl border border-white/10 bg-white/[0.07] p-4 backdrop-blur-sm">
-            <p class="m-0 text-xs text-slate-400">Retention</p>
-            <p class="mb-0 mt-2 text-lg font-extrabold">{{ backupStatus.retentionDays }} days</p>
-            <span class="text-xs text-slate-300">Automatic cleanup</span>
+            <p class="m-0 text-xs text-slate-400">مدة الاحتفاظ</p>
+            <p class="mb-0 mt-2 text-lg font-extrabold">{{ backupStatus.retentionDays }} يومًا</p>
+            <span class="text-xs text-slate-300">تنظيف تلقائي</span>
           </div>
           <div class="rounded-2xl border border-white/10 bg-white/[0.07] p-4 backdrop-blur-sm">
-            <p class="m-0 text-xs text-slate-400">Available archives</p>
+            <p class="m-0 text-xs text-slate-400">الأرشيفات المتاحة</p>
             <p class="mb-0 mt-2 text-lg font-extrabold">{{ backupStatus.backupCount }}</p>
-            <span class="text-xs text-slate-300">Private server storage</span>
+            <span class="text-xs text-slate-300">تخزين خاص على الخادم</span>
           </div>
           <div class="rounded-2xl border border-white/10 bg-white/[0.07] p-4 backdrop-blur-sm">
-            <p class="m-0 text-xs text-slate-400">Daily schedule</p>
-            <p class="mb-0 mt-2 text-lg font-extrabold">{{ backupStatus.runAtUtc || 'Not scheduled' }} <span *ngIf="backupStatus.runAtUtc" class="text-xs font-medium text-slate-300">UTC</span></p>
-            <span class="text-xs text-slate-300">Server-controlled time</span>
+            <p class="m-0 text-xs text-slate-400">الجدولة اليومية</p>
+            <p class="mb-0 mt-2 text-lg font-extrabold">{{ backupStatus.runAtUtc || 'غير مجدولة' }} <span *ngIf="backupStatus.runAtUtc" class="text-xs font-medium text-slate-300" dir="ltr">UTC</span></p>
+            <span class="text-xs text-slate-300">وقت يحدده الخادم</span>
           </div>
         </div>
       </ng-container>
@@ -138,7 +138,7 @@ import { TenantsService } from '../tenants/tenants.service';
       <ng-template #statusPending>
         <div class="relative flex min-h-48 items-center gap-3 text-slate-200">
           <i class="pi pi-spin pi-spinner text-xl text-cyan-300"></i>
-          <span>Checking backup service readiness…</span>
+          <span>جارٍ التحقق من جاهزية خدمة النسخ الاحتياطية…</span>
         </div>
       </ng-template>
     </section>
@@ -146,15 +146,15 @@ import { TenantsService } from '../tenants/tenants.service';
     <div *ngIf="statusError()" class="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
       <i class="pi pi-times-circle mt-0.5"></i>
       <div>
-        <p class="m-0 font-bold">Could not read the latest backup status</p>
+        <p class="m-0 font-bold">تعذر قراءة أحدث حالة للنسخ الاحتياطية</p>
         <p class="mb-0 mt-1">{{ statusError() }}</p>
       </div>
     </div>
 
     <div *ngIf="lastCreatedBatch() as recentBatch" class="mb-6 flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p class="m-0 font-bold">Latest backup request received</p>
-        <p class="mb-0 mt-1">{{ scopeLabel(recentBatch.scope) }} · {{ batchStatusLabel(recentBatch.status) }} · {{ completedCount(recentBatch) }}/{{ recentBatch.artifacts.length }} targets complete</p>
+        <p class="m-0 font-bold">تم استلام طلب النسخ الاحتياطي الأخير</p>
+        <p class="mb-0 mt-1">{{ scopeLabel(recentBatch.scope) }} · {{ batchStatusLabel(recentBatch.status) }} · {{ completedCount(recentBatch) }}/{{ recentBatch.artifacts.length }} هدفًا مكتملًا</p>
       </div>
       <span class="font-mono text-xs text-emerald-700">{{ recentBatch.id }}</span>
     </div>
@@ -162,28 +162,28 @@ import { TenantsService } from '../tenants/tenants.service';
     <section class="mb-6 grid gap-4 lg:grid-cols-3">
       <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><i class="pi pi-lock"></i></div>
-        <h3 class="m-0 text-sm font-bold text-slate-900">Private storage</h3>
-        <p class="mb-0 mt-2 text-sm leading-6 text-slate-500">Backup files stay behind the protected admin download endpoint. Connection strings and provider credentials are never displayed.</p>
+        <h3 class="m-0 text-sm font-bold text-slate-900">تخزين خاص</h3>
+        <p class="mb-0 mt-2 text-sm leading-6 text-slate-500">تبقى ملفات النسخ الاحتياطية خلف نقطة التنزيل المحمية للإدارة. لا تُعرض سلاسل الاتصال أو بيانات اعتماد المزود مطلقًا.</p>
       </article>
       <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"><i class="pi pi-check-square"></i></div>
-        <h3 class="m-0 text-sm font-bold text-slate-900">Evidence per target</h3>
-        <p class="mb-0 mt-2 text-sm leading-6 text-slate-500">Every batch reports each resolved platform or tenant artifact, its status, size, and SHA-256 checksum.</p>
+        <h3 class="m-0 text-sm font-bold text-slate-900">دليل مستقل لكل هدف</h3>
+        <p class="mb-0 mt-2 text-sm leading-6 text-slate-500">يعرض كل تشغيل حالة كل ملف للمنصة أو مساحة العمل وحجمه وبصمته SHA-256.</p>
       </article>
       <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><i class="pi pi-history"></i></div>
-        <h3 class="m-0 text-sm font-bold text-slate-900">Controlled restore</h3>
-        <p class="mb-0 mt-2 text-sm leading-6 text-slate-500">This screen records evidence and download actions. Restore capability is shown separately and is never started here.</p>
+        <h3 class="m-0 text-sm font-bold text-slate-900">استعادة محكومة</h3>
+        <p class="mb-0 mt-2 text-sm leading-6 text-slate-500">تسجل هذه الشاشة الأدلة وإجراءات التنزيل. تُعرض إمكانية الاستعادة منفصلة ولا تبدأ من هنا مطلقًا.</p>
       </article>
     </section>
 
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 class="m-0 text-lg font-extrabold text-slate-900">Completed backup files</h2>
-          <p class="mb-0 mt-1 text-sm text-slate-500">Legacy archive list. Use batch history below for per-target checksum and manifest evidence.</p>
+          <h2 class="m-0 text-lg font-extrabold text-slate-900">ملفات النسخ المكتملة</h2>
+          <p class="mb-0 mt-1 text-sm text-slate-500">قائمة الأرشيفات السابقة. استخدم سجل الدفعات أدناه لمراجعة البصمة والبيان لكل هدف.</p>
         </div>
-        <span class="inline-flex w-fit items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600"><i class="pi pi-folder"></i>{{ totalCount }} files</span>
+        <span class="inline-flex w-fit items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600"><i class="pi pi-folder"></i>{{ totalCount }} ملفًا</span>
       </div>
 
       <div *ngIf="archiveError()" class="mx-5 mt-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
@@ -193,24 +193,24 @@ import { TenantsService } from '../tenants/tenants.service';
 
       <p-table [value]="rows()" [loading]="loading()" styleClass="p-datatable-sm">
         <ng-template pTemplate="header">
-          <tr><th>File</th><th>Created</th><th>Size</th><th>Status</th><th class="text-left">Action</th></tr>
+          <tr><th>الملف</th><th>تاريخ الإنشاء</th><th>الحجم</th><th>الحالة</th><th class="text-left">الإجراء</th></tr>
         </ng-template>
         <ng-template pTemplate="body" let-row>
           <tr>
             <td>
               <div class="flex items-center gap-3">
                 <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"><i class="pi pi-file"></i></span>
-                <div><code class="text-xs font-semibold text-slate-700">{{ row.fileName }}</code><p class="m-0 mt-1 text-[11px] text-slate-400">BACPAC · full database export</p></div>
+                <div><code class="text-xs font-semibold text-slate-700">{{ row.fileName }}</code><p class="m-0 mt-1 text-[11px] text-slate-400">BACPAC · تصدير كامل لقاعدة البيانات</p></div>
               </div>
             </td>
             <td><span class="text-sm font-medium text-slate-700">{{ row.createdAt | date:'medium' }}</span></td>
             <td><span class="rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">{{ formatBytes(row.sizeBytes) }}</span></td>
             <td><span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold" [ngClass]="recordStatusClass(row.status)"><i class="text-[10px]" [ngClass]="recordStatusIcon(row.status)"></i>{{ recordStatusLabel(row.status) }}</span></td>
-            <td class="text-left"><button pButton type="button" label="Secure download" icon="pi pi-download" [loading]="downloadingFile() === row.fileName" (click)="download(row)" class="!border-indigo-100 !bg-indigo-50 !text-indigo-700 hover:!bg-indigo-100"></button></td>
+            <td class="text-left"><button pButton type="button" label="تنزيل آمن" icon="pi pi-download" [loading]="downloadingFile() === row.fileName" (click)="download(row)" class="!border-indigo-100 !bg-indigo-50 !text-indigo-700 hover:!bg-indigo-100"></button></td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
-          <tr><td colspan="5" class="py-14 text-center"><i class="pi pi-inbox mb-3 block text-3xl text-slate-300"></i><p class="m-0 font-bold text-slate-600">No completed backup files yet</p><p class="mb-0 mt-1 text-sm text-slate-400">Create a backup after the service reports Ready. The resulting batch will appear below.</p></td></tr>
+          <tr><td colspan="5" class="py-14 text-center"><i class="pi pi-inbox mb-3 block text-3xl text-slate-300"></i><p class="m-0 font-bold text-slate-600">لا توجد ملفات نسخ مكتملة حتى الآن</p><p class="mb-0 mt-1 text-sm text-slate-400">أنشئ نسخة بعد أن تعلن الخدمة جاهزيتها؛ ستظهر الدفعة الناتجة أدناه.</p></td></tr>
         </ng-template>
       </p-table>
       <app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator>
@@ -219,17 +219,17 @@ import { TenantsService } from '../tenants/tenants.service';
     <section class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 class="m-0 text-lg font-extrabold text-slate-900">Backup batches</h2>
-          <p class="mb-0 mt-1 text-sm text-slate-500">One batch contains one independent artifact for every target resolved by the selected scope.</p>
+          <h2 class="m-0 text-lg font-extrabold text-slate-900">دفعات النسخ الاحتياطية</h2>
+          <p class="mb-0 mt-1 text-sm text-slate-500">تحتوي كل دفعة على ملف مستقل لكل هدف يحدده النطاق المختار.</p>
         </div>
-        <span class="inline-flex w-fit items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700"><i class="pi pi-sitemap"></i>{{ batches().length }} batches</span>
+        <span class="inline-flex w-fit items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700"><i class="pi pi-sitemap"></i>{{ batches().length }} دفعة</span>
       </div>
 
       <div *ngIf="batchError()" class="mx-5 mt-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
         <i class="pi pi-times-circle mt-0.5"></i><span>{{ batchError() }}</span>
       </div>
-      <div *ngIf="batchLoading()" class="flex items-center gap-2 px-5 py-8 text-sm text-slate-500"><i class="pi pi-spin pi-spinner text-indigo-500"></i>Loading batch history…</div>
-      <div *ngIf="!batchLoading() && batches().length === 0 && !batchError()" class="px-5 py-10 text-center text-sm text-slate-500">No batch history is available yet.</div>
+      <div *ngIf="batchLoading()" class="flex items-center gap-2 px-5 py-8 text-sm text-slate-500"><i class="pi pi-spin pi-spinner text-indigo-500"></i>جارٍ تحميل سجل الدفعات…</div>
+      <div *ngIf="!batchLoading() && batches().length === 0 && !batchError()" class="px-5 py-10 text-center text-sm text-slate-500">لا يتوفر سجل دفعات حتى الآن.</div>
 
       <div *ngFor="let batch of batches()" class="border-b border-slate-100 px-5 py-5 last:border-b-0">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -237,17 +237,17 @@ import { TenantsService } from '../tenants/tenants.service';
             <div class="flex flex-wrap items-center gap-2">
               <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{{ scopeLabel(batch.scope) }}</span>
               <span class="rounded-full px-2.5 py-1 text-xs font-bold" [ngClass]="batchStatusClass(batch.status)">{{ batchStatusLabel(batch.status) }}</span>
-              <span class="text-xs text-slate-400">{{ completedCount(batch) }}/{{ batch.artifacts.length }} targets complete</span>
+              <span class="text-xs text-slate-400">{{ completedCount(batch) }}/{{ batch.artifacts.length }} هدفًا مكتملًا</span>
             </div>
-            <div class="mt-3 h-2 max-w-xl overflow-hidden rounded-full bg-slate-100" role="progressbar" [attr.aria-valuenow]="progressPercent(batch)" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="'Backup progress for ' + batch.id">
+            <div class="mt-3 h-2 max-w-xl overflow-hidden rounded-full bg-slate-100" role="progressbar" [attr.aria-valuenow]="progressPercent(batch)" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="'تقدم النسخة الاحتياطية للدفعة ' + batch.id">
               <div class="h-full rounded-full bg-indigo-500 transition-all" [style.width.%]="progressPercent(batch)"></div>
             </div>
-            <p class="mb-0 mt-2 text-xs text-slate-500">Started {{ batch.startedAtUtc | date:'medium' }} <span *ngIf="batch.completedAtUtc">· finished {{ batch.completedAtUtc | date:'medium' }}</span></p>
-            <p class="mb-0 mt-1 truncate font-mono text-[11px] text-slate-400" [title]="batch.id">Batch {{ batch.id }}</p>
+            <p class="mb-0 mt-2 text-xs text-slate-500">بدأت {{ batch.startedAtUtc | date:'medium' }} <span *ngIf="batch.completedAtUtc">· اكتملت {{ batch.completedAtUtc | date:'medium' }}</span></p>
+            <p class="mb-0 mt-1 truncate font-mono text-[11px] text-slate-400" [title]="batch.id">الدفعة {{ batch.id }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button *ngIf="batch.manifestStorageKey" pButton type="button" label="Download manifest" icon="pi pi-file-export" [loading]="downloadingFile() === batch.manifestStorageKey" (click)="downloadManifest(batch)" class="!border-slate-200 !bg-slate-50 !text-slate-700 hover:!bg-slate-100"></button>
-            <button *ngIf="isRetryable(batch)" pButton type="button" label="Retry failed targets" icon="pi pi-refresh" [loading]="batchAction() === batch.id" [disabled]="batchAction() !== null" (click)="retry(batch)" class="!border-amber-200 !bg-amber-50 !text-amber-800 hover:!bg-amber-100"></button>
+            <button *ngIf="batch.manifestStorageKey" pButton type="button" label="تنزيل البيان" icon="pi pi-file-export" [loading]="downloadingFile() === batch.manifestStorageKey" (click)="downloadManifest(batch)" class="!border-slate-200 !bg-slate-50 !text-slate-700 hover:!bg-slate-100"></button>
+            <button *ngIf="isRetryable(batch)" pButton type="button" label="إعادة محاولة الأهداف الفاشلة" icon="pi pi-refresh" [loading]="batchAction() === batch.id" [disabled]="batchAction() !== null" (click)="retry(batch)" class="!border-amber-200 !bg-amber-50 !text-amber-800 hover:!bg-amber-100"></button>
           </div>
         </div>
 
@@ -261,31 +261,31 @@ import { TenantsService } from '../tenants/tenants.service';
                   <span class="text-xs text-slate-500">{{ formatBytes(artifact.sizeBytes) }}</span>
                 </div>
               </div>
-              <button *ngIf="artifact.storageKey" pButton type="button" icon="pi pi-download" [attr.aria-label]="'Download ' + artifactLabel(artifact)" [loading]="downloadingFile() === artifact.storageKey" (click)="downloadArtifact(artifact)" class="!h-8 !w-8 !border-indigo-100 !bg-indigo-50 !text-indigo-700 hover:!bg-indigo-100"></button>
+              <button *ngIf="artifact.storageKey" pButton type="button" icon="pi pi-download" [attr.aria-label]="'تنزيل ' + artifactLabel(artifact)" [loading]="downloadingFile() === artifact.storageKey" (click)="downloadArtifact(artifact)" class="!h-8 !w-8 !border-indigo-100 !bg-indigo-50 !text-indigo-700 hover:!bg-indigo-100"></button>
             </div>
             <div class="mt-3 rounded-lg bg-white p-3 text-xs text-slate-500">
-              <span class="font-semibold text-slate-700">SHA-256:</span>
+              <span class="font-semibold text-slate-700">بصمة SHA-256:</span>
               <code *ngIf="artifact.sha256; else noChecksum" class="ml-1 break-all text-[11px]">{{ artifact.sha256 }}</code>
-              <ng-template #noChecksum><span class="ml-1 text-amber-700">Not available yet</span></ng-template>
+              <ng-template #noChecksum><span class="ml-1 text-amber-700">غير متاحة حتى الآن</span></ng-template>
             </div>
-            <p *ngIf="artifact.errorCode" class="mb-0 mt-2 text-xs font-semibold text-red-700">Failure code: {{ artifact.errorCode }}</p>
+            <p *ngIf="artifact.errorCode" class="mb-0 mt-2 text-xs font-semibold text-red-700">رمز الفشل: {{ artifact.errorCode }}</p>
           </article>
         </div>
-        <ng-template #noArtifacts><p class="mb-0 mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">The server has not returned target artifacts for this batch yet.</p></ng-template>
+        <ng-template #noArtifacts><p class="mb-0 mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">لم يُعد الخادم ملفات الأهداف لهذه الدفعة حتى الآن.</p></ng-template>
       </div>
 
       <div class="border-t border-slate-100 bg-slate-50/60 px-5 py-5">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h3 class="m-0 text-sm font-extrabold text-slate-900">Restore capability</h3>
-            <p class="mb-0 mt-1 text-sm text-slate-500">Restore remains provider-controlled and is never started from this evidence view.</p>
+            <h3 class="m-0 text-sm font-extrabold text-slate-900">إمكانية الاستعادة</h3>
+            <p class="mb-0 mt-1 text-sm text-slate-500">تظل الاستعادة تحت تحكم المزود ولا تبدأ من شاشة الأدلة هذه مطلقًا.</p>
           </div>
           <ng-container *ngIf="restoreCapabilities() as capabilities; else restorePending">
-            <span class="rounded-full px-3 py-1.5 text-xs font-bold" [ngClass]="capabilities.enabled ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ capabilities.enabled ? 'Available' : 'Manual / unavailable' }}</span>
+            <span class="rounded-full px-3 py-1.5 text-xs font-bold" [ngClass]="capabilities.enabled ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ capabilities.enabled ? 'متاحة' : 'يدوية / غير متاحة' }}</span>
           </ng-container>
-          <ng-template #restorePending><span class="text-xs font-semibold text-slate-400">Checking provider…</span></ng-template>
+          <ng-template #restorePending><span class="text-xs font-semibold text-slate-400">جارٍ التحقق من المزود…</span></ng-template>
         </div>
-        <p *ngIf="restoreCapabilities() as capabilities" class="mb-0 mt-3 text-xs text-slate-500">{{ capabilities.enabled ? restoreDetails(capabilities) : (capabilities.unavailableReason || 'Direct restore is not enabled for this provider.') }} Batch start and finish events are recorded by the server audit log.</p>
+        <p *ngIf="restoreCapabilities() as capabilities" class="mb-0 mt-3 text-xs text-slate-500">{{ capabilities.enabled ? restoreDetails(capabilities) : (capabilities.unavailableReason || 'الاستعادة المباشرة غير مفعلة لهذا المزود.') }} تُسجل أحداث بدء الدفعة واكتمالها في سجل تدقيق الخادم.</p>
         <p *ngIf="restoreError()" class="mb-0 mt-3 text-xs font-semibold text-red-700">{{ restoreError() }}</p>
       </div>
     </section>
@@ -326,12 +326,12 @@ export class BackupsComponent implements OnInit {
   selectedTenantIds = signal<string[]>([]);
 
   scopeOptions = [
-    { value: BackupScope.FullSystem, label: 'Full system (platform + all active tenants)' },
-    { value: BackupScope.AllTenants, label: 'All active tenant databases' },
-    { value: BackupScope.AllGyms, label: 'All active gym databases' },
-    { value: BackupScope.AllFreelance, label: 'All active freelance databases' },
-    { value: BackupScope.Platform, label: 'Platform database only' },
-    { value: BackupScope.SelectedTenants, label: 'Selected active tenant databases' },
+    { value: BackupScope.FullSystem, label: 'النظام بالكامل (المنصة + كل مساحات العمل النشطة)' },
+    { value: BackupScope.AllTenants, label: 'كل قواعد بيانات مساحات العمل النشطة' },
+    { value: BackupScope.AllGyms, label: 'كل قواعد بيانات الجيمات النشطة' },
+    { value: BackupScope.AllFreelance, label: 'كل قواعد بيانات المدربين الأحرار النشطة' },
+    { value: BackupScope.Platform, label: 'قاعدة بيانات المنصة فقط' },
+    { value: BackupScope.SelectedTenants, label: 'قواعد بيانات مساحات العمل النشطة المحددة' },
   ];
 
   ngOnInit(): void {
@@ -352,7 +352,7 @@ export class BackupsComponent implements OnInit {
         this.loadRelatedData();
       },
       error: error => {
-        const message = this.readError(error, 'The server did not return backup readiness.');
+        const message = this.readError(error, 'لم يُعد الخادم حالة جاهزية النسخ الاحتياطية.');
         this.statusError.set(message);
         this.status.set({
           isEnabled: false,
@@ -385,7 +385,7 @@ export class BackupsComponent implements OnInit {
       },
       error: error => {
         this.batches.set([]);
-        this.batchError.set(this.readError(error, 'The server did not return batch history.'));
+        this.batchError.set(this.readError(error, 'لم يُعد الخادم سجل الدفعات.'));
         this.batchLoading.set(false);
       },
     });
@@ -397,7 +397,7 @@ export class BackupsComponent implements OnInit {
       next: capabilities => this.restoreCapabilities.set(capabilities),
       error: error => {
         this.restoreCapabilities.set(null);
-        this.restoreError.set(this.readError(error, 'Could not read restore capability.'));
+        this.restoreError.set(this.readError(error, 'تعذر قراءة إمكانية الاستعادة.'));
       },
     });
   }
@@ -423,7 +423,7 @@ export class BackupsComponent implements OnInit {
       error: error => {
         this.tenants.set([]);
         this.tenantLoading.set(false);
-        this.notify.error(this.readError(error, 'Active tenants could not be loaded for a selected backup.'));
+        this.notify.error(this.readError(error, 'تعذر تحميل مساحات العمل النشطة للنسخة المحددة.'));
       },
     });
   }
@@ -440,7 +440,7 @@ export class BackupsComponent implements OnInit {
       error: error => {
         this.rows.set([]);
         this.totalCount = 0;
-        this.archiveError.set(this.readError(error, 'The server did not return completed backup files.'));
+        this.archiveError.set(this.readError(error, 'لم يُعد الخادم ملفات النسخ المكتملة.'));
         this.loading.set(false);
       },
     });
@@ -455,23 +455,23 @@ export class BackupsComponent implements OnInit {
   create(): void {
     const backupStatus = this.status();
     if (!backupStatus?.isReady) {
-      this.notify.error(backupStatus?.unavailableReason || 'Backup service is not ready.', 'Backup unavailable');
+      this.notify.error(backupStatus?.unavailableReason || 'خدمة النسخ الاحتياطية غير جاهزة.', 'النسخ الاحتياطية غير متاحة');
       return;
     }
 
     const scope = this.selectedScope();
     const tenantIds = this.selectedTenantIds();
     if (scope === BackupScope.SelectedTenants && tenantIds.length === 0) {
-      this.notify.error('Select at least one active tenant before creating this backup.', 'Tenants required');
+      this.notify.error('حدد مساحة عمل نشطة واحدة على الأقل قبل إنشاء هذه النسخة.', 'اختيار مساحة عمل مطلوب');
       return;
     }
     if (this.creating()) return;
     this.creating.set(true);
     void this.notify.confirm({
-      header: 'Create backup now?',
-      message: `The server will create a ${this.scopeLabel(scope)} batch and return per-target status, size, SHA-256, and manifest evidence.`,
-      acceptLabel: 'Create backup',
-      rejectLabel: 'Cancel',
+      header: 'هل تريد إنشاء النسخة الآن؟',
+      message: `سينشئ الخادم دفعة «${this.scopeLabel(scope)}» ويعيد حالة كل هدف وحجمه وبصمة SHA-256 ودليل البيان.`,
+      acceptLabel: 'إنشاء النسخة',
+      rejectLabel: 'إلغاء',
       icon: 'pi pi-shield',
     }).then(confirmed => {
       if (!confirmed) {
@@ -486,12 +486,12 @@ export class BackupsComponent implements OnInit {
         next: batch => {
           this.lastCreatedBatch.set(batch);
           this.creating.set(false);
-          this.notify.success(`${this.scopeLabel(batch.scope)} returned ${this.batchStatusLabel(batch.status)} with ${completedCountValue(batch)}/${batch.artifacts.length} targets complete.`, 'Backup request completed');
+          this.notify.success(`اكتملت دفعة «${this.scopeLabel(batch.scope)}» بحالة ${this.batchStatusLabel(batch.status)} مع ${completedCountValue(batch)}/${batch.artifacts.length} هدفًا مكتملًا.`, 'اكتمل طلب النسخ الاحتياطي');
           this.loadStatus();
         },
         error: error => {
           this.creating.set(false);
-          this.notify.error(this.readError(error, 'The backup request failed before producing a result.'), 'Backup request failed');
+          this.notify.error(this.readError(error, 'فشل طلب النسخ الاحتياطي قبل إنتاج نتيجة.'), 'فشل طلب النسخ الاحتياطي');
           this.loadStatus();
         },
       });
@@ -502,10 +502,10 @@ export class BackupsComponent implements OnInit {
     if (!this.isRetryable(batch) || this.batchAction() !== null) return;
     this.batchAction.set(batch.id);
     void this.notify.confirm({
-      header: 'Retry failed targets?',
-      message: `The server will retry the failed or incomplete targets in batch ${batch.id}. Completed artifacts will remain recorded.`,
-      acceptLabel: 'Retry targets',
-      rejectLabel: 'Cancel',
+      header: 'هل تريد إعادة محاولة الأهداف الفاشلة؟',
+      message: `سيعيد الخادم محاولة الأهداف الفاشلة أو غير المكتملة في الدفعة ${batch.id}. وستظل الملفات المكتملة مسجلة.`,
+      acceptLabel: 'إعادة المحاولة',
+      rejectLabel: 'إلغاء',
       icon: 'pi pi-refresh',
     }).then(confirmed => {
       if (!confirmed) {
@@ -516,12 +516,12 @@ export class BackupsComponent implements OnInit {
         next: updated => {
           this.batches.update(items => items.map(item => item.id === updated.id ? updated : item));
           this.batchAction.set(null);
-          this.notify.success(`${this.completedCount(updated)}/${updated.artifacts.length} targets are complete.`, 'Retry completed');
+          this.notify.success(`اكتمل ${this.completedCount(updated)}/${updated.artifacts.length} هدفًا.`, 'اكتملت إعادة المحاولة');
           this.loadStatus();
         },
         error: error => {
           this.batchAction.set(null);
-          this.notify.error(this.readError(error, 'The retry request failed.'), 'Retry failed');
+          this.notify.error(this.readError(error, 'فشل طلب إعادة المحاولة.'), 'فشلت إعادة المحاولة');
           this.loadBatches();
         },
       });
@@ -554,47 +554,47 @@ export class BackupsComponent implements OnInit {
       },
       error: error => {
         this.downloadingFile.set(null);
-        this.notify.error(this.readError(error, 'The protected download could not be completed.'), 'Download failed');
+        this.notify.error(this.readError(error, 'تعذر إتمام التنزيل المحمي.'), 'فشل التنزيل');
       },
     });
   }
 
   readinessLabel(status: BackupStatus): string {
-    return status.isReady ? 'Ready to create backups' : 'Action required before backup';
+    return status.isReady ? 'جاهزة لإنشاء النسخ' : 'إجراء مطلوب قبل إنشاء النسخة';
   }
 
   readinessTitle(status: BackupStatus): string {
-    return status.isReady ? 'Your backup evidence is under control.' : 'Backup service is not ready.';
+    return status.isReady ? 'أدلة النسخ الاحتياطية تحت السيطرة.' : 'خدمة النسخ الاحتياطية غير جاهزة.';
   }
 
   readinessMessage(status: BackupStatus): string {
-    if (!status.isReady) return status.unavailableReason || 'Enable and configure the server backup provider before creating a backup.';
-    return 'Create a scoped BACPAC batch, then verify each artifact, checksum, and manifest before downloading it. Target connection and export failures remain visible per artifact.';
+    if (!status.isReady) return status.unavailableReason || 'فعّل مزود النسخ الاحتياطية على الخادم واضبطه قبل إنشاء نسخة.';
+    return 'أنشئ دفعة BACPAC بالنطاق المطلوب، ثم تحقق من كل ملف وبصمته وبيانه قبل تنزيله. تظل أخطاء الاتصال والتصدير ظاهرة لكل هدف.';
   }
 
   scopeLabel(scope: BackupScope | number): string {
-    return this.scopeOptions.find(option => option.value === Number(scope))?.label || 'Unknown scope';
+    return this.scopeOptions.find(option => option.value === Number(scope))?.label || 'نطاق غير معروف';
   }
 
   scopeDescription(scope: BackupScope | number): string {
     switch (Number(scope)) {
-      case BackupScope.FullSystem: return 'Platform database plus every active tenant mapping resolved by the server.';
-      case BackupScope.AllTenants: return 'Every active tenant database, without the platform database.';
-      case BackupScope.AllGyms: return 'Every active gym workspace database.';
-      case BackupScope.AllFreelance: return 'Every active freelance workspace database.';
-      case BackupScope.Platform: return 'The platform database only.';
-      case BackupScope.SelectedTenants: return 'Only the active tenants selected below; the server still validates their mappings and access.';
-      default: return 'The server resolves targets from the selected scope.';
+      case BackupScope.FullSystem: return 'قاعدة بيانات المنصة بالإضافة إلى كل ربط لمساحات العمل النشطة يحله الخادم.';
+      case BackupScope.AllTenants: return 'كل قواعد بيانات مساحات العمل النشطة، دون قاعدة بيانات المنصة.';
+      case BackupScope.AllGyms: return 'كل قواعد بيانات مساحات الجيم النشطة.';
+      case BackupScope.AllFreelance: return 'كل قواعد بيانات مساحات المدربين الأحرار النشطة.';
+      case BackupScope.Platform: return 'قاعدة بيانات المنصة فقط.';
+      case BackupScope.SelectedTenants: return 'مساحات العمل النشطة المحددة أدناه فقط؛ يواصل الخادم التحقق من ربطها وإمكانية الوصول إليها.';
+      default: return 'يحدد الخادم الأهداف من النطاق المختار.';
     }
   }
 
   batchStatusLabel(status: string): string {
     switch (status) {
-      case 'Completed': return 'Completed';
-      case 'Running': return 'Running';
-      case 'Partial': return 'Partial';
-      case 'Failed': return 'Failed';
-      default: return status || 'Unknown';
+      case 'Completed': return 'مكتملة';
+      case 'Running': return 'قيد التنفيذ';
+      case 'Partial': return 'مكتملة جزئيًا';
+      case 'Failed': return 'فاشلة';
+      default: return status || 'غير معروفة';
     }
   }
 
@@ -609,7 +609,7 @@ export class BackupsComponent implements OnInit {
   }
 
   artifactStatusLabel(status: string): string {
-    return status === 'Completed' ? 'Verified' : this.batchStatusLabel(status);
+    return status === 'Completed' ? 'تم التحقق' : this.batchStatusLabel(status);
   }
 
   artifactStatusClass(status: string): string {
@@ -619,7 +619,7 @@ export class BackupsComponent implements OnInit {
   }
 
   recordStatusLabel(status: string): string {
-    return status === 'Completed' ? 'Completed' : this.batchStatusLabel(status);
+    return status === 'Completed' ? 'مكتملة' : this.batchStatusLabel(status);
   }
 
   recordStatusClass(status: string): string {
@@ -643,7 +643,7 @@ export class BackupsComponent implements OnInit {
   }
 
   artifactLabel(artifact: BackupArtifact): string {
-    return artifact.tenantId ? `Tenant database (${artifact.tenantId.slice(0, 8)}…)` : 'Platform database';
+    return artifact.tenantId ? `قاعدة بيانات مساحة العمل (${artifact.tenantId.slice(0, 8)}…)` : 'قاعدة بيانات المنصة';
   }
 
   formatBytes(value: number | null | undefined): string {
@@ -656,9 +656,9 @@ export class BackupsComponent implements OnInit {
 
   restoreDetails(capabilities: RestoreCapabilities): string {
     const details: string[] = [];
-    if (capabilities.supportsBacpacImport) details.push('BACPAC import is supported');
-    if (capabilities.supportsMappingSwitch) details.push('mapping switch is supported');
-    return details.length > 0 ? `${details.join(' and ')} by the provider.` : 'The provider reported restore capability.';
+    if (capabilities.supportsBacpacImport) details.push('استيراد BACPAC مدعوم');
+    if (capabilities.supportsMappingSwitch) details.push('تبديل الربط مدعوم');
+    return details.length > 0 ? `${details.join(' و')} من خلال المزود.` : 'أبلغ المزود بإمكانية الاستعادة.';
   }
 
   private readError(error: unknown, fallback: string): string {

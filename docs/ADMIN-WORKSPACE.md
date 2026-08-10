@@ -1,60 +1,13 @@
 # منصة الإدارة: Pagination وعمليات التحكم
 
-> **Issue #79 — local implementation, not merged or deployed:** دورة طلبات المساحات الموحدة
-> لـ`Gym` و`FreelanceCoach`، Timeline، الفلاتر، وحالة الوصول موجودة على فرع المهمة فقط. فحص
-> Production الحالي مستقل عن هذا الفرع؛ لا تعتبر هذه الوثيقة إعلان إصدار.
-
-## Tenant credential and deletion controls (Issue #214)
-
-The `/tenants` screen exposes owner email and account state through **بيانات الدخول** only; it
-never stores or renders the current password. **إعادة تعيين كلمة المرور** asks the Backend to send
-the normal one-time reset link. **حذف مؤقت** disables access while retaining the tenant and its
-database mapping. **حذف نهائي** requires the exact gym name and is restricted by the Backend to
-`PlatformOwner`; the API must complete a BACPAC backup before provider-backed purge and resource
-release. The owner Global Identity is preserved and only the deleted workspace association is
-removed. `ManualOnly` purge responses are shown as an operator-actionable error.
-
-> **Issue #60 — local implementation, not released:** OTP remains mandatory for Platform login only. No action after login opens an OTP dialog or requires a step-up header.
-
-## لوحة القيادة التنفيذية
-
-- المسار `/dashboard` محمي بـ`ManagePlatformReports` ويقرأ المؤشرات من
-  `GET /api/platform/dashboard`، بما في ذلك `operations` الخاصة بطلبات مساحات العمل،
-  المدفوعات، Database Pool، Provisioning، Backups وRestores.
-- تعرض الشاشة أرقامًا حقيقية من العقد أو نسبًا مشتقة حسابيًا منها فقط: بطاقات KPI،
-  توزيع حالات الجيمات، ضغط مراحل التشغيل، تركيب موارد قواعد البيانات، مؤشر الاعتمادية،
-  ومركز روابط للشاشات المصدرية.
-- التحديث اليدوي متاح دائمًا، والتحديث التلقائي كل 60 ثانية يمكن إيقافه من الشاشة.
-  يتم إلغاء timer عند مغادرة الشاشة، ولا يتم توليد أرقام أو اتجاهات تاريخية غير موجودة في API.
-- نطاق بيانات الاشتراكات وحالة الاشتراك يمران كـquery filters إلى الخادم؛ أما بقية أرقام التشغيل
-  فتظل لقطة حالية وفق عقد الـBackend. القرار المالي أو التشغيلي لا يُتخذ من KPI مجمع فقط؛ يجب
-  فتح السجل المصدر من الرابط المناسب.
-- جدول الجيمات يقرأ من `GET /api/platform/dashboard/tenants` مع بحث خادمي وحالات تحميل/خطأ،
-  ولا يعرض Connection Strings أو Tokens أو أي مادة حساسة.
-
 ## طابور مراجعة مساحات العمل
 
 - المسار `/workspace-applications` محمي في الواجهة بـ`ManageTenants` ومحمي بالسياسة نفسها في Platform API.
-- يعرض قائمة خادمية الصفحات من `GET /api/platform/workspace-applications` مع نوع المساحة والحالة وبيانات المراجعة الآمنة فقط، دون Connection Material. النوع مرئي بصريًا: أزرق/أيقونة مبنى للجيم، وبنفسجي/أيقونة مدرب لـ`FreelanceCoach`.
-- زر **إنشاء مساحة عمل** يفتح نفس التدفق للجيم والمدرب الحر: اختيار النوع، بيانات المالك، بيانات المساحة، الباقة، ثم إنشاء طلب `Submitted` مع دفع `PendingReview` ومساحة/اشتراك غير مفعّلين. المدرب الحر Tenant مستقل ولا يُنشأ كموظف داخل جيم.
-- شاشة التفاصيل تعرض Timeline منفصلًا للطلب والدفع والمراجعة والتجهيز والاشتراك والوصول. لا تعتبر `Active` وحدها دليلًا على جاهزية الدخول؛ القرار النهائي يعتمد على `canAccessDashboard` و`databaseStatus` و`subscriptionStatus` والعضوية.
-- تدعم القائمة الفلاتر الخادمية حسب النوع، حالة الطلب، الدفع، التجهيز، مساحة العمل والاشتراك. فشل التجهيز يظهر كحالة قابلة لإعادة المحاولة، ولا يعرض Connection String أو اسم قاعدة البيانات أو Token.
-- تبدأ المراجعة ثم يختار المسؤول طلب استكمال حقول مسموحة، أو الاعتماد، أو الرفض. كل قرار يحمل `rowVersion` ويعتمد على استجابة الخادم المحدثة؛ التعارض يعيد تحميل القائمة بدل تكرار قرار قديم. إذا كانت أدوار المدرب الحر المرجعية غير مهيأة، تعرض اللوحة رسالة تشغيلية تطلب تطبيق `SeedFreelanceSystemRoles` بدل عرض رسالة الخادم الخام.
-- يختار المسؤول حقول الاستكمال من قائمة مقيدة بعقد الـAPI: حقول مساحة المدرب الحر المعتمدة فقط، أو `FullName` لطلب العضوية. لا يوجد إدخال نصي حر يمكنه إرسال مثال أو حقل غير مسموح.
+- يعرض قائمة خادمية الصفحات من `GET /api/platform/workspace-applications` مع النوع والحالة وبيانات الاتصال اللازمة للمراجعة فقط.
+- تبدأ المراجعة ثم يختار المسؤول طلب استكمال حقول مسموحة، أو الاعتماد، أو الرفض. كل قرار يحمل `rowVersion` ويعتمد على استجابة الخادم المحدثة؛ التعارض يعيد تحميل القائمة بدل تكرار قرار قديم.
 - لا تعرض الشاشة Payload الطلب الكامل أو أي بيانات صحية أو تدريبية للعملاء. لا توجد عمليات CRUD عامة أو حذف.
-- عند إنشاء هوية مالك جديدة يعيد الخادم كلمة مرور مؤقتة في استجابة الإنشاء فقط؛ تعرضها الواجهة في نافذة مرة واحدة، ويُلزم المالك بتغييرها عند أول دخول. لا تظهر في القائمة أو التفاصيل أو السجلات.
 
 ## القاعدة المشتركة
-
-المشغل لا يحصل على جلسة بعد كلمة المرور وحدها: يجب إكمال OTP إلى الهاتف المؤكد.
-تحسين اكتشاف Caps Lock لا يُعد شرطًا للدخول؛ الأحداث غير المدعومة تمر بأمان إلى تحقق الخادم.
-بعد اكتمال الدخول لا تفتح الواجهة OTP لأي عملية. تعتمد كل عملية على Access Token والصلاحية
-المطلوبة وقيود الحالة و`rowVersion` كما كانت قبل إضافة step-up.
-Refresh Token لا يظهر في التخزين المحلي؛ الخادم يدوره في HttpOnly Cookie.
-
-خلال استثناء الاختبار المستضاف في Issue #127 تعرض شاشة OTP الكود `1234` مؤقتًا. يظل
-الخادم هو صاحب القرار: يلزم challenge صحيح، وتطبق حدود المحاولات والاستهلاك الأحادي، ويتوقف
-الكود عند تاريخ انتهاء إعداد الخادم. تُحذف العبارة عند ربط مزود الإرسال الخارجي.
 
 كل شاشة تعرض مجموعة بيانات تستخدم `ServerPaginatorComponent` من
 `src/app/shared/ui/server-paginator.component.ts`. لا تعتمد الشاشات على تقطيع
@@ -85,7 +38,7 @@ interface PagedResult<T> {
 | كتالوج الميزات | إنشاء، تعديل، أرشفة؛ مفتاح الميزة ثابت بعد الإنشاء |
 | اعتماديات الميزات | إضافة وإزالة علاقة إعداد آمنة |
 | الحدود والاستثناءات | إنشاء وتعديل/تعطيل زمني؛ لا حذف تاريخي |
-| الجيمات والاشتراكات والمشرفون | أوامر دورة حياة؛ الحذف النهائي استثناء محمي بنسخة احتياطية وتأكيد صريح |
+| الجيمات والاشتراكات والمشرفون | أوامر دورة حياة، وليست حذفًا مباشرًا |
 | طلبات الدفع | موافقة أو رفض فقط |
 | الفواتير والتدقيق والنسخ والـOutbox والـJobs والتنبيهات | قراءة/تشغيل آمن فقط؛ لا تعديل أو حذف للسجل |
 
@@ -102,18 +55,22 @@ interface PagedResult<T> {
 
 ## موارد قواعد البيانات
 
-- `/database-resources` تستخدم `ManagePlatformBackups` وتقرأ من `GET /api/platform/database-resources`.
-- تعرض الصفحة `ResourceCode` مختصراً، المزود، الحالة، مساحة العمل، provisioning/health، سجل النسخ، ووجود
-  اتصال محمي فقط. لا تعرض اسم قاعدة البيانات أو connection string أو القيمة المشفرة.
-- `Refresh` و`Retry` يعيدان تحميل القائمة. `Register database` يرسل قيمة جديدة مرة واحدة إلى
-  `POST /api/platform/database-resources`؛ الخادم يختبرها ويشفرها ولا يعيدها.
-- `Repair` يظهر للمورد `Available` أو `Allocated` أو `Failed`، ويستدعي
-  `POST /api/platform/database-resources/{id}/repair-connection` بعد تأكيد صريح. للمورد المخصص يصلح
-  الـactive mapping نفسه؛ للمورد الفاشل يعيده إلى `Available`.
-- `Migrations` يستدعي `POST /api/platform/database-resources/{id}/migrations` ويشغل migrations وCanConnect
-  من الخادم. `Backup` يظهر للمورد `Allocated` فقط ويستدعي endpoint النسخ الخاص به؛ النتائج التفصيلية تظهر
-  في Backup Center. Disable/Enable تستخدمان `POST /api/platform/database-resources/{id}/status`.
-- لا يوجد generic edit أو delete للمورد المخصص؛ قرارات lifecycle والـTenant isolation يفرضها الخادم.
+- `/database-resources` تستخدم `ManagePlatformBackups` وتقرأ من `GET /api/platform/database-resources`،
+  وتوفر تسجيل مورد جديد من خلال `POST /api/platform/database-resources`.
+- تعرض الصفحة `Id` مختصراً، المزود، الحالة، مساحة العمل، آخر فحص صحة، الحجم، إصدار الـschema، ووجود
+  اتصال محمي فقط. لا تعرض اسم قاعدة البيانات أو connection string أو قيمة مشفرة.
+- زر `تسجيل قاعدة بيانات` يرسل اسمًا وصِفَة المورد وسلسلة الاتصال إلى الخادم عبر TLS؛ الخادم
+  يشفر القيمة فورًا ولا يعيدها. بعد الحفظ تختفي القيمة من النموذج ولا توجد edit/delete أو كشف للمادة.
+- `Refresh` يعيد قراءة الحالة، مع ترقيم خادمي وحالة Loading/Empty/Error. أي تخصيص أو Migration أو
+  health check يتم عبر الـprovisioning saga المحمي، وليس من CRUD عام في المتصفح.
+
+## Issue #248 — طابور إنشاء المساحات
+
+شاشة `/workspace-applications` تعرض Gym بلون أزرق وأيقونة مبنى، وFreelanceCoach بلون بنفسجي
+وأيقونة مدرب. الفلاتر تشمل النوع وحالة الطلب والدفع والتجهيز. الأزرار مرتبطة بالعقود التالية:
+`start-review`, payment approve/reject, request-information, approve-workspace, reject, و
+`retry-provisioning`. يمنع الزر نفسه الضغط المزدوج أثناء الطلب، ويُحدّث الصف من استجابة الخادم
+لا من حالة محلية مفترضة. لا يظهر زر Dashboard قبل `canAccessDashboard=true`.
 
 ## التحقق المحلي
 
