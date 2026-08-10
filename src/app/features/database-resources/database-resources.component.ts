@@ -31,25 +31,25 @@ interface ResourceEditor {
   imports: [CommonModule, FormsModule, RouterLink, ButtonModule, DialogModule, TableModule, PageHeaderComponent, ServerPaginatorComponent],
   template: `
     <app-page-header
-      title="Database Resources"
-      subtitle="Manage the protected workspace database pool with explicit, server-validated actions."
+      title="موارد قواعد البيانات"
+      subtitle="أدر Pool قواعد بيانات مساحات العمل المحمية بإجراءات واضحة يتحقق منها الخادم."
       icon="pi pi-database">
       <button
         pButton
         type="button"
-        label="Refresh"
+        label="تحديث"
         icon="pi pi-refresh"
         class="p-button-text"
-        aria-label="Refresh database resources"
+        aria-label="تحديث موارد قواعد البيانات"
         [loading]="loading()"
         (click)="load()"></button>
-      <button pButton type="button" label="Register database" icon="pi pi-plus" (click)="openRegister()"></button>
+      <button pButton type="button" label="تسجيل قاعدة بيانات" icon="pi pi-plus" (click)="openRegister()"></button>
     </app-page-header>
 
     @if (loadError(); as message) {
       <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800" role="alert">
         <span><i class="pi pi-exclamation-circle me-2"></i>{{ message }}</span>
-        <button pButton type="button" label="Retry" icon="pi pi-refresh" class="p-button-sm p-button-danger p-button-outlined" (click)="load()"></button>
+        <button pButton type="button" label="إعادة المحاولة" icon="pi pi-refresh" class="p-button-sm p-button-danger p-button-outlined" (click)="load()"></button>
       </div>
     }
 
@@ -57,10 +57,10 @@ interface ResourceEditor {
       <div class="flex items-start gap-3">
         <i class="pi pi-info-circle mt-1"></i>
         <div>
-          <p class="m-0 font-extrabold">Protected resource pool controls</p>
-          <p class="mb-0 mt-1">Register and repair accept a connection string only over the protected API. The server tests it, encrypts it immediately, and never returns or displays it. Allocated resources must use the explicit repair action; migrations, health checks, assignment, and backups remain server-authoritative.</p>
+          <p class="m-0 font-extrabold">إدارة Pool الموارد المحمية</p>
+          <p class="mb-0 mt-1">يقبل التسجيل والإصلاح سلسلة الاتصال عبر الـAPI المحمي فقط. يختبرها الخادم ويشفّرها فورًا ولا يعيدها أو يعرضها مطلقًا. تستخدم الموارد المخصصة إجراء الإصلاح الصريح؛ وتظل الترحيلات وفحوصات الصحة والتخصيص والنسخ الاحتياطية تحت تحكم الخادم.</p>
           <a routerLink="/backups" class="mt-2 inline-flex items-center gap-2 font-bold text-blue-700 hover:underline">
-            Open Backup Center <i class="pi pi-arrow-right text-xs"></i>
+            عرض مركز النسخ الاحتياطية <i class="pi pi-arrow-right text-xs"></i>
           </a>
         </div>
       </div>
@@ -68,20 +68,20 @@ interface ResourceEditor {
 
       <div class="mb-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] md:items-end">
         <label class="lf-label m-0">
-          Lifecycle status
+          حالة دورة الحياة
           <select class="lf-input mt-1" [ngModel]="statusFilter()" (ngModelChange)="selectStatus($event)">
-            <option [ngValue]="null">All statuses</option>
+            <option [ngValue]="null">كل الحالات</option>
             @for (option of statusOptions; track option.value) {
               <option [ngValue]="option.value">{{ option.label }}</option>
             }
           </select>
         </label>
         <label class="lf-label m-0">
-          Tenant ID (optional)
+          معرّف مساحة العمل (اختياري)
           <input class="lf-input mt-1" [ngModel]="tenantIdFilter()" (ngModelChange)="tenantIdFilter.set($event)" dir="ltr" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
         </label>
-        <button pButton type="button" label="Apply filters" icon="pi pi-filter" class="p-button-outlined" [loading]="loading()" (click)="applyFilters()"></button>
-        <button pButton type="button" label="Clear" icon="pi pi-times" class="p-button-text p-button-secondary" [disabled]="!hasFilters()" (click)="clearFilters()"></button>
+        <button pButton type="button" label="تطبيق الفلاتر" icon="pi pi-filter" class="p-button-outlined" [loading]="loading()" (click)="applyFilters()"></button>
+        <button pButton type="button" label="مسح" icon="pi pi-times" class="p-button-text p-button-secondary" [disabled]="!hasFilters()" (click)="clearFilters()"></button>
       </div>
 
       <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -95,86 +95,86 @@ interface ResourceEditor {
         </div>
       }
     </div>
-    <p class="-mt-4 mb-6 text-xs text-slate-500">Summary counts describe the currently loaded page. The table total is {{ totalCount }} resource(s).</p>
+    <p class="-mt-4 mb-6 text-xs text-slate-500">تعرض أرقام الملخص الصفحة المحملة حاليًا. إجمالي الجدول هو {{ totalCount }} موردًا.</p>
 
     <section class="lf-card overflow-hidden">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
         <div>
-          <h2 class="m-0 text-base font-extrabold text-slate-800">Registered workspace databases</h2>
-          <p class="mb-0 mt-1 text-xs text-slate-500">Connection strings are encrypted in DatabaseResources and never displayed here.</p>
+          <h2 class="m-0 text-base font-extrabold text-slate-800">قواعد بيانات مساحات العمل المسجلة</h2>
+          <p class="mb-0 mt-1 text-xs text-slate-500">تُشفّر سلاسل الاتصال داخل DatabaseResources ولا تُعرض هنا مطلقًا.</p>
         </div>
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ totalCount }} resources</span>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ totalCount }} موردًا</span>
       </div>
 
       <p-table [value]="rows()" [loading]="loading()" styleClass="p-datatable-sm" [scrollable]="true">
         <ng-template pTemplate="header">
           <tr>
-            <th>Resource</th>
-            <th>Status</th>
-            <th>Workspace</th>
-            <th>Provisioning / health</th>
-            <th>Backups</th>
-            <th class="text-center">Actions</th>
+            <th>المورد</th>
+            <th>الحالة</th>
+            <th>مساحة العمل</th>
+            <th>التجهيز / الصحة</th>
+            <th>النسخ الاحتياطية</th>
+            <th class="text-center">الإجراءات</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-row>
           <tr>
             <td>
               <div class="font-bold text-slate-800" dir="ltr">{{ row.resourceCode || shortId(row.id) }}</div>
-              <div class="mt-1 text-xs text-slate-500" dir="ltr">{{ row.provider }}</div>
+              <div class="mt-1 text-xs text-slate-500" dir="ltr">{{ providerLabel(row.provider) }}</div>
               <div class="mt-1 text-[11px]" [class.text-emerald-600]="row.hasProtectedConnection" [class.text-amber-600]="!row.hasProtectedConnection">
                 <i [class]="row.hasProtectedConnection ? 'pi pi-lock' : 'pi pi-exclamation-triangle'"></i>
-                {{ row.hasProtectedConnection ? 'Protected connection saved' : 'Connection missing' }}
+                {{ row.hasProtectedConnection ? 'تم حفظ الاتصال المحمي' : 'الاتصال غير موجود' }}
               </div>
             </td>
-            <td><span class="lf-badge" [ngClass]="statusClass(row)">{{ lifecycleLabel(row) }}</span></td>
+            <td><span class="lf-badge" [ngClass]="statusClass(row)">{{ lifecycleText(row) }}</span></td>
             <td>
               @if (row.tenantName) {
                 <div class="font-semibold text-slate-700">{{ row.tenantName }}</div>
                 <div class="text-xs text-slate-500">{{ workspaceLabel(row.workspaceType) }}</div>
               } @else {
-                <span class="text-sm text-slate-400">Not allocated</span>
+                <span class="text-sm text-slate-400">غير مخصص</span>
               }
             </td>
             <td>
-              <div class="text-sm text-slate-700">{{ provisioningLabel(row) }}</div>
-              @if (row.provisioningError || row.lastError) {
-                <div class="text-xs font-semibold text-rose-600">{{ row.provisioningError || row.lastError }}</div>
+                <div class="text-sm text-slate-700">{{ provisioningLabel(row) }}</div>
+                @if (row.provisioningError || row.lastError) {
+                <div class="text-xs font-semibold text-rose-600">{{ errorLabel(row.provisioningError || row.lastError) }}</div>
               }
-              <div class="mt-1 text-xs text-slate-500">Health: {{ row.lastHealthCheckAtUtc ? formatDate(row.lastHealthCheckAtUtc) : 'Not checked' }}</div>
+              <div class="mt-1 text-xs text-slate-500">الصحة: {{ row.lastHealthCheckAtUtc ? formatDate(row.lastHealthCheckAtUtc) : 'لم يتم التحقق' }}</div>
               @if (row.schemaVersion) { <div class="text-[11px] text-slate-400" dir="ltr">{{ row.schemaVersion }}</div> }
             </td>
             <td>
-              <div class="font-semibold text-slate-700">{{ row.backupCount || 0 }} backup(s)</div>
-              <div class="text-xs text-slate-500">{{ row.lastBackupStatus || 'No backup yet' }}</div>
+              <div class="font-semibold text-slate-700">{{ row.backupCount || 0 }} نسخة</div>
+              <div class="text-xs text-slate-500">{{ backupStatusLabel(row.lastBackupStatus) }}</div>
               @if (row.lastBackupCompletedAtUtc) { <div class="text-[11px] text-slate-400">{{ formatDate(row.lastBackupCompletedAtUtc) }}</div> }
             </td>
             <td class="whitespace-nowrap text-center">
               <div class="flex flex-wrap justify-center gap-1">
                 @if (canRepair(row)) {
-                  <button pButton type="button" label="Repair" icon="pi pi-wrench" class="p-button-sm p-button-warning p-button-outlined" title="Repair protected connection" (click)="openRepair(row)"></button>
+                  <button pButton type="button" label="إصلاح" icon="pi pi-wrench" class="p-button-sm p-button-warning p-button-outlined" title="إصلاح الاتصال المحمي" (click)="openRepair(row)"></button>
                 }
                 @if (canRunMigrations(row)) {
-                  <button pButton type="button" label="Migrations" icon="pi pi-sync" class="p-button-sm p-button-outlined" [loading]="busyId() === row.id && busyAction() === 'migrations'" (click)="runMigrations(row)"></button>
+                  <button pButton type="button" label="الترحيلات" icon="pi pi-sync" class="p-button-sm p-button-outlined" [loading]="busyId() === row.id && busyAction() === 'migrations'" (click)="runMigrations(row)"></button>
                 }
                 @if (isAllocated(row)) {
-                  <button pButton type="button" label="Backup" icon="pi pi-save" class="p-button-sm p-button-outlined" [loading]="busyId() === row.id && busyAction() === 'backup'" (click)="createBackup(row)"></button>
+                  <button pButton type="button" label="نسخة احتياطية" icon="pi pi-save" class="p-button-sm p-button-outlined" [loading]="busyId() === row.id && busyAction() === 'backup'" (click)="createBackup(row)"></button>
                 }
                 @if (canDisable(row)) {
-                  <button pButton type="button" label="Disable" icon="pi pi-ban" class="p-button-sm p-button-warning p-button-text" [loading]="busyId() === row.id && busyAction() === 'status'" (click)="setStatus(row, 'Disabled')"></button>
+                  <button pButton type="button" label="تعطيل" icon="pi pi-ban" class="p-button-sm p-button-warning p-button-text" [loading]="busyId() === row.id && busyAction() === 'status'" (click)="setStatus(row, 'Disabled')"></button>
                 }
                 @if (isDisabled(row)) {
-                  <button pButton type="button" label="Enable" icon="pi pi-check" class="p-button-sm p-button-success p-button-text" [loading]="busyId() === row.id && busyAction() === 'status'" (click)="setStatus(row, 'Available')"></button>
+                  <button pButton type="button" label="تفعيل" icon="pi pi-check" class="p-button-sm p-button-success p-button-text" [loading]="busyId() === row.id && busyAction() === 'status'" (click)="setStatus(row, 'Available')"></button>
                 }
                 @if (!canRepair(row) && !canRunMigrations(row) && !isAllocated(row) && !canDisable(row) && !isDisabled(row)) {
-                  <span class="text-xs text-slate-400">Server managed</span>
+                  <span class="text-xs text-slate-400">يديرها الخادم</span>
                 }
               </div>
             </td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
-          <tr><td colspan="6" class="py-14 text-center text-slate-400"><i class="pi pi-database mb-2 block text-3xl opacity-40"></i>No database resources registered. Use Register database to add a protected pool resource.</td></tr>
+          <tr><td colspan="6" class="py-14 text-center text-slate-400"><i class="pi pi-database mb-2 block text-3xl opacity-40"></i>لا توجد موارد قواعد بيانات مسجلة. استخدم «تسجيل قاعدة بيانات» لإضافة مورد محمي إلى الـPool.</td></tr>
         </ng-template>
       </p-table>
       <app-server-paginator [page]="page" [pageSize]="pageSize" [totalCount]="totalCount" (pageChange)="onPageChange($event)"></app-server-paginator>
@@ -186,52 +186,52 @@ interface ResourceEditor {
       [draggable]="false"
       [dismissableMask]="true"
       [style]="{ width: '650px', maxWidth: '94vw' }"
-      [header]="repairMode ? (repairAllocated ? 'Repair allocated database connection' : 'Repair database resource') : 'Register database resource'">
+      [header]="repairMode ? (repairAllocated ? 'إصلاح اتصال قاعدة البيانات المخصص' : 'إصلاح مورد قاعدة البيانات') : 'تسجيل مورد قاعدة بيانات'">
       <form #resourceForm="ngForm" (ngSubmit)="save()" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         @if (!repairMode) {
           <div>
-            <label class="lf-label">Provider *</label>
+            <label class="lf-label">المزود *</label>
             <select class="lf-input" name="provider" [(ngModel)]="editor.provider" required>
               <option value="ManualMonster">ManualMonster</option>
               <option value="LocalSql">LocalSql</option>
             </select>
           </div>
           <div>
-            <label class="lf-label">Database label *</label>
+            <label class="lf-label">اسم قاعدة البيانات *</label>
             <input class="lf-input" name="databaseName" [(ngModel)]="editor.databaseName" dir="ltr" required placeholder="tenant-db-01" />
           </div>
           <div class="sm:col-span-2">
-            <label class="lf-label">Server key / note</label>
-            <input class="lf-input" name="serverKey" [(ngModel)]="editor.serverKey" dir="ltr" placeholder="Optional operator reference" />
+            <label class="lf-label">مفتاح الخادم / ملاحظة</label>
+            <input class="lf-input" name="serverKey" [(ngModel)]="editor.serverKey" dir="ltr" placeholder="مرجع تشغيلي اختياري" />
           </div>
         } @else {
           <div class="sm:col-span-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
             <i class="pi pi-wrench me-1"></i>
             @if (repairAllocated) {
-              This replaces the protected value for the allocated workspace mapping. The existing value is never displayed.
+              سيستبدل هذا القيمة المحمية لربط مساحة العمل المخصصة. لا تُعرض القيمة الحالية مطلقًا.
             } @else {
-              This validates and protects a new pool connection, then returns the resource to Available.
+              يتحقق هذا الإجراء من اتصال جديد للـPool ويحميه، ثم يعيد المورد إلى حالة «متاح».
             }
           </div>
         }
         <div class="sm:col-span-2">
-          <label class="lf-label">Connection string *</label>
-          <textarea class="lf-input min-h-28 font-mono text-xs" name="connectionString" [(ngModel)]="editor.connectionString" dir="ltr" required autocomplete="new-password" placeholder="Entered over TLS; never displayed after save"></textarea>
-          <p class="mt-1 text-xs text-slate-500">The server validates the SQL database, encrypts the value before persistence, and returns only a protected-connection flag.</p>
+          <label class="lf-label">سلسلة الاتصال *</label>
+          <textarea class="lf-input min-h-28 font-mono text-xs" name="connectionString" [(ngModel)]="editor.connectionString" dir="ltr" required autocomplete="new-password" placeholder="تُدخل عبر اتصال آمن ولا تُعرض بعد الحفظ"></textarea>
+          <p class="mt-1 text-xs text-slate-500">يتحقق الخادم من قاعدة بيانات SQL ويشفّر القيمة قبل حفظها، ولا يعيد إلا مؤشرًا بوجود اتصال محمي.</p>
         </div>
         @if (!repairMode && lastTest(); as test) {
           <div class="sm:col-span-2 rounded-xl p-3 text-sm" [class.bg-emerald-50]="test.succeeded" [class.text-emerald-700]="test.succeeded" [class.bg-rose-50]="!test.succeeded" [class.text-rose-700]="!test.succeeded">
             <i [class]="test.succeeded ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
-            {{ test.message }}
+            {{ connectionTestMessage(test) }}
           </div>
         }
       </form>
       <ng-template pTemplate="footer">
-        <button pButton type="button" label="Cancel" class="p-button-text p-button-secondary" (click)="closeDialog()"></button>
+        <button pButton type="button" label="إلغاء" class="p-button-text p-button-secondary" (click)="closeDialog()"></button>
         @if (!repairMode) {
-          <button pButton type="button" label="Test connection" icon="pi pi-link" class="p-button-outlined" [loading]="testing()" [disabled]="!editor.databaseName.trim() || !editor.connectionString.trim()" (click)="testConnection()"></button>
+          <button pButton type="button" label="اختبار الاتصال" icon="pi pi-link" class="p-button-outlined" [loading]="testing()" [disabled]="!editor.databaseName.trim() || !editor.connectionString.trim()" (click)="testConnection()"></button>
         }
-        <button pButton type="submit" [label]="repairMode ? 'Repair and protect' : 'Register securely'" icon="pi pi-lock" [loading]="saving() || registering()" [disabled]="saving() || registering() || !editor.connectionString.trim() || (!repairMode && (!editor.provider.trim() || !editor.databaseName.trim()))" (click)="save()"></button>
+        <button pButton type="submit" [label]="repairMode ? 'إصلاح وحماية' : 'تسجيل آمن'" icon="pi pi-lock" [loading]="saving() || registering()" [disabled]="saving() || registering() || !editor.connectionString.trim() || (!repairMode && (!editor.provider.trim() || !editor.databaseName.trim()))" (click)="save()"></button>
       </ng-template>
     </p-dialog>
   `,
@@ -250,10 +250,10 @@ export class DatabaseResourcesComponent implements OnInit {
   readonly busyAction = signal<string | null>(null);
   readonly lastTest = signal<ConnectionTestResult | null>(null);
   readonly summaryCards = computed(() => [
-    { label: 'Available on page', value: this.count('Available'), icon: 'pi pi-check-circle', color: 'text-emerald-500' },
-    { label: 'Allocated on page', value: this.count('Allocated'), icon: 'pi pi-link', color: 'text-blue-500' },
-    { label: 'In progress on page', value: this.rows().filter(row => ['Provisioning', 'RestorePending'].includes(this.lifecycleLabel(row))).length, icon: 'pi pi-spin pi-spinner', color: 'text-amber-500' },
-    { label: 'Needs review on page', value: this.rows().filter(row => ['Failed', 'Disabled'].includes(this.lifecycleLabel(row))).length, icon: 'pi pi-exclamation-triangle', color: 'text-rose-500' },
+    { label: 'متاح في الصفحة', value: this.count('Available'), icon: 'pi pi-check-circle', color: 'text-emerald-500' },
+    { label: 'مخصص في الصفحة', value: this.count('Allocated'), icon: 'pi pi-link', color: 'text-blue-500' },
+    { label: 'قيد التنفيذ في الصفحة', value: this.rows().filter(row => ['Provisioning', 'RestorePending'].includes(this.lifecycleLabel(row))).length, icon: 'pi pi-spin pi-spinner', color: 'text-amber-500' },
+    { label: 'يحتاج إلى مراجعة', value: this.rows().filter(row => ['Failed', 'Disabled'].includes(this.lifecycleLabel(row))).length, icon: 'pi pi-exclamation-triangle', color: 'text-rose-500' },
   ]);
 
   dialogVisible = false;
@@ -268,14 +268,14 @@ export class DatabaseResourcesComponent implements OnInit {
   tenantIdFilter = signal('');
 
   readonly statusOptions = [
-    { value: DatabaseResourceStatus.Available, label: 'Available' },
-    { value: DatabaseResourceStatus.Reserved, label: 'Reserved' },
-    { value: DatabaseResourceStatus.Provisioning, label: 'Provisioning' },
-    { value: DatabaseResourceStatus.Assigned, label: 'Assigned' },
-    { value: DatabaseResourceStatus.Maintenance, label: 'Maintenance / Disabled' },
-    { value: DatabaseResourceStatus.RestorePending, label: 'Restore pending' },
-    { value: DatabaseResourceStatus.Faulted, label: 'Faulted / Failed' },
-    { value: DatabaseResourceStatus.Retired, label: 'Retired' },
+    { value: DatabaseResourceStatus.Available, label: 'متاح' },
+    { value: DatabaseResourceStatus.Reserved, label: 'محجوز' },
+    { value: DatabaseResourceStatus.Provisioning, label: 'جارٍ التجهيز' },
+    { value: DatabaseResourceStatus.Assigned, label: 'مخصص' },
+    { value: DatabaseResourceStatus.Maintenance, label: 'صيانة / معطل' },
+    { value: DatabaseResourceStatus.RestorePending, label: 'بانتظار الاستعادة' },
+    { value: DatabaseResourceStatus.Faulted, label: 'متعطل / فاشل' },
+    { value: DatabaseResourceStatus.Retired, label: 'متقاعد' },
   ];
 
   ngOnInit(): void { this.load(); }
@@ -315,7 +315,7 @@ export class DatabaseResourcesComponent implements OnInit {
   applyFilters(): void {
     const tenantId = this.tenantIdFilter().trim();
     if (tenantId && !this.isGuid(tenantId)) {
-      this.notify.error('Tenant ID must be a valid GUID.');
+      this.notify.error('يجب أن يكون معرّف مساحة العمل GUID صالحًا.');
       return;
     }
     this.load(1, this.pageSize, this.statusFilter(), tenantId || null);
@@ -342,12 +342,12 @@ export class DatabaseResourcesComponent implements OnInit {
     if (!this.canRepair(row)) return;
     const allocated = this.isAllocated(row);
     void this.notify.confirm({
-      header: allocated ? 'Repair allocated connection?' : 'Repair pool connection?',
+      header: allocated ? 'هل تريد إصلاح الاتصال المخصص؟' : 'هل تريد إصلاح اتصال المورد؟',
       message: allocated
-        ? `The new value will be tested and applied to ${row.resourceCode || this.shortId(row.id)} and its active workspace mapping.`
-        : `The new value will be tested and ${row.resourceCode || this.shortId(row.id)} will return to Available.`,
-      acceptLabel: 'Continue',
-      rejectLabel: 'Cancel',
+        ? `سيُختبر الاتصال الجديد ويُطبق على ${row.resourceCode || this.shortId(row.id)} وربطه النشط بمساحة العمل.`
+        : `سيُختبر الاتصال الجديد ويعود ${row.resourceCode || this.shortId(row.id)} إلى حالة «متاح».`,
+      acceptLabel: 'متابعة',
+      rejectLabel: 'إلغاء',
       danger: true,
       icon: 'pi pi-wrench',
     }).then(confirmed => {
@@ -376,7 +376,7 @@ export class DatabaseResourcesComponent implements OnInit {
       next: result => {
         this.testing.set(false);
         this.lastTest.set(result);
-        result.succeeded ? this.notify.success('Connection test succeeded.') : this.notify.error(result.message);
+        result.succeeded ? this.notify.success('نجح اختبار الاتصال.') : this.notify.error(this.connectionTestMessage(result));
       },
       error: error => { this.testing.set(false); this.notify.error(errMsg(error)); },
     });
@@ -385,7 +385,7 @@ export class DatabaseResourcesComponent implements OnInit {
   save(): void {
     if (this.repairMode && this.editingId) {
       if (!this.editor.connectionString.trim()) {
-        this.notify.error('A new connection string is required for repair.');
+        this.notify.error('أدخل سلسلة اتصال جديدة للإصلاح.');
         return;
       }
       this.saving.set(true);
@@ -402,7 +402,7 @@ export class DatabaseResourcesComponent implements OnInit {
     }
 
     if (!this.editor.provider.trim() || !this.editor.databaseName.trim() || !this.editor.connectionString.trim()) {
-      this.notify.error('Provider, database label, and connection string are required.');
+      this.notify.error('المزود واسم قاعدة البيانات وسلسلة الاتصال حقول مطلوبة.');
       return;
     }
     const command: RegisterDatabaseResourceCommand = {
@@ -415,7 +415,7 @@ export class DatabaseResourcesComponent implements OnInit {
     this.service.register(command).subscribe({
       next: () => {
         this.registering.set(false);
-        this.notify.success('Database resource registered securely.');
+        this.notify.success('تم تسجيل مورد قاعدة البيانات بأمان.');
         this.closeDialog();
         this.load();
       },
@@ -426,10 +426,10 @@ export class DatabaseResourcesComponent implements OnInit {
   runMigrations(row: DatabaseResource): void {
     if (!this.canRunMigrations(row)) return;
     void this.notify.confirm({
-      header: 'Run migrations and health check?',
-      message: `The server will run tenant migrations and CanConnect for ${row.resourceCode || this.shortId(row.id)}.`,
-      acceptLabel: 'Run migrations',
-      rejectLabel: 'Cancel',
+      header: 'هل تريد تشغيل الترحيلات وفحص الصحة؟',
+      message: `سيشغل الخادم ترحيلات مساحة العمل واختبار CanConnect للمورد ${row.resourceCode || this.shortId(row.id)}.`,
+      acceptLabel: 'تشغيل الترحيلات',
+      rejectLabel: 'إلغاء',
     }).then(confirmed => {
       if (!confirmed) return;
       this.startBusy(row.id, 'migrations');
@@ -443,15 +443,15 @@ export class DatabaseResourcesComponent implements OnInit {
   createBackup(row: DatabaseResource): void {
     if (!this.isAllocated(row)) return;
     void this.notify.confirm({
-      header: 'Create backup for this workspace?',
-      message: `The server will resolve and create the protected backup batch for ${row.tenantName || 'the allocated workspace'}.`,
-      acceptLabel: 'Create backup',
-      rejectLabel: 'Cancel',
+      header: 'هل تريد إنشاء نسخة لهذه المساحة؟',
+      message: `سيحدد الخادم دفعة النسخ المحمية وينشئها لمساحة العمل ${row.tenantName || 'المخصصة'}.`,
+      acceptLabel: 'إنشاء النسخة',
+      rejectLabel: 'إلغاء',
     }).then(confirmed => {
       if (!confirmed) return;
       this.startBusy(row.id, 'backup');
       this.service.createBackup(row.id).subscribe({
-        next: () => { this.finishBusy(); this.notify.success('Backup request completed. Review the Backup Center for checksum and artifact evidence.'); this.load(); },
+        next: () => { this.finishBusy(); this.notify.success('اكتمل طلب النسخ الاحتياطي. راجع مركز النسخ الاحتياطية لمراجعة البصمة وملفات الأدلة.'); this.load(); },
         error: error => { this.finishBusy(); this.notify.error(errMsg(error)); this.load(); },
       });
     });
@@ -460,18 +460,18 @@ export class DatabaseResourcesComponent implements OnInit {
   setStatus(row: DatabaseResource, status: 'Available' | 'Disabled'): void {
     const enabling = status === 'Available';
     void this.notify.confirm({
-      header: enabling ? 'Enable resource?' : 'Disable resource?',
+      header: enabling ? 'هل تريد تفعيل المورد؟' : 'هل تريد تعطيل المورد؟',
       message: enabling
-        ? `Allow ${row.resourceCode || this.shortId(row.id)} to be selected for a new workspace?`
-        : `Stop ${row.resourceCode || this.shortId(row.id)} from being selected for a new workspace?`,
-      acceptLabel: enabling ? 'Enable' : 'Disable',
-      rejectLabel: 'Cancel',
+        ? `هل تسمح باختيار ${row.resourceCode || this.shortId(row.id)} لمساحة عمل جديدة؟`
+        : `هل تمنع اختيار ${row.resourceCode || this.shortId(row.id)} لمساحة عمل جديدة؟`,
+      acceptLabel: enabling ? 'تفعيل' : 'تعطيل',
+      rejectLabel: 'إلغاء',
       danger: !enabling,
     }).then(confirmed => {
       if (!confirmed) return;
       this.startBusy(row.id, 'status');
       this.service.setStatus(row.id, status).subscribe({
-        next: updated => { this.finishBusy(); this.replace(updated); this.notify.success(`Resource marked ${status}.`); },
+        next: updated => { this.finishBusy(); this.replace(updated); this.notify.success(`تم تغيير حالة المورد إلى «${enabling ? 'متاح' : 'معطل'}».`); },
         error: error => { this.finishBusy(); this.notify.error(errMsg(error)); this.load(); },
       });
     });
@@ -479,6 +479,18 @@ export class DatabaseResourcesComponent implements OnInit {
 
   lifecycleLabel(row: DatabaseResource): string {
     return row.lifecycleStatus || this.statusLabel(row.status);
+  }
+
+  lifecycleText(row: DatabaseResource): string {
+    switch (this.lifecycleLabel(row)) {
+      case 'Available': return 'متاح';
+      case 'Allocated': return 'مخصص';
+      case 'Provisioning': return 'جارٍ التجهيز';
+      case 'RestorePending': return 'بانتظار الاستعادة';
+      case 'Failed': return 'فاشل';
+      case 'Disabled': return 'معطل';
+      default: return 'غير معروف';
+    }
   }
 
   statusClass(row: DatabaseResource): string {
@@ -507,15 +519,62 @@ export class DatabaseResourcesComponent implements OnInit {
   isDisabled(row: DatabaseResource): boolean { return this.lifecycleLabel(row) === 'Disabled'; }
 
   provisioningLabel(row: DatabaseResource): string {
-    if (row.provisioningError || row.lastError) return 'Failed';
-    if (row.provisioningStatus === null || row.provisioningStatus === undefined) return 'Not started';
-    return String(row.provisioningStatus);
+    if (row.provisioningError || row.lastError) return 'فشل';
+    if (row.provisioningStatus === null || row.provisioningStatus === undefined) return 'لم يبدأ';
+    switch (String(row.provisioningStatus)) {
+      case 'Pending': return 'قيد الانتظار';
+      case 'AwaitingDatabaseCapacity': return 'بانتظار سعة قاعدة بيانات';
+      case 'Provisioning': return 'جارٍ التجهيز';
+      case 'Completed': return 'اكتمل';
+      case 'Failed': return 'فشل';
+      default: return String(row.provisioningStatus);
+    }
   }
 
   workspaceLabel(workspaceType: string | null): string {
-    if (workspaceType === 'FreelanceCoach') return 'Freelance coach workspace';
-    if (workspaceType === 'Gym') return 'Gym workspace';
-    return 'Assigned workspace';
+    if (workspaceType === 'FreelanceCoach') return 'مساحة مدرب حر';
+    if (workspaceType === 'Gym') return 'مساحة جيم';
+    return 'مساحة العمل المخصصة';
+  }
+
+  providerLabel(provider: string): string {
+    if (provider === 'ManualMonster') return 'Monster يدوي';
+    if (provider === 'LocalSql') return 'SQL محلي';
+    return provider;
+  }
+
+  backupStatusLabel(status: string | null | undefined): string {
+    switch (status) {
+      case 'Completed': return 'مكتملة';
+      case 'Running': return 'قيد التنفيذ';
+      case 'Partial': return 'مكتملة جزئيًا';
+      case 'Failed': return 'فاشلة';
+      case 'Pending': return 'قيد الانتظار';
+      case 'Queued': return 'في قائمة الانتظار';
+      case null:
+      case undefined:
+      case '': return 'لا توجد نسخة بعد';
+      default: return status;
+    }
+  }
+
+  errorLabel(error: string | null | undefined): string {
+    if (!error) return '';
+    switch (error) {
+      case 'DATABASE_CONNECTION_NOT_CONFIGURED': return 'لم يتم إعداد اتصال قاعدة البيانات.';
+      case 'DATABASE_CONNECTION_FAILED': return 'فشل الاتصال بقاعدة البيانات.';
+      case 'DATABASE_HEALTH_CHECK_FAILED': return 'فشل فحص صحة قاعدة البيانات.';
+      case 'TENANT_DATABASE_HEALTH_CHECK_FAILED': return 'فشل فحص صحة قاعدة بيانات مساحة العمل.';
+      case 'DATABASE_RESOURCE_UNAVAILABLE': return 'مورد قاعدة البيانات غير متاح.';
+      case 'DATABASE_CAPACITY_UNAVAILABLE': return 'لا توجد سعة متاحة في Pool قواعد البيانات.';
+      case 'PROVISIONING_FAILED': return 'فشل تجهيز قاعدة البيانات.';
+      default: return error;
+    }
+  }
+
+  connectionTestMessage(result: ConnectionTestResult): string {
+    if (result.succeeded) return 'نجح اختبار الاتصال.';
+    return this.errorLabel(result.errorCode) || result.message || 'فشل اختبار الاتصال.';
   }
 
   statusLabel(status: DatabaseResourceStatus): DatabaseResourceLifecycleStatus {
@@ -535,7 +594,7 @@ export class DatabaseResourcesComponent implements OnInit {
 
   formatDate(value: string): string {
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 'Invalid timestamp' : date.toLocaleString();
+    return Number.isNaN(date.getTime()) ? 'تاريخ غير صالح' : date.toLocaleString();
   }
 
   private emptyEditor(provider = 'ManualMonster'): ResourceEditor {

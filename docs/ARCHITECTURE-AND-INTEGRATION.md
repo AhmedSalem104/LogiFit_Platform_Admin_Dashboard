@@ -63,9 +63,10 @@ flowchart LR
   عاماً إليها.
 - شاشة `/database-resources` تستخدم `GET /api/platform/database-resources` وتعرض
   `hasProtectedConnection` كمؤشر Boolean آمن لوجود قيمة محمية؛ لا تعتمد على `DatabaseName` ولا
-  تقرأ أو تعرض connection material. زر التسجيل يستدعي `POST /api/platform/database-resources` مرة
-  واحدة، والخادم يشفر القيمة ولا يعيدها. لا توجد edit/delete أو connection-test من المتصفح؛
-  التخصيص وmigrations وhealth والنسخ تبقى في تدفقات الخادم المحمية.
+  تقرأ أو تعرض مادة الاتصال. يستدعي التسجيل `POST /api/platform/database-resources`، ويستدعي اختبار
+  الاتصال `POST /api/platform/database-resources/test-connection`، بينما يستدعي الإصلاح والترحيلات
+  وفحص الصحة والنسخ نقاط الخادم المحمية. يشفر الخادم القيمة ولا يعيدها؛ ولا توجد edit/delete عامة،
+  ويظل التخصيص والنسخ تحت سلطة الخادم.
 
 ## تكامل النسخ الاحتياطي
 

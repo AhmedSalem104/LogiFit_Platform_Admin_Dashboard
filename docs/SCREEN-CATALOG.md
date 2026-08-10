@@ -27,9 +27,9 @@
 | `/roles` | الأدوار والصلاحيات | `ManagePlatformReports` | `/roles` | تحرير permissions | ManagePlatform وصول كامل. |
 | `/operations` | Jobs وOutbox | `ManagePlatformReports` | `/operations/jobs`, `/operations/outbox` | متابعة وتشخيص | لا تحذف jobs/outbox. |
 
-### Backup Center interaction contract
+### عقد التفاعل مع شاشة النسخ الاحتياطية
 
-The `/backups` screen starts a server-resolved backup batch only after the service reports `Ready` and the operator confirms the selected scope. The screen distinguishes loading, unavailable, empty, partial, failed, and completed states; it shows per-target status, size, SHA-256, manifest availability, and protected download actions. Retry is offered only for `Failed` or `Partial` batches. No connection string, database name, storage path, or provider credential is rendered.
+تبدأ شاشة `/backups` دفعة نسخ يحددها الخادم فقط بعد إعلان الخدمة حالة `Ready` وبعد تأكيد المشغّل للنطاق المختار. تميز الشاشة حالات التحميل وعدم الإتاحة والفراغ والاكتمال الجزئي والفشل والاكتمال؛ وتعرض حالة كل هدف وحجمه وبصمة SHA-256 وتوفر البيان وإجراءات التنزيل المحمية. تتاح إعادة المحاولة لدفعات `Failed` أو `Partial` فقط. ولا تعرض الشاشة سلسلة اتصال أو اسم قاعدة بيانات أو مسار تخزين أو بيانات اعتماد للمزود.
 | `/reports` | التقارير | `ManagePlatformReports` | `/reports/overview` | قراءة المؤشرات | افتح مصدر البيانات قبل القرار. |
 | `/alerts` | التنبيهات | `ManagePlatformReports` | `/alerts` | فرز/متابعة مصدر التنبيه | 500/503 تحتاج Logs وخادم. |
 | `/documentation` | المرجع والدليل | `ManagePlatformReports` | محتوى الواجهة الموثق | بحث وفتح شاشة | لا يحل محل تحقق Backend. |
