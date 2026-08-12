@@ -194,6 +194,7 @@ flowchart LR
 
 | Document | Contents |
 |---|---|
+| [Complete platform documentation](docs/COMPLETE-PLATFORM-ADMIN-DOCUMENTATION.md) | كل شاشة، تدفق إنشاء المساحات، الصلاحيات، حالات النسخ وقواعد البيانات، عقد الـAPI، الاختبارات والتشغيل. |
 | [Admin workspace](docs/ADMIN-WORKSPACE.md) | Pagination, CRUD/lifecycle limits and the assistant. |
 | [Screen catalog](docs/SCREEN-CATALOG.md) | Every dashboard route, permission, endpoint and action. |
 | [Complete screen operations guide](docs/SCREEN-OPERATIONS-GUIDE.md) | The operational purpose, data, controls, permissions and business safeguards for every dashboard screen. |

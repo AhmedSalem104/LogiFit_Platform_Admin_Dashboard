@@ -59,8 +59,8 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
               <i class="pi" [ngClass]="s.autoRenew ? 'pi-check-circle text-green-500' : 'pi-times-circle text-slate-300'"></i>
             </td>
             <td class="whitespace-nowrap">
-              <button class="p-button p-button-text p-button-sm" (click)="extend(s.id)" title="Extend">+30d</button>
-              <button class="p-button p-button-text p-button-sm" (click)="transition(s.id, TenantSubscriptionStatus.Suspended)" title="Suspend">Suspend</button>
+              <button class="p-button p-button-text p-button-sm" [disabled]="busyId() === s.id" (click)="extend(s.id)" title="تمديد الاشتراك">+30 يومًا</button>
+              <button class="p-button p-button-text p-button-sm" [disabled]="busyId() === s.id" (click)="transition(s, TenantSubscriptionStatus.Suspended)" title="إيقاف الاشتراك">إيقاف</button>
             </td>
           </tr>
         </ng-template>
@@ -93,7 +93,9 @@ export class SubscriptionsComponent implements OnInit {
     { label: 'موقوف', value: TenantSubscriptionStatus.Suspended },
     { label: 'منتهٍ', value: TenantSubscriptionStatus.Expired },
     { label: 'ملغى', value: TenantSubscriptionStatus.Cancelled },
+    { label: 'فترة سماح', value: TenantSubscriptionStatus.GracePeriod },
   ];
+  busyId = signal<string | null>(null);
 
   ngOnInit(): void {
     this.load();
@@ -112,24 +114,42 @@ export class SubscriptionsComponent implements OnInit {
   }
 
   async extend(id: string): Promise<void> {
-    if (!id) return;
-    const days = await this.notify.numberPrompt({
-      title: 'تمديد الاشتراك',
-      label: 'أدخل عدد الأيام التي ستضاف إلى نهاية الاشتراك الحالية.',
-      initialValue: 30,
-      min: 1,
-      max: 3660,
-      confirmLabel: 'تمديد',
-    });
-    if (days === null) return;
-    this.service.extend(id, days).subscribe({
-      next: () => { this.notify.success(`تم تمديد الاشتراك لمدة ${days} يومًا.`); this.load(); },
-      error: err => this.notify.error(errMsg(err)),
-    });
+    if (!id || this.busyId()) return;
+    this.busyId.set(id);
+    try {
+      const days = await this.notify.numberPrompt({
+        title: 'تمديد الاشتراك',
+        label: 'أدخل عدد الأيام التي ستضاف إلى نهاية الاشتراك الحالية.',
+        initialValue: 30,
+        min: 1,
+        max: 3660,
+        confirmLabel: 'تمديد',
+      });
+      if (days === null) { this.busyId.set(null); return; }
+      this.service.extend(id, days).subscribe({
+        next: () => { this.busyId.set(null); this.notify.success(`تم تمديد الاشتراك لمدة ${days} يومًا.`); this.load(); },
+        error: err => { this.busyId.set(null); this.notify.error(errMsg(err)); },
+      });
+    } catch {
+      this.busyId.set(null);
+    }
   }
 
-  transition(id: string, status: TenantSubscriptionStatus): void {
-    this.service.transition(id, status).subscribe({ next: () => this.load(), error: err => this.notify.error(errMsg(err)) });
+  async transition(subscription: PlatformSubscriptionDto, status: TenantSubscriptionStatus): Promise<void> {
+    if (!subscription.id || this.busyId()) return;
+    const ok = await this.notify.confirm({
+      header: 'إيقاف الاشتراك',
+      message: `سيُمنع الدخول التشغيلي للجيم «${subscription.tenantName}» حتى إعادة التفعيل. متابعة؟`,
+      acceptLabel: 'إيقاف الاشتراك',
+      rejectLabel: 'إلغاء',
+      danger: true,
+    });
+    if (!ok) return;
+    this.busyId.set(subscription.id);
+    this.service.transition(subscription.id, status).subscribe({
+      next: () => { this.busyId.set(null); this.notify.success('تم إيقاف الاشتراك.'); this.load(); },
+      error: err => { this.busyId.set(null); this.notify.error(errMsg(err)); },
+    });
   }
 
   load(): void {

@@ -152,19 +152,19 @@ interface ResourceEditor {
             <td class="whitespace-nowrap text-center">
               <div class="flex flex-wrap justify-center gap-1">
                 @if (canRepair(row)) {
-                  <button pButton type="button" label="إصلاح" icon="pi pi-wrench" class="p-button-sm p-button-warning p-button-outlined" title="إصلاح الاتصال المحمي" (click)="openRepair(row)"></button>
+                  <button pButton type="button" label="إصلاح" icon="pi pi-wrench" class="p-button-sm p-button-warning p-button-outlined" title="إصلاح الاتصال المحمي" [disabled]="busyId() !== null" (click)="openRepair(row)"></button>
                 }
                 @if (canRunMigrations(row)) {
-                  <button pButton type="button" label="الترحيلات" icon="pi pi-sync" class="p-button-sm p-button-outlined" [loading]="busyId() === row.id && busyAction() === 'migrations'" (click)="runMigrations(row)"></button>
+                  <button pButton type="button" label="الترحيلات" icon="pi pi-sync" class="p-button-sm p-button-outlined" [loading]="busyId() === row.id && busyAction() === 'migrations'" [disabled]="busyId() !== null" (click)="runMigrations(row)"></button>
                 }
                 @if (isAllocated(row)) {
-                  <button pButton type="button" label="نسخة احتياطية" icon="pi pi-save" class="p-button-sm p-button-outlined" [loading]="busyId() === row.id && busyAction() === 'backup'" (click)="createBackup(row)"></button>
+                  <button pButton type="button" label="نسخة احتياطية" icon="pi pi-save" class="p-button-sm p-button-outlined" [loading]="busyId() === row.id && busyAction() === 'backup'" [disabled]="busyId() !== null" (click)="createBackup(row)"></button>
                 }
                 @if (canDisable(row)) {
-                  <button pButton type="button" label="تعطيل" icon="pi pi-ban" class="p-button-sm p-button-warning p-button-text" [loading]="busyId() === row.id && busyAction() === 'status'" (click)="setStatus(row, 'Disabled')"></button>
+                  <button pButton type="button" label="تعطيل" icon="pi pi-ban" class="p-button-sm p-button-warning p-button-text" [loading]="busyId() === row.id && busyAction() === 'status'" [disabled]="busyId() !== null" (click)="setStatus(row, 'Disabled')"></button>
                 }
                 @if (isDisabled(row)) {
-                  <button pButton type="button" label="تفعيل" icon="pi pi-check" class="p-button-sm p-button-success p-button-text" [loading]="busyId() === row.id && busyAction() === 'status'" (click)="setStatus(row, 'Available')"></button>
+                  <button pButton type="button" label="تفعيل" icon="pi pi-check" class="p-button-sm p-button-success p-button-text" [loading]="busyId() === row.id && busyAction() === 'status'" [disabled]="busyId() !== null" (click)="setStatus(row, 'Available')"></button>
                 }
                 @if (!canRepair(row) && !canRunMigrations(row) && !isAllocated(row) && !canDisable(row) && !isDisabled(row)) {
                   <span class="text-xs text-slate-400">يديرها الخادم</span>
@@ -369,7 +369,7 @@ export class DatabaseResourcesComponent implements OnInit {
   }
 
   testConnection(): void {
-    if (this.repairMode || !this.editor.databaseName.trim() || !this.editor.connectionString.trim()) return;
+    if (this.testing() || this.repairMode || !this.editor.databaseName.trim() || !this.editor.connectionString.trim()) return;
     this.testing.set(true);
     this.lastTest.set(null);
     this.service.testConnection(this.editor.databaseName.trim(), this.editor.connectionString.trim()).subscribe({
@@ -383,6 +383,7 @@ export class DatabaseResourcesComponent implements OnInit {
   }
 
   save(): void {
+    if (this.saving() || this.registering()) return;
     if (this.repairMode && this.editingId) {
       if (!this.editor.connectionString.trim()) {
         this.notify.error('أدخل سلسلة اتصال جديدة للإصلاح.');
@@ -424,40 +425,39 @@ export class DatabaseResourcesComponent implements OnInit {
   }
 
   runMigrations(row: DatabaseResource): void {
-    if (!this.canRunMigrations(row)) return;
+    if (!this.canRunMigrations(row) || !this.startBusy(row.id, 'migrations')) return;
     void this.notify.confirm({
       header: 'هل تريد تشغيل الترحيلات وفحص الصحة؟',
       message: `سيشغل الخادم ترحيلات مساحة العمل واختبار CanConnect للمورد ${row.resourceCode || this.shortId(row.id)}.`,
       acceptLabel: 'تشغيل الترحيلات',
       rejectLabel: 'إلغاء',
     }).then(confirmed => {
-      if (!confirmed) return;
-      this.startBusy(row.id, 'migrations');
+      if (!confirmed) { this.finishBusy(); return; }
       this.service.runMigrations(row.id).subscribe({
         next: result => { this.finishBusy(); this.notify.success(result.message); this.load(); },
         error: error => { this.finishBusy(); this.notify.error(errMsg(error)); this.load(); },
       });
-    });
+    }).catch(() => this.finishBusy());
   }
 
   createBackup(row: DatabaseResource): void {
-    if (!this.isAllocated(row)) return;
+    if (!this.isAllocated(row) || !this.startBusy(row.id, 'backup')) return;
     void this.notify.confirm({
       header: 'هل تريد إنشاء نسخة لهذه المساحة؟',
       message: `سيحدد الخادم دفعة النسخ المحمية وينشئها لمساحة العمل ${row.tenantName || 'المخصصة'}.`,
       acceptLabel: 'إنشاء النسخة',
       rejectLabel: 'إلغاء',
     }).then(confirmed => {
-      if (!confirmed) return;
-      this.startBusy(row.id, 'backup');
+      if (!confirmed) { this.finishBusy(); return; }
       this.service.createBackup(row.id).subscribe({
         next: () => { this.finishBusy(); this.notify.success('اكتمل طلب النسخ الاحتياطي. راجع مركز النسخ الاحتياطية لمراجعة البصمة وملفات الأدلة.'); this.load(); },
         error: error => { this.finishBusy(); this.notify.error(errMsg(error)); this.load(); },
       });
-    });
+    }).catch(() => this.finishBusy());
   }
 
   setStatus(row: DatabaseResource, status: 'Available' | 'Disabled'): void {
+    if (!this.startBusy(row.id, 'status')) return;
     const enabling = status === 'Available';
     void this.notify.confirm({
       header: enabling ? 'هل تريد تفعيل المورد؟' : 'هل تريد تعطيل المورد؟',
@@ -468,13 +468,12 @@ export class DatabaseResourcesComponent implements OnInit {
       rejectLabel: 'إلغاء',
       danger: !enabling,
     }).then(confirmed => {
-      if (!confirmed) return;
-      this.startBusy(row.id, 'status');
+      if (!confirmed) { this.finishBusy(); return; }
       this.service.setStatus(row.id, status).subscribe({
         next: updated => { this.finishBusy(); this.replace(updated); this.notify.success(`تم تغيير حالة المورد إلى «${enabling ? 'متاح' : 'معطل'}».`); },
         error: error => { this.finishBusy(); this.notify.error(errMsg(error)); this.load(); },
       });
-    });
+    }).catch(() => this.finishBusy());
   }
 
   lifecycleLabel(row: DatabaseResource): string {
@@ -609,9 +608,11 @@ export class DatabaseResourcesComponent implements OnInit {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   }
 
-  private startBusy(id: string, action: string): void {
+  private startBusy(id: string, action: string): boolean {
+    if (this.busyId()) return false;
     this.busyId.set(id);
     this.busyAction.set(action);
+    return true;
   }
 
   private finishBusy(): void {

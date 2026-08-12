@@ -33,7 +33,7 @@ import { NotifyService, errMsg } from '../../shared/ui/notify.service';
           <ng-template pTemplate="body" let-row><tr>
             <td><code class="rounded bg-primary-50 px-2 py-1 font-semibold text-primary-700" dir="ltr">{{ row.featureCode }}</code></td>
             <td><code class="rounded bg-slate-100 px-2 py-1 font-semibold text-slate-700" dir="ltr">{{ row.dependsOnFeatureCode }}</code></td>
-            <td class="text-center"><button pButton type="button" icon="pi pi-trash" class="p-button-sm p-button-danger p-button-text" aria-label="حذف العلاقة" (click)="remove(row)"></button></td>
+            <td class="text-center"><button pButton type="button" icon="pi pi-trash" class="p-button-sm p-button-danger p-button-text" aria-label="حذف العلاقة" [loading]="busyId() === row.id" [disabled]="busyId() !== null" (click)="remove(row)"></button></td>
           </tr></ng-template>
           <ng-template pTemplate="emptymessage"><tr><td colspan="3" class="py-10 text-center text-slate-400">لا توجد اعتماديات معرفة</td></tr></ng-template>
         </p-table>
@@ -49,6 +49,7 @@ export class FeatureDependenciesComponent implements OnInit {
   features = signal<any[]>([]);
   loading = signal(false);
   saving = signal(false);
+  busyId = signal<string | null>(null);
   page = 1;
   pageSize = 20;
   totalCount = 0;
@@ -73,7 +74,7 @@ export class FeatureDependenciesComponent implements OnInit {
   onPageChange(event: { page: number; pageSize: number }): void { this.page = event.page; this.pageSize = event.pageSize; this.load(); }
 
   save(): void {
-    if (!this.featureId || !this.dependsOnFeatureId || this.featureId === this.dependsOnFeatureId) return;
+    if (this.saving() || !this.featureId || !this.dependsOnFeatureId || this.featureId === this.dependsOnFeatureId) return;
     this.saving.set(true);
     this.service.addDependency({ featureId: this.featureId, dependsOnFeatureId: this.dependsOnFeatureId }).subscribe({
       next: () => { this.saving.set(false); this.dependsOnFeatureId = ''; this.notify.success('تمت إضافة الاعتمادية'); this.load(); },
@@ -82,8 +83,13 @@ export class FeatureDependenciesComponent implements OnInit {
   }
 
   async remove(row: any): Promise<void> {
+    if (this.busyId()) return;
+    this.busyId.set(row.id);
     const ok = await this.notify.confirm({ header: 'حذف الاعتمادية', message: `إزالة الاعتمادية بين ${row.featureCode} و ${row.dependsOnFeatureCode}؟`, acceptLabel: 'حذف', danger: true });
-    if (!ok) return;
-    this.service.removeDependency(row.id).subscribe({ next: () => { this.notify.success('تم حذف الاعتمادية'); this.load(); }, error: (error) => this.notify.error(errMsg(error)) });
+    if (!ok) { this.busyId.set(null); return; }
+    this.service.removeDependency(row.id).subscribe({
+      next: () => { this.busyId.set(null); this.notify.success('تم حذف الاعتمادية'); this.load(); },
+      error: (error) => { this.busyId.set(null); this.notify.error(errMsg(error)); },
+    });
   }
 }

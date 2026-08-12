@@ -56,7 +56,7 @@ import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assi
             <td><app-status-badge [badge]="activeBadge(m.isActive)"></app-status-badge></td>
             <td class="text-center whitespace-nowrap">
               <button pButton pTooltip="تعديل" icon="pi pi-pencil" class="p-button-sm p-button-text" (click)="openEdit(m)"></button>
-              <button pButton pTooltip="حذف" icon="pi pi-trash" class="p-button-sm p-button-danger p-button-text" (click)="remove(m)"></button>
+              <button pButton pTooltip="حذف" icon="pi pi-trash" class="p-button-sm p-button-danger p-button-text" [loading]="busyId() === m.id" [disabled]="busyId() !== null" (click)="remove(m)"></button>
             </td>
           </tr>
         </ng-template>
@@ -134,6 +134,7 @@ export class PaymentMethodsComponent implements OnInit {
   totalCount = 0;
   loading = signal(false);
   saving = signal(false);
+  busyId = signal<string | null>(null);
   showForm = false;
   editingId: string | null = null;
 
@@ -203,6 +204,7 @@ export class PaymentMethodsComponent implements OnInit {
   }
 
   save(): void {
+    if (this.saving()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -237,19 +239,22 @@ export class PaymentMethodsComponent implements OnInit {
   }
 
   async remove(m: PaymentMethodDto): Promise<void> {
+    if (this.busyId()) return;
+    this.busyId.set(m.id);
     const ok = await this.notify.confirm({
       header: 'حذف طريقة الدفع',
       message: `هل تريد حذف "${m.name}"؟`,
       acceptLabel: 'حذف',
       danger: true,
     });
-    if (!ok) return;
+    if (!ok) { this.busyId.set(null); return; }
     this.service.remove(m.id).subscribe({
       next: () => {
+        this.busyId.set(null);
         this.notify.success('تم الحذف');
         this.load();
       },
-      error: (err) => this.notify.error(errMsg(err)),
+      error: (err) => { this.busyId.set(null); this.notify.error(errMsg(err)); },
     });
   }
 }
