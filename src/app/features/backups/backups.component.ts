@@ -93,6 +93,7 @@ import { TenantsService } from '../tenants/tenants.service';
               label="تحديث"
               icon="pi pi-refresh"
               [loading]="refreshing()"
+              [disabled]="refreshing()"
               [attr.aria-busy]="refreshing()"
               (click)="refresh()"
               class="!border-white/20 !bg-white/10 !px-5 !py-3 !font-semibold !text-white hover:!bg-white/20"></button>
@@ -206,7 +207,7 @@ import { TenantsService } from '../tenants/tenants.service';
             <td><span class="text-sm font-medium text-slate-700">{{ row.createdAt | date:'medium' }}</span></td>
             <td><span class="rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">{{ formatBytes(row.sizeBytes) }}</span></td>
             <td><span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold" [ngClass]="recordStatusClass(row.status)"><i class="text-[10px]" [ngClass]="recordStatusIcon(row.status)"></i>{{ recordStatusLabel(row.status) }}</span></td>
-            <td class="text-left"><button pButton type="button" label="تنزيل آمن" icon="pi pi-download" [loading]="downloadingFile() === row.fileName" (click)="download(row)" class="!border-indigo-100 !bg-indigo-50 !text-indigo-700 hover:!bg-indigo-100"></button></td>
+            <td class="text-left"><button pButton type="button" label="تنزيل آمن" icon="pi pi-download" [loading]="downloadingFile() === row.fileName" [disabled]="downloadingFile() !== null" (click)="download(row)" class="!border-indigo-100 !bg-indigo-50 !text-indigo-700 hover:!bg-indigo-100"></button></td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
@@ -246,7 +247,7 @@ import { TenantsService } from '../tenants/tenants.service';
             <p class="mb-0 mt-1 truncate font-mono text-[11px] text-slate-400" [title]="batch.id">الدفعة {{ batch.id }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button *ngIf="batch.manifestStorageKey" pButton type="button" label="تنزيل البيان" icon="pi pi-file-export" [loading]="downloadingFile() === batch.manifestStorageKey" (click)="downloadManifest(batch)" class="!border-slate-200 !bg-slate-50 !text-slate-700 hover:!bg-slate-100"></button>
+            <button *ngIf="batch.manifestStorageKey" pButton type="button" label="تنزيل البيان" icon="pi pi-file-export" [loading]="downloadingFile() === batch.manifestStorageKey" [disabled]="downloadingFile() !== null" (click)="downloadManifest(batch)" class="!border-slate-200 !bg-slate-50 !text-slate-700 hover:!bg-slate-100"></button>
             <button *ngIf="isRetryable(batch)" pButton type="button" label="إعادة محاولة الأهداف الفاشلة" icon="pi pi-refresh" [loading]="batchAction() === batch.id" [disabled]="batchAction() !== null" (click)="retry(batch)" class="!border-amber-200 !bg-amber-50 !text-amber-800 hover:!bg-amber-100"></button>
           </div>
         </div>
@@ -261,7 +262,7 @@ import { TenantsService } from '../tenants/tenants.service';
                   <span class="text-xs text-slate-500">{{ formatBytes(artifact.sizeBytes) }}</span>
                 </div>
               </div>
-              <button *ngIf="artifact.storageKey" pButton type="button" icon="pi pi-download" [attr.aria-label]="'تنزيل ' + artifactLabel(artifact)" [loading]="downloadingFile() === artifact.storageKey" (click)="downloadArtifact(artifact)" class="!h-8 !w-8 !border-indigo-100 !bg-indigo-50 !text-indigo-700 hover:!bg-indigo-100"></button>
+              <button *ngIf="artifact.storageKey" pButton type="button" icon="pi pi-download" [attr.aria-label]="'تنزيل ' + artifactLabel(artifact)" [loading]="downloadingFile() === artifact.storageKey" [disabled]="downloadingFile() !== null" (click)="downloadArtifact(artifact)" class="!h-8 !w-8 !border-indigo-100 !bg-indigo-50 !text-indigo-700 hover:!bg-indigo-100"></button>
             </div>
             <div class="mt-3 rounded-lg bg-white p-3 text-xs text-slate-500">
               <span class="font-semibold text-slate-700">بصمة SHA-256:</span>
@@ -339,6 +340,7 @@ export class BackupsComponent implements OnInit {
   }
 
   refresh(): void {
+    if (this.refreshing()) return;
     this.refreshing.set(true);
     this.loadStatus();
   }
@@ -541,6 +543,7 @@ export class BackupsComponent implements OnInit {
   }
 
   private downloadFile(resourceKey: string, downloadName: string): void {
+    if (this.downloadingFile()) return;
     this.downloadingFile.set(resourceKey);
     this.service.download(resourceKey).subscribe({
       next: blob => {

@@ -87,7 +87,7 @@ const EMPTY_OPERATIONS: PlatformOperationsSummaryDto = {
               <input type="checkbox" [(ngModel)]="autoRefreshEnabled" aria-label="تفعيل التحديث التلقائي">
               <span>تحديث تلقائي كل 60 ثانية</span>
             </label>
-            <button type="button" class="lf-btn lf-btn-primary" (click)="load()" [disabled]="refreshing()">
+            <button type="button" class="lf-btn lf-btn-primary" (click)="load()" [disabled]="loading() || refreshing()">
               <i class="pi pi-refresh" [class.pi-spin]="refreshing()"></i>
               تحديث الآن
             </button>
@@ -206,6 +206,7 @@ const EMPTY_OPERATIONS: PlatformOperationsSummaryDto = {
           <div class="lf-section-heading"><div><h2>الجيمات الحالية</h2><p>بيانات حقيقية من قائمة الجيمات مع بحث سريع</p></div><a routerLink="/tenants" class="lf-btn lf-btn-secondary">إدارة الجيمات <i class="pi pi-arrow-left"></i></a></div>
           <div class="mt-5 flex max-w-md items-center gap-2"><i class="pi pi-search text-slate-400"></i><input class="lf-input" type="search" placeholder="ابحث بالاسم أو النطاق" [(ngModel)]="tenantSearch" (ngModelChange)="onTenantSearchChange($event)" aria-label="البحث في الجيمات"></div>
           @if (tenantsLoading()) { <div class="mt-5 space-y-3">@for (item of [1,2,3,4]; track item) { <div class="h-12 animate-pulse rounded-lg bg-slate-100"></div> }</div> }
+          @else if (tenantsError()) { <div class="lf-empty-state mt-5" role="alert"><i class="pi pi-exclamation-triangle"></i><h3>تعذر تحميل قائمة الجيمات</h3><p>{{ tenantsError() }}</p><button type="button" class="lf-btn lf-btn-primary mt-3" (click)="retryTenants()">إعادة المحاولة</button></div> }
           @else { <div class="lf-table-shell mt-5 overflow-x-auto"><table class="min-w-full text-right text-sm"><thead><tr><th>الجيم</th><th>الحالة</th><th>الخطة</th><th>الأعضاء</th><th>انتهاء الاشتراك</th></tr></thead><tbody>@for (tenant of tenants(); track tenant.id) { <tr><td><strong>{{ tenant.name }}</strong><span class="block text-xs text-slate-400" dir="ltr">{{ tenant.subdomain || 'بدون نطاق' }}</span></td><td><span class="lf-badge" [ngClass]="tenantStatusClass(tenant.status)">{{ tenantStatusLabel(tenant.status) }}</span></td><td>{{ tenant.subscription?.planName || 'غير مشترك' }}</td><td>{{ tenant.membersCount | number }}</td><td dir="ltr">{{ tenant.subscription?.endDate ? (tenant.subscription?.endDate | date:'mediumDate') : '—' }}</td></tr> } @empty { <tr><td colspan="5" class="p-8 text-center text-slate-400"><i class="pi pi-inbox mb-2 block text-2xl"></i>لا توجد جيمات مطابقة</td></tr> }</tbody></table></div> }
         </section>
 
@@ -225,6 +226,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly refreshing = signal(false);
   readonly tenantsLoading = signal(true);
+  readonly tenantsError = signal('');
   readonly error = signal('');
   readonly data = signal<PlatformDashboardDto | null>(null);
   readonly tenants = signal<DashboardTenantSummary[]>([]);
@@ -250,6 +252,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   load(showLoading = true): void {
+    if (this.refreshing() || (showLoading && this.loading() && this.data())) return;
     if (showLoading) this.loading.set(true);
     else this.refreshing.set(true);
     this.error.set('');
@@ -413,11 +416,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return filters;
   }
 
+  retryTenants(): void { this.loadTenants(); }
+
   private loadTenants(): void {
     this.tenantsLoading.set(true);
+    this.tenantsError.set('');
     this.service.getTenants(1, 8, this.tenantSearch).subscribe({
       next: response => { this.tenants.set(response.items ?? []); this.tenantsLoading.set(false); },
-      error: () => { this.tenants.set([]); this.tenantsLoading.set(false); },
+      error: error => { const message = errMsg(error); this.tenants.set([]); this.tenantsError.set(message); this.tenantsLoading.set(false); },
     });
   }
 

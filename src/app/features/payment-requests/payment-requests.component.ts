@@ -242,10 +242,12 @@ export class PaymentRequestsComponent implements OnInit {
   }
 
   async approve(r: PaymentRequestDto): Promise<void> {
+    if (this.busyId()) return;
     // SweetAlert must not render underneath the PrimeNG image dialog.
     // Temporarily hide the preview while asking for confirmation and restore it
     // unchanged if the operator cancels.
     const previewWasOpen = this.showPreview;
+    this.busyId.set(r.id);
     this.showPreview = false;
     const ok = await this.notify.confirm({
       header: 'الموافقة على الدفعة',
@@ -254,11 +256,11 @@ export class PaymentRequestsComponent implements OnInit {
       icon: 'pi pi-check-circle',
     });
     if (!ok) {
+      this.busyId.set(null);
       this.showPreview = previewWasOpen;
       return;
     }
 
-    this.busyId.set(r.id);
     this.service.approve(r.id).subscribe({
       next: (updated) => {
         this.busyId.set(null);
@@ -275,6 +277,7 @@ export class PaymentRequestsComponent implements OnInit {
   }
 
   openReject(r: PaymentRequestDto): void {
+    if (this.busyId()) return;
     this.rejectTarget.set(r);
     this.rejectReason = '';
     this.rejectError.set(false);
@@ -283,7 +286,7 @@ export class PaymentRequestsComponent implements OnInit {
 
   confirmReject(): void {
     const r = this.rejectTarget();
-    if (!r) return;
+    if (!r || this.busyId()) return;
     if (!this.rejectReason.trim()) {
       this.rejectError.set(true);
       return;

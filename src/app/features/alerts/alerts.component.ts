@@ -18,7 +18,7 @@ type NotificationResponse = PagedResult<NotificationItem> & { unreadCount: numbe
     <div class="lf-page">
       <app-page-header title="مركز الإشعارات" subtitle="تابع التنبيهات والإجراءات المطلوبة من مكان واحد" icon="pi pi-bell">
         <button class="lf-btn lf-btn-secondary" type="button" (click)="load()"><i class="pi pi-refresh"></i> تحديث</button>
-        <button class="lf-btn lf-btn-primary" type="button" [disabled]="!unreadCount()" (click)="markAllRead()"><i class="pi pi-check-circle"></i> تعليم الكل كمقروء</button>
+        <button class="lf-btn lf-btn-primary" type="button" [disabled]="!unreadCount() || markAllBusy()" [attr.aria-busy]="markAllBusy()" (click)="markAllRead()"><i class="pi pi-check-circle"></i> {{ markAllBusy() ? 'جارٍ التعليم...' : 'تعليم الكل كمقروء' }}</button>
       </app-page-header>
       <section class="lf-card p-4 sm:p-5">
         <div class="grid grid-cols-1 gap-3 md:grid-cols-[1fr_12rem_10rem]">
@@ -35,7 +35,7 @@ type NotificationResponse = PagedResult<NotificationItem> & { unreadCount: numbe
 })
 export class AlertsComponent implements OnInit {
   private http = inject(HttpClient); private notify = inject(NotifyService);
-  items = signal<NotificationItem[]>([]); loading = signal(false); unreadCount = signal(0);
+  items = signal<NotificationItem[]>([]); loading = signal(false); unreadCount = signal(0); markAllBusy = signal(false); markingIds = signal<Set<string>>(new Set());
   search = ''; type: number | null = null; readFilter: boolean | null = null; page = 1; pageSize = 20; totalCount = 0;
   ngOnInit(): void { this.load(); }
   refresh(): void { this.page = 1; this.load(); }
@@ -50,8 +50,23 @@ export class AlertsComponent implements OnInit {
       error: error => { this.notify.error(errMsg(error)); this.loading.set(false); }
     });
   }
-  markRead(item: NotificationItem): void { if (item.isRead) return; this.http.post(`${environment.apiUrl}/notifications/${item.id}/read`, {}).subscribe({ next: () => { item.isRead = true; this.items.set([...this.items()]); this.unreadCount.update(value => Math.max(0, value - 1)); }, error: error => this.notify.error(errMsg(error)) }); }
-  markAllRead(): void { this.http.post<{marked:number}>(`${environment.apiUrl}/notifications/read-all`, {}).subscribe({ next: () => { this.items.update(items => items.map(item => ({ ...item, isRead: true }))); this.unreadCount.set(0); this.notify.success('تم تعليم الإشعارات كمقروءة'); }, error: error => this.notify.error(errMsg(error)) }); }
+  markRead(item: NotificationItem): void {
+    if (item.isRead || this.markAllBusy() || this.markingIds().has(item.id)) return;
+    this.markingIds.update(ids => new Set(ids).add(item.id));
+    this.http.post(`${environment.apiUrl}/notifications/${item.id}/read`, {}).subscribe({
+      next: () => { item.isRead = true; this.items.set([...this.items()]); this.unreadCount.update(value => Math.max(0, value - 1)); this.clearMarking(item.id); },
+      error: error => { this.clearMarking(item.id); this.notify.error(errMsg(error)); },
+    });
+  }
+  markAllRead(): void {
+    if (!this.unreadCount() || this.markAllBusy()) return;
+    this.markAllBusy.set(true);
+    this.http.post<{marked:number}>(`${environment.apiUrl}/notifications/read-all`, {}).subscribe({
+      next: () => { this.items.update(items => items.map(item => ({ ...item, isRead: true }))); this.unreadCount.set(0); this.markAllBusy.set(false); this.notify.success('تم تعليم الإشعارات كمقروءة'); },
+      error: error => { this.markAllBusy.set(false); this.notify.error(errMsg(error)); },
+    });
+  }
+  private clearMarking(id: string): void { this.markingIds.update(ids => { const next = new Set(ids); next.delete(id); return next; }); }
   onPageChange(event: {page:number; pageSize:number}): void { this.page = event.page; this.pageSize = event.pageSize; this.load(); }
   iconFor(type: number): string { return type === 4 ? 'pi pi-calendar-times' : type === 5 ? 'pi pi-megaphone' : 'pi pi-bell'; }
 }

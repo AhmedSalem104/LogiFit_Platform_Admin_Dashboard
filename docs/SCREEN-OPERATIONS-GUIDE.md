@@ -61,9 +61,9 @@
 |---|---|
 | **الصلاحية** | `ManagePlatformReports`. |
 | **الغرض** | الصورة التنفيذية السريعة للمنصة: نمو الصالات، حالة الاشتراكات، المدفوعات والإنذارات التشغيلية. |
-| **ما يعرض** | مؤشرات KPI واتجاهات/ملخصات، عناصر تستحق المتابعة، وروابط مباشرة لوحدة العمل المناسبة. مصدره `GET /api/platform/dashboard`. |
+| **ما يعرض** | مؤشرات KPI واتجاهات/ملخصات، عناصر تستحق المتابعة، وروابط مباشرة لوحدة العمل المناسبة. مصدره `GET /api/platform/dashboard`، وقائمة الجيمات الموجزة من `/dashboard/tenants`. |
 | **ما يمكن فعله** | قراءة المؤشرات، فتح الصالات/الاشتراكات/المدفوعات/التنبيهات من الاختصارات، وفتح المساعد لشرح أي مؤشر. |
-| **الضوابط** | هذه شاشة قرار وليست مكان تعديل مالي أو تغيير اشتراك مباشر. الرقم المجمع يحتاج فتح سجل المصدر قبل اتخاذ قرار. |
+| **الضوابط** | هذه شاشة قرار وليست مكان تعديل مالي أو تغيير اشتراك مباشر. الرقم المجمع يحتاج فتح سجل المصدر قبل اتخاذ قرار. فشل قائمة الجيمات يظهر كخطأ مستقل مع إعادة محاولة، ولا يُعرض كقائمة فارغة مضللة. |
 
 ## 4. الصالات ودورة الاشتراك
 
@@ -83,8 +83,8 @@
 |---|---|
 | **الصلاحية** | `ManageTenants`. |
 | **الغرض والفائدة** | متابعة كل دورة SaaS لصالة وإجراء الانتقالات والتمديد المسموحين دون كسر invariants الاشتراك. |
-| **ما يعرض** | الصالة، الخطة، الحالة، البداية، النهاية، المبلغ/العملة، التجديد التلقائي ومؤشرات التأخر. يمكن الفلترة بالحالة والترقيم. المصدر `GET /api/platform/subscriptions`. |
-| **الإجراءات** | تمديد عدد أيام محدود (1–3660) عبر SweetAlert، أو تعليق انتقال حالة متاح من الشاشة. تستخدم الأوامر عقود الاشتراك الموثقة في API catalog. |
+| **ما يعرض** | الصالة، الخطة، الحالة، البداية، النهاية، المبلغ/العملة، التجديد التلقائي ومؤشرات التأخر. يمكن الفلترة بكل الحالات، ومنها `GracePeriod`، والترقيم. المصدر `GET /api/platform/subscriptions`. |
+| **الإجراءات** | تمديد عدد أيام محدود (1–3660) عبر SweetAlert، أو تعليق الاشتراك بعد تأكيد صريح. تمنع الشاشة mutation المكرر أثناء تنفيذ الصف، وتستخدم الأوامر عقود الاشتراك الموثقة في API catalog. |
 | **الضوابط الجوهرية** | `EndDate` غير شامل: ينتهي الوصول عند بلوغه. Snapshot السعر/العملة/الميزات/الحدود ثابت بعد التفعيل. التجديد قبل النهاية يبدأ من النهاية الحالية، وبعدها من وقت الموافقة. لا انتقال خارج جدول الانتقالات المسموح، مثل Expired مباشرةً إلى Suspended. |
 
 ### `/plans` — خطط المنصة وأسعارها
@@ -253,9 +253,9 @@
 |---|---|
 | **الصلاحية** | `ManagePlatformReports`. |
 | **الغرض والفائدة** | قراءة مؤشرات الأعمال والصحة التشغيلية على نطاق المنصة. |
-| **ما يعرض** | مؤشرات من `GET /api/platform/reports/overview`: نمو الصالات، الاشتراكات، التحصيل، وحالات ملخصة وفق الإصدار المنشور. |
-| **الإجراءات** | قراءة ومقارنة، ثم فتح شاشة المصدر للمزيد من التحقيق. |
-| **الضوابط** | لا يعدل التقرير بيانات. قبل اعتماد قرار سعر/إيقاف/تحصيل، راجع البيانات المصدر والوقت/المرشحات. |
+| **ما يعرض** | مؤشرات من `GET /api/platform/reports/overview` وكتالوج سجلات من `GET /api/platform/reports/catalog`: الاشتراكات، التحصيل، الفواتير، التشغيل والتدقيق. |
+| **الإجراءات** | قراءة ومقارنة، إعادة محاولة كل مصدر فاشل على حدة، ثم فتح شاشة المصدر للمزيد من التحقيق، أو طباعة/تصدير الملخص المتاح. |
+| **الضوابط** | لا يعدل التقرير بيانات. فشل الكتالوج لا يخفي نجاح الملخص ولا يعرض حالة فارغة عامة؛ قبل اعتماد قرار سعر/إيقاف/تحصيل، راجع البيانات المصدر والوقت/المرشحات. |
 
 ### `/documentation` — مركز المعرفة داخل اللوحة
 
@@ -288,8 +288,9 @@
 
 `/workspace-applications` يختصر رحلة الإدارة إلى مراجعة الدفع والطلب ثم متابعة مراحل التجهيز. يعرض
 النوع بصريًا (`Gym` أزرق/مبنى، `FreelanceCoach` بنفسجي/مدرب)، ويفصل Payment وWorkspace وDatabase
-وSubscription وProvisioning. زر Retry لا يظهر إلا للحالة القابلة للإعادة، وكل mutation يرسل
-`rowVersion` أو معرف العملية المناسب ويمنع الضغط المتكرر.
+وSubscription وProvisioning. تتاح فلاتر مستقلة لحالة الطلب، نوع المساحة، الدفع، مساحة العمل، الاشتراك
+والتجهيز، وتغطي دورة الحياة كاملة بما فيها المسودة والإلغاء والانتهاء والفشل. زر Retry لا يظهر إلا
+للحالة القابلة للإعادة، وكل mutation يرسل `rowVersion` أو معرف العملية المناسب ويمنع الضغط المتكرر.
 
 `/database-resources` يعرض `Available`, `Reserved`, `Provisioning`, `Assigned`, `Faulted` فقط دون
 material. زر التسجيل يقبل connection string على الخادم، ثم يعرض Boolean `hasProtectedConnection`
@@ -304,3 +305,10 @@ material. زر التسجيل يقبل connection string على الخادم، �
 2. حدّث [SCREEN-CATALOG.md](SCREEN-CATALOG.md) للفهرسة السريعة و`src/app/shared/assistant/admin-assistant.catalog.ts` لشرح المساعد.
 3. إذا تغير العقد، أعد توليد [API-ENDPOINT-CATALOG.md](API-ENDPOINT-CATALOG.md) من مشروع Backend وراجع `ARCHITECTURE-AND-INTEGRATION.md`.
 4. اختبر المسار للمستخدم المصرح، وغير المصرح، وحالات التحميل/الفراغ/الفشل والهاتف قبل الدمج.
+## Issue #287 — Mutation safety
+
+Lifecycle and destructive actions in Platform Admin use a per-operation busy guard. While a request is pending, the relevant action buttons are disabled and show loading; cancellation, success, and failure all clear the guard. This covers approve/activate/suspend/archive/delete/migration/backup, feature archiving, administrator status, payment decisions, role-permission saving, workspace application decisions/provisioning, and workspace creation. Notification read operations and dashboard refresh also reject overlapping requests. This prevents duplicate mutations and repeated audit events from rapid clicks.
+# نقطة البدء للتوثيق الكامل
+
+للتفاصيل الكاملة لكل شاشة، زر، حالة، صلاحية، API، ومسار فشل راجع
+[دليل لوحة الإدارة الكامل](COMPLETE-PLATFORM-ADMIN-DOCUMENTATION.md).

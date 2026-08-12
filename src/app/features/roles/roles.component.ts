@@ -31,6 +31,6 @@ export class RolesComponent implements OnInit {
   select(role: any): void { this.selected.set(role); this.chosen.set(new Set(role.permissions || [])); }
   has(code: string): boolean { return this.chosen().has(code); }
   toggle(code: string): void { const next = new Set(this.chosen()); next.has(code) ? next.delete(code) : next.add(code); this.chosen.set(next); }
-  save(): void { const role = this.selected(); if (!role) return; this.saving.set(true); this.http.put(`${environment.apiUrl}/roles/${role.id}/permissions`, { permissionCodes: [...this.chosen()] }).subscribe({ next: () => { this.saving.set(false); this.notify.success('تم حفظ الصلاحيات'); this.load(); }, error: (error) => { this.saving.set(false); this.notify.error(errMsg(error)); } }); }
+  save(): void { const role = this.selected(); if (!role || this.saving()) return; this.saving.set(true); this.http.put(`${environment.apiUrl}/roles/${role.id}/permissions`, { permissionCodes: [...this.chosen()] }).subscribe({ next: () => { this.saving.set(false); this.notify.success('تم حفظ الصلاحيات'); this.load(); }, error: (error) => { this.saving.set(false); this.notify.error(errMsg(error)); } }); }
   private fail(error: any): void { this.notify.error(errMsg(error)); this.loading.set(false); }
 }

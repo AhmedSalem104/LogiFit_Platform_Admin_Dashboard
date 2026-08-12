@@ -77,23 +77,23 @@ import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assi
             <td class="text-center whitespace-nowrap">
               <button pButton pTooltip="بيانات الدخول" aria-label="بيانات الدخول" icon="pi pi-id-card" class="p-button-sm p-button-text" (click)="openCredentials(t)"></button>
               @if (t.status === TS.PendingApproval) {
-                <button pButton pTooltip="موافقة" icon="pi pi-check" class="p-button-sm p-button-success p-button-text" (click)="act(t, 'approve')"></button>
+                <button pButton pTooltip="موافقة" icon="pi pi-check" class="p-button-sm p-button-success p-button-text" [disabled]="busyId() !== null" [loading]="busyId() === t.id && busyAction() === 'approve'" (click)="act(t, 'approve')"></button>
               }
               @if (t.status === TS.Suspended || t.status === TS.PendingApproval) {
-                <button pButton pTooltip="تفعيل" icon="pi pi-play" class="p-button-sm p-button-text" (click)="act(t, 'activate')"></button>
+                <button pButton pTooltip="تفعيل" icon="pi pi-play" class="p-button-sm p-button-text" [disabled]="busyId() !== null" [loading]="busyId() === t.id && busyAction() === 'activate'" (click)="act(t, 'activate')"></button>
               }
               @if (t.status === TS.Active || t.status === TS.Trial) {
-                <button pButton pTooltip="إيقاف" icon="pi pi-pause" class="p-button-sm p-button-warning p-button-text" (click)="act(t, 'suspend')"></button>
+                <button pButton pTooltip="إيقاف" icon="pi pi-pause" class="p-button-sm p-button-warning p-button-text" [disabled]="busyId() !== null" [loading]="busyId() === t.id && busyAction() === 'suspend'" (click)="act(t, 'suspend')"></button>
               }
               @if (t.status !== TS.Archived) {
-                <button pButton pTooltip="أرشفة" icon="pi pi-inbox" class="p-button-sm p-button-secondary p-button-text" (click)="act(t, 'archive')"></button>
+                <button pButton pTooltip="أرشفة" icon="pi pi-inbox" class="p-button-sm p-button-secondary p-button-text" [disabled]="busyId() !== null" [loading]="busyId() === t.id && busyAction() === 'archive'" (click)="act(t, 'archive')"></button>
               }
               @if (t.isDeleted || t.status === TS.Deleted) {
-                <button pButton pTooltip="استعادة" aria-label="استعادة" icon="pi pi-replay" class="p-button-sm p-button-success p-button-text" (click)="restore(t)"></button>
+                <button pButton pTooltip="استعادة" aria-label="استعادة" icon="pi pi-replay" class="p-button-sm p-button-success p-button-text" [disabled]="busyId() !== null" [loading]="busyId() === t.id && busyAction() === 'restore'" (click)="restore(t)"></button>
               } @else {
-                <button pButton pTooltip="حذف مؤقت" aria-label="حذف مؤقت" icon="pi pi-ban" class="p-button-sm p-button-warning p-button-text" (click)="softDelete(t)"></button>
+                <button pButton pTooltip="حذف مؤقت" aria-label="حذف مؤقت" icon="pi pi-ban" class="p-button-sm p-button-warning p-button-text" [disabled]="busyId() !== null" [loading]="busyId() === t.id && busyAction() === 'soft-delete'" (click)="softDelete(t)"></button>
               }
-              <button pButton pTooltip="حذف نهائي" aria-label="حذف نهائي" icon="pi pi-trash" class="p-button-sm p-button-danger p-button-text" (click)="permanentDelete(t)"></button>
+              <button pButton pTooltip="حذف نهائي" aria-label="حذف نهائي" icon="pi pi-trash" class="p-button-sm p-button-danger p-button-text" [disabled]="busyId() !== null" [loading]="busyId() === t.id && busyAction() === 'permanent-delete'" (click)="permanentDelete(t)"></button>
             </td>
           </tr>
         </ng-template>
@@ -187,6 +187,8 @@ export class TenantsComponent implements OnInit {
   totalCount = 0;
   loading = signal(false);
   saving = signal(false);
+  busyId = signal<string | null>(null);
+  busyAction = signal<string | null>(null);
   statusFilter: TenantStatus | null = null;
   showCreate = false;
   showCredentials = false;
@@ -253,6 +255,7 @@ export class TenantsComponent implements OnInit {
   }
 
   create(): void {
+    if (this.saving()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -290,7 +293,7 @@ export class TenantsComponent implements OnInit {
   async resetPassword(): Promise<void> {
     const tenant = this.selectedTenant();
     const credentials = this.credentials();
-    if (!tenant || !credentials?.passwordResetAvailable) return;
+    if (!tenant || !credentials?.passwordResetAvailable || this.saving()) return;
 
     const ok = await this.notify.confirm({
       header: 'إعادة تعيين كلمة المرور',
@@ -313,48 +316,53 @@ export class TenantsComponent implements OnInit {
   }
 
   async softDelete(t: PlatformTenantDto): Promise<void> {
+    if (!this.beginAction(t.id, 'soft-delete')) return;
     const ok = await this.notify.confirm({
       header: 'حذف مؤقت للجيم',
       message: `سيتم تعطيل "${t.name}" ومنع الدخول مع الاحتفاظ بالبيانات وإمكانية الاستعادة.`,
       acceptLabel: 'تعطيل وحذف مؤقت',
       danger: true,
     });
-    if (!ok) return;
+    if (!ok) { this.clearAction(); return; }
 
     this.service.softDelete(t.id).subscribe({
       next: () => {
+        this.clearAction();
         this.notify.success('تم تعطيل الجيم وحفظ بياناته');
         this.load();
       },
-      error: (err) => this.notify.error(errMsg(err)),
+      error: (err) => { this.clearAction(); this.notify.error(errMsg(err)); },
     });
   }
 
   async restore(t: PlatformTenantDto): Promise<void> {
+    if (!this.beginAction(t.id, 'restore')) return;
     const ok = await this.notify.confirm({
       header: 'استعادة الجيم',
       message: `استعادة "${t.name}" وإتاحة الدخول مرة أخرى؟`,
       acceptLabel: 'استعادة',
     });
-    if (!ok) return;
+    if (!ok) { this.clearAction(); return; }
 
     this.service.restore(t.id).subscribe({
       next: () => {
+        this.clearAction();
         this.notify.success('تمت استعادة الجيم');
         this.load();
       },
-      error: (err) => this.notify.error(errMsg(err)),
+      error: (err) => { this.clearAction(); this.notify.error(errMsg(err)); },
     });
   }
 
   async permanentDelete(t: PlatformTenantDto): Promise<void> {
+    if (!this.beginAction(t.id, 'permanent-delete')) return;
     const confirmation = await this.notify.textPrompt({
       title: 'حذف نهائي وغير قابل للتراجع',
       label: `سيتم إنشاء نسخة BACPAC كاملة أولاً، ثم تفريغ قاعدة بيانات الجيم وإعادتها لقائمة الموارد. لن يتم حذف Global Identity للمالك. اكتب اسم الجيم حرفياً للتأكيد: ${t.name}`,
       placeholder: t.name,
       confirmLabel: 'تنفيذ الحذف النهائي',
     });
-    if (confirmation?.trim() !== t.name.trim()) return;
+    if (confirmation?.trim() !== t.name.trim()) { this.clearAction(); return; }
 
     this.saving.set(true);
     this.service.permanentDelete(t.id, {
@@ -362,11 +370,13 @@ export class TenantsComponent implements OnInit {
       preserveGlobalIdentity: true,
     }).subscribe({
       next: (result) => {
+        this.clearAction();
         this.saving.set(false);
         this.notify.success(`تم الحذف النهائي بعد نجاح النسخة الاحتياطية. رقم النسخة: ${result.backupBatchId}`);
         this.load();
       },
       error: (err) => {
+        this.clearAction();
         this.saving.set(false);
         this.notify.error(errMsg(err));
       },
@@ -374,6 +384,7 @@ export class TenantsComponent implements OnInit {
   }
 
   async act(t: PlatformTenantDto, action: 'approve' | 'activate' | 'suspend' | 'archive'): Promise<void> {
+    if (!this.beginAction(t.id, action)) return;
     const meta = {
       approve: { header: 'موافقة على الجيم', message: `تفعيل "${t.name}"؟`, danger: false },
       activate: { header: 'تفعيل الجيم', message: `إعادة تفعيل "${t.name}"؟`, danger: false },
@@ -382,14 +393,27 @@ export class TenantsComponent implements OnInit {
     }[action];
 
     const ok = await this.notify.confirm({ ...meta, acceptLabel: meta.header });
-    if (!ok) return;
+    if (!ok) { this.clearAction(); return; }
 
     this.service[action](t.id).subscribe({
       next: (updated) => {
+        this.clearAction();
         this.rows.update((rows) => rows.map((r) => (r.id === updated.id ? updated : r)));
         this.notify.success('تم تنفيذ الإجراء');
       },
-      error: (err) => this.notify.error(errMsg(err)),
+      error: (err) => { this.clearAction(); this.notify.error(errMsg(err)); },
     });
+  }
+
+  private beginAction(id: string, action: string): boolean {
+    if (this.busyId()) return false;
+    this.busyId.set(id);
+    this.busyAction.set(action);
+    return true;
+  }
+
+  private clearAction(): void {
+    this.busyId.set(null);
+    this.busyAction.set(null);
   }
 }

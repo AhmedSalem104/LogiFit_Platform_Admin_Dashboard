@@ -43,7 +43,7 @@ import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assi
             <td class="font-semibold text-slate-800">{{ f.name }}</td>
             <td class="text-slate-500 text-sm hidden sm:table-cell">{{ f.description || '—' }}</td>
             <td><div class="flex flex-wrap gap-1"><app-status-badge [badge]="activeBadge(f.isActive)"></app-status-badge><span class="lf-badge lf-badge-gray">{{ statusLabel(f.status) }}</span></div></td>
-            <td><button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="open(f)"></button>@if(f.status !== 4){<button pButton icon="pi pi-inbox" class="p-button-secondary p-button-text p-button-sm" title="أرشفة" (click)="archive(f)"></button>}</td>
+            <td><button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="open(f)"></button>@if(f.status !== 4){<button pButton icon="pi pi-inbox" class="p-button-secondary p-button-text p-button-sm" title="أرشفة" [loading]="archiveBusyId() === f.id" [disabled]="archiveBusyId() !== null" (click)="archive(f)"></button>}</td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
@@ -84,6 +84,7 @@ export class FeaturesComponent implements OnInit {
   pageSize = 20;
   totalCount = 0;
   loading = signal(false);
+  archiveBusyId = signal<string | null>(null);
   showForm = false;
   saving = false;
   editingId: string | undefined;
@@ -124,7 +125,7 @@ export class FeaturesComponent implements OnInit {
   }
 
   save(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.saving) return;
     this.saving = true;
     this.service.save({ ...this.form.getRawValue(), id: this.editingId }).subscribe({ next: () => { this.saving = false; this.showForm = false; this.service.invalidate(); this.load(); this.notify.success('تم حفظ الميزة'); }, error: (e) => { this.saving = false; this.notify.error(errMsg(e)); } });
   }
@@ -132,8 +133,10 @@ export class FeaturesComponent implements OnInit {
   statusLabel(status?: number): string { return this.statusOptions.find((item) => item.value === status)?.label ?? 'غير محددة'; }
 
   async archive(feature: FeatureDto): Promise<void> {
+    if (this.archiveBusyId()) return;
     const ok = await this.notify.confirm({ header: 'أرشفة الميزة', message: `أرشفة ${feature.code}؟ لن تُمنح للاشتراكات الجديدة.`, acceptLabel: 'أرشفة', danger: true });
     if (!ok) return;
-    this.service.save({ ...feature, status: 4, isActive: false }).subscribe({ next: () => { this.service.invalidate(); this.notify.success('تمت أرشفة الميزة'); this.load(); }, error: (error) => this.notify.error(errMsg(error)) });
+    this.archiveBusyId.set(feature.id);
+    this.service.save({ ...feature, status: 4, isActive: false }).subscribe({ next: () => { this.archiveBusyId.set(null); this.service.invalidate(); this.notify.success('تمت أرشفة الميزة'); this.load(); }, error: (error) => { this.archiveBusyId.set(null); this.notify.error(errMsg(error)); } });
   }
 }

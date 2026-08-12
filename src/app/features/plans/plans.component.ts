@@ -74,7 +74,7 @@ import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assi
             <td><app-status-badge [badge]="activeBadge(p.isActive)"></app-status-badge></td>
             <td class="text-center whitespace-nowrap">
               <button pButton pTooltip="تعديل" icon="pi pi-pencil" class="p-button-sm p-button-text" (click)="openEdit(p)"></button>
-              <button pButton pTooltip="حذف" icon="pi pi-trash" class="p-button-sm p-button-danger p-button-text" (click)="remove(p)"></button>
+              <button pButton pTooltip="حذف" icon="pi pi-trash" class="p-button-sm p-button-danger p-button-text" [loading]="busyId() === p.id" [disabled]="busyId() !== null" (click)="remove(p)"></button>
             </td>
           </tr>
         </ng-template>
@@ -177,6 +177,7 @@ export class PlansComponent implements OnInit {
   features = signal<FeatureDto[]>([]);
   loading = signal(false);
   saving = signal(false);
+  busyId = signal<string | null>(null);
   showForm = false;
   editingId: string | null = null;
 
@@ -281,6 +282,7 @@ export class PlansComponent implements OnInit {
   }
 
   save(): void {
+    if (this.saving()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -321,15 +323,18 @@ export class PlansComponent implements OnInit {
   }
 
   async remove(p: PlanDto): Promise<void> {
+    if (this.busyId()) return;
+    this.busyId.set(p.id);
     const ok = await this.notify.confirm({
       header: 'حذف الباقة',
       message: `هل تريد حذف باقة "${p.name}"؟`,
       acceptLabel: 'حذف',
       danger: true,
     });
-    if (!ok) return;
+    if (!ok) { this.busyId.set(null); return; }
     this.service.remove(p.id).subscribe({
       next: () => {
+        this.busyId.set(null);
         this.notify.success('تم الحذف');
         this.load();
       },
@@ -343,7 +348,9 @@ export class PlansComponent implements OnInit {
             rejectLabel: 'إغلاق',
           });
           if (deactivate) this.deactivate(p);
+          else this.busyId.set(null);
         } else {
+          this.busyId.set(null);
           this.notify.error(errMsg(err));
         }
       },
@@ -370,10 +377,11 @@ export class PlansComponent implements OnInit {
     };
     this.service.update(p.id, cmd).subscribe({
       next: () => {
+        this.busyId.set(null);
         this.notify.success('تم تعطيل الباقة');
         this.load();
       },
-      error: (err) => this.notify.error(errMsg(err)),
+      error: (err) => { this.busyId.set(null); this.notify.error(errMsg(err)); },
     });
   }
 
