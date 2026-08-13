@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -24,8 +24,11 @@ export class TenantsService {
     return this.http.get<PagedResult<PlatformTenantDto>>(this.base, { params });
   }
 
-  create(cmd: CreateTenantWithOwnerCommand): Observable<PlatformTenantDto> {
-    return this.http.post<PlatformTenantDto>(this.base, cmd);
+  create(cmd: CreateTenantWithOwnerCommand, idempotencyKey?: string): Observable<PlatformTenantDto> {
+    const key = idempotencyKey?.trim();
+    return this.http.post<PlatformTenantDto>(this.base, cmd, key
+      ? { headers: new HttpHeaders({ 'Idempotency-Key': key }) }
+      : undefined);
   }
 
   approve(id: string): Observable<PlatformTenantDto> {

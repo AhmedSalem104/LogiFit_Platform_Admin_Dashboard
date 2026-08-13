@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
@@ -178,6 +179,7 @@ export class TenantsComponent implements OnInit {
 
   private service = inject(TenantsService);
   private fb = inject(FormBuilder);
+  private router = inject(Router);
   private notify = inject(NotifyService);
 
   readonly TS = TenantStatus;
@@ -212,7 +214,7 @@ export class TenantsComponent implements OnInit {
     ownerFullName: ['', Validators.required],
     ownerEmail: ['', [Validators.required, Validators.email]],
     ownerPhoneNumber: ['', Validators.required],
-    ownerPassword: ['', [Validators.required, Validators.minLength(6)]],
+    ownerPassword: ['', [Validators.required, Validators.minLength(8)]],
   });
 
   ngOnInit(): void {
@@ -250,8 +252,10 @@ export class TenantsComponent implements OnInit {
   }
 
   openCreate(): void {
-    this.form.reset();
-    this.showCreate = true;
+    // Creation must use the unified application flow. The legacy tenant form
+    // could not create the payment/subscription prerequisites required by the
+    // provisioning saga and therefore produced a misleading 400/503 path.
+    void this.router.navigate(['/workspace-applications']);
   }
 
   create(): void {
