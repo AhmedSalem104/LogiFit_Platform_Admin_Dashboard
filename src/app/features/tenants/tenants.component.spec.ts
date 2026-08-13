@@ -6,7 +6,7 @@ describe('TenantsComponent lifecycle actions', () => {
   const tenant = { id: 'tenant-1', name: 'Test Gym' } as any;
 
   function createFixture() {
-    const service = jasmine.createSpyObj('TenantsService', ['approve', 'activate', 'suspend', 'archive', 'softDelete', 'restore', 'permanentDelete']);
+    const service = jasmine.createSpyObj('TenantsService', ['create', 'approve', 'activate', 'suspend', 'archive', 'softDelete', 'restore', 'permanentDelete']);
     const notify = jasmine.createSpyObj('NotifyService', ['confirm', 'textPrompt', 'success', 'error']);
     notify.confirm.and.resolveTo(true);
     const component = Object.create(TenantsComponent.prototype) as any;
@@ -46,5 +46,15 @@ describe('TenantsComponent lifecycle actions', () => {
     expect(service.suspend).not.toHaveBeenCalled();
     expect(component.busyId()).toBeNull();
     expect(component.busyAction()).toBeNull();
+  });
+
+  it('routes new workspace creation to the unified application flow', () => {
+    const { component } = createFixture();
+    component.router = jasmine.createSpyObj('Router', ['navigate']);
+
+    component.openCreate();
+
+    expect(component.router.navigate).toHaveBeenCalledOnceWith(['/workspace-applications']);
+    expect(component.service.create).not.toHaveBeenCalled();
   });
 });
