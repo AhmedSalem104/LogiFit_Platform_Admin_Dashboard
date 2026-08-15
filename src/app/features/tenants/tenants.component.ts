@@ -6,6 +6,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+import { Router } from '@angular/router';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
 import { ServerPaginatorComponent } from '../../shared/ui/server-paginator.component';
@@ -48,7 +49,7 @@ import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assi
         [showClear]="true"
         styleClass="w-full sm:w-48"
       ></p-dropdown>
-      <button pButton label="جيم جديد" icon="pi pi-plus" (click)="openCreate()"></button>
+      <button pButton label="إنشاء طلب مساحة عمل" icon="pi pi-plus" (click)="openCreate()"></button>
     </app-page-header>
 
     <div class="lf-card overflow-hidden">
@@ -177,6 +178,7 @@ export class TenantsComponent implements OnInit {
   }
 
   private service = inject(TenantsService);
+  private router = inject(Router);
   private fb = inject(FormBuilder);
   private notify = inject(NotifyService);
 
@@ -250,8 +252,9 @@ export class TenantsComponent implements OnInit {
   }
 
   openCreate(): void {
-    this.form.reset();
-    this.showCreate = true;
+    // New Gym/FreelanceCoach workspaces must use the unified application,
+    // payment, approval, and provisioning workflow.
+    void this.router.navigate(['/workspace-applications'], { queryParams: { create: '1' } });
   }
 
   create(): void {

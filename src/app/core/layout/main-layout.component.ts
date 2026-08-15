@@ -21,7 +21,7 @@ import { NotificationService } from '../../shared/ui/notification.service';
         @if (!effectiveCollapsed()) { <div class="lf-nav-search"><i class="pi pi-search"></i><input [(ngModel)]="navQuery" placeholder="ابحث في القائمة" aria-label="البحث في القائمة"><kbd>Ctrl /</kbd></div> }
         <nav class="flex-1 overflow-y-auto px-3 py-4">
           @for (group of visibleGroups(); track group) {
-            @if (!effectiveCollapsed()) { <div class="lf-nav-divider" aria-hidden="true"><span></span></div> }
+            @if (!effectiveCollapsed()) { <div class="lf-nav-group-heading"><span>{{ groupLabel(group) }}</span><span class="lf-nav-group-count">{{ groupedNav()[group].length }}</span></div> }
             <div class="lf-nav-grid">
               @for (item of groupedNav()[group]; track item.route) {
                 <a [routerLink]="item.route" routerLinkActive="lf-nav-active" (click)="mobileOpen.set(false)" class="lf-nav-item" [title]="item.label">
@@ -53,7 +53,10 @@ import { NotificationService } from '../../shared/ui/notification.service';
     .lf-brand-mark { width:2.6rem; height:2.6rem; display:grid; place-items:center; flex:none; border-radius:.85rem; color:#fff; background:linear-gradient(135deg,#38bdf8,#6366f1); box-shadow:0 8px 18px rgba(56,189,248,.2); }
     .lf-brand b { display:block; color:#fff; font-size:1rem; }.lf-brand span { display:block; margin-top:.1rem; color:#94a3b8; font-size:.7rem; }
     .lf-nav-search { display:flex; align-items:center; gap:.5rem; margin:.85rem .75rem .25rem; padding:.5rem .65rem; color:#94a3b8; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08); border-radius:.7rem; }.lf-nav-search input { min-width:0; flex:1; outline:0; color:#fff; background:transparent; font:600 .75rem inherit; }.lf-nav-search input::placeholder { color:#64748b; }.lf-nav-search kbd { color:#64748b; font-size:.6rem; }
-    .lf-nav-divider { height:1px; margin:.85rem .55rem .65rem; background:linear-gradient(90deg,transparent,rgba(148,163,184,.12),rgba(148,163,184,.48),rgba(148,163,184,.12),transparent); }
+    .lf-nav-group-heading { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin:.95rem .35rem .45rem; padding:0 .25rem; color:#94a3b8; font-size:.62rem; font-weight:800; letter-spacing:.02em; }
+    .lf-nav-group-heading::before { content:''; width:.35rem; height:.35rem; flex:none; border-radius:999px; background:#38bdf8; box-shadow:0 0 0 3px rgba(56,189,248,.12); }
+    .lf-nav-group-heading > span:first-of-type { flex:1; }
+    .lf-nav-group-count { min-width:1.25rem; padding:.12rem .3rem; border:1px solid rgba(148,163,184,.18); border-radius:999px; color:#64748b; text-align:center; font-size:.58rem; }
     .lf-nav-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.55rem; margin-bottom:.35rem; }
     .lf-nav-item { min-height:5.1rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.42rem; padding:.65rem .35rem; border:1px solid transparent; border-radius:1rem; color:#cbd5e1; text-align:center; font-size:.68rem; line-height:1.2; font-weight:700; transition:transform .18s, background .18s, border-color .18s, color .18s; }
     .lf-nav-item i { width:auto; text-align:center; font-size:1.45rem; line-height:1; }
@@ -76,7 +79,16 @@ export class MainLayoutComponent {
   private isDesktop = signal(window.matchMedia('(min-width:1024px)').matches); user = this.auth.user; pageTitle = signal(this.titleForUrl(this.router.url));
   constructor() { this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe(event => { this.pageTitle.set(this.titleForUrl(event.urlAfterRedirects)); this.notifications.refresh(); }); this.notifications.refresh(); }
   effectiveCollapsed = computed(() => this.collapsed() && !this.sidebarHover() && this.isDesktop()); railWidth = computed(() => this.effectiveCollapsed() ? 78 : 272); contentMargin = computed(() => this.isDesktop() ? this.railWidth() : 0);
-  visibleNav = computed(() => { const query = this.navQuery.trim().toLocaleLowerCase(); return NAV_ITEMS.filter(item => this.auth.hasAnyPermission(...item.permissions) && (!query || item.label.toLocaleLowerCase().includes(query))); });
+  visibleNav = computed(() => {
+    const query = this.navQuery.trim().toLocaleLowerCase();
+    return NAV_ITEMS.filter(item => {
+      const searchableText = `${item.label} ${item.searchTerms ?? ''}`.toLocaleLowerCase();
+      const isSearchMode = query.length > 0;
+      return this.auth.hasAnyPermission(...item.permissions)
+        && (item.visible !== false || isSearchMode)
+        && (!query || searchableText.includes(query));
+    });
+  });
   groupedNav = computed(() => this.visibleNav().reduce((groups, item) => { (groups[item.group] ??= []).push(item); return groups; }, {} as Record<NavGroup, typeof NAV_ITEMS>));
   visibleGroups = computed(() => (Object.keys(NAV_GROUPS) as NavGroup[]).filter(group => (this.groupedNav()[group]?.length ?? 0) > 0));
   roleLabel = computed(() => this.user()?.role === 'PlatformOwner' ? 'مالك المنصة' : this.user()?.role === 'PlatformAdmin' ? 'مشرف المنصة' : this.user()?.role || '');
