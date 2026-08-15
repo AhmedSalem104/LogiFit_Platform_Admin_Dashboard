@@ -36,7 +36,7 @@
 | `/feature-dependencies` | اعتماديات الميزات | `ManagePlans` | `/features/dependencies` | إضافة/إزالة علاقة إعداد | لا دوائر أو self-dependency. |
 | `/payment-methods` | طرق الدفع | `ManagePaymentRequests` | `/payment-methods` | CRUD طرق الدفع اليدوي | لا تضع أسراراً ظاهرة. |
 | `/payment-requests` | طلبات الدفع | `ManagePaymentRequests` | `/payment-requests` | موافقة/رفض سبب | قرار معتمد لا يعدل. |
-| `/backups` | النسخ الاحتياطية | `ManagePlatformBackups` | `/backups`, `/batch`, `/batches`, `/restores/capabilities` | تشغيل FullSystem/AllTenants، متابعة artifacts، checksum/manifest، retry آمن | السجلات immutable؛ لا connection material؛ `ManualOnly` لا يضيف زر restore. |
+| `/backups` | النسخ الاحتياطية | `ManagePlatformBackups` | `/backups`, `/batch`, `/batches`, `/restores/capabilities` | وضع افتراضي لنسخة مساحة عمل واحدة Gym/FreelanceCoach، ووضع منفصل للنطاقات الجماعية؛ متابعة artifacts، checksum/manifest، retry آمن | السجلات immutable؛ لا connection material أو اسم قاعدة بيانات؛ `ManualOnly` لا يضيف زر restore. |
 | `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `GET/POST /api/platform/database-resources` | مراجعة Pool وتسجيل مورد مشفر، مع عرض الحالة والصحة والتخصيص | لا تعرض connection string أو اسم قاعدة البيانات أو القيمة المشفرة؛ التسجيل write-once من الخادم ويعرض `hasProtectedConnection` فقط. |
 | `/audit-logs` | سجل المراجعة | `ManagePlatformReports` | `/audit-logs` | بحث وقراءة | immutable؛ لا CRUD. |
 | `/invoices` | الفواتير | `ManagePlatformReports` | `/invoices` | بحث وقراءة | تصحيح بعكس مالي جديد. |
@@ -46,7 +46,14 @@
 
 ### عقد التفاعل مع شاشة النسخ الاحتياطية
 
-تبدأ شاشة `/backups` دفعة نسخ يحددها الخادم فقط بعد إعلان الخدمة حالة `Ready` وبعد تأكيد المشغّل للنطاق المختار. تدعم النطاقات `Platform` و`SelectedTenants` و`AllGyms` و`AllFreelance` و`AllTenants` و`FullSystem`؛ وتحمّل المساحات المحددة كأسماء آمنة ولا ترسل إلا معرّفاتها. تميز الشاشة حالات التحميل وعدم الإتاحة والفراغ والاكتمال الجزئي والفشل والاكتمال؛ وتعرض حالة كل هدف وحجمه وبصمة SHA-256 وتوفر البيان وإجراءات التنزيل المحمية. تمنع أقفال التأكيد والتنفيذ ومفتاح idempotency اليدوي النقرات المكررة. تتاح إعادة المحاولة لدفعات `Failed` أو `Partial` فقط وبنطاق الأهداف الذي يحدده الخادم. ولا تعرض الشاشة سلسلة اتصال أو اسم قاعدة بيانات أو مسار تخزين أو بيانات اعتماد للمزود.
+تبدأ شاشة `/backups` في وضع **مساحة عمل واحدة**. يختار المشغّل Gym أو FreelanceCoach واحدًا فقط،
+ويرى Badge النوع وحالة مورد قاعدة البيانات قبل التأكيد؛ يرسل الطلب `SelectedTenants` ومعرّفًا واحدًا
+فقط. وضع **نسخ المنصة والنظام** منفصل ويعرض `Platform` و`AllGyms` و`AllFreelance` و`AllTenants`
+و`FullSystem`. تميز الشاشة حالات التحميل وعدم الإتاحة والفراغ والاكتمال الجزئي والفشل والاكتمال؛
+وتعرض لكل artifact اسم المساحة ومعرّفها ونوعها الآمن وحجمه وبصمة SHA-256 وتوفر البيان وإجراءات
+التنزيل المحمية. تمنع أقفال التأكيد والتنفيذ ومفتاح idempotency اليدوي النقرات المكررة. تتاح إعادة
+المحاولة لدفعات `Failed` أو `Partial` فقط وبنطاق الأهداف الذي يحدده الخادم. ولا تعرض الشاشة سلسلة
+اتصال أو اسم قاعدة بيانات أو مسار تخزين أو بيانات اعتماد للمزود.
 
 تدعم شاشة `/database-resources` فلاتر دورة الحياة ومعرّف مساحة العمل من الخادم. أرقام الملخص مرتبطة بالصفحة الحالية لأن الجدول يستخدم الترقيم. يتاح `إصلاح` للصفوف `Available` و`Allocated` و`Failed` و`Disabled`؛ ويتحقق الخادم من القيمة البديلة ويحميها ويحدّث الربط المخصص داخل معاملة. لا تعرض الواجهة القيمة المحمية أو بيانات تعريف قاعدة البيانات.
 | `/reports` | التقارير | `ManagePlatformReports` | `/reports/overview`, `/reports/catalog` | قراءة المؤشرات والكتالوج، إعادة محاولة المصدر الفاشل، طباعة/CSV | فشل مصدر لا يخفي نجاح المصدر الآخر؛ افتح المصدر قبل القرار. |
