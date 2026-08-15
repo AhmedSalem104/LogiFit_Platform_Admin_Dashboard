@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { TableModule } from 'primeng/table';
 import { DropdownModule } from 'primeng/dropdown';
@@ -112,6 +113,7 @@ export class WorkspaceApplicationsComponent implements OnInit {
   private readonly paymentService = inject(PaymentRequestsService);
   private readonly plansService = inject(PlansService);
   private readonly notify = inject(NotifyService);
+  private readonly route = inject(ActivatedRoute);
   readonly Status = PlatformApplicationStatus;
   readonly PRS = PaymentRequestStatus;
   readonly PWT = PlatformWorkspaceType;
@@ -147,7 +149,11 @@ export class WorkspaceApplicationsComponent implements OnInit {
   readonly subscriptionStatusOptions = [{ label: 'بانتظار الدفع', value: TenantSubscriptionStatus.PendingPayment }, { label: 'تجريبي', value: TenantSubscriptionStatus.Trial }, { label: 'نشط', value: TenantSubscriptionStatus.Active }, { label: 'متأخر', value: TenantSubscriptionStatus.PastDue }, { label: 'موقوف', value: TenantSubscriptionStatus.Suspended }, { label: 'ملغى', value: TenantSubscriptionStatus.Cancelled }, { label: 'منتهٍ', value: TenantSubscriptionStatus.Expired }, { label: 'فترة سماح', value: TenantSubscriptionStatus.GracePeriod }];
   readonly provisioningOptions = [{ label: 'معلّق', value: ProvisioningJobStatus.Pending }, { label: 'بانتظار السعة', value: ProvisioningJobStatus.AwaitingDatabaseCapacity }, { label: 'جاري التجهيز', value: ProvisioningJobStatus.Provisioning }, { label: 'مكتمل', value: ProvisioningJobStatus.Completed }, { label: 'فشل', value: ProvisioningJobStatus.Failed }];
 
-  ngOnInit(): void { this.loadPlans(); this.load(); }
+  ngOnInit(): void {
+    this.loadPlans();
+    this.load();
+    if (this.route.snapshot.queryParamMap.get('create') === '1') this.openCreate();
+  }
   loadPlans(): void { this.plansService.list(true, 1, 100).subscribe({ next: data => this.plans.set(data.items), error: err => this.notify.error(errMsg(err)) }); }
   load(): void { this.loading.set(true); this.service.list({ status: this.statusFilter ?? undefined, type: this.typeFilter ?? undefined, paymentStatus: this.paymentFilter ?? undefined, workspaceStatus: this.workspaceStatusFilter ?? undefined, subscriptionStatus: this.subscriptionStatusFilter ?? undefined, provisioningStatus: this.provisioningFilter ?? undefined }, this.page, this.pageSize).subscribe({ next: data => { this.rows.set(data.items); this.totalCount = data.totalCount; this.loading.set(false); }, error: err => { this.notify.error(errMsg(err)); this.loading.set(false); } }); }
   resetPage(): void { this.page = 1; this.load(); }

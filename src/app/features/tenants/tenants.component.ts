@@ -49,7 +49,7 @@ import { ADMIN_ASSISTANT_COMMAND_EVENT } from '../../shared/assistant/admin-assi
         [showClear]="true"
         styleClass="w-full sm:w-48"
       ></p-dropdown>
-      <button pButton label="جيم جديد" icon="pi pi-plus" (click)="openCreate()"></button>
+      <button pButton label="إنشاء طلب مساحة عمل" icon="pi pi-plus" (click)="openCreate()"></button>
     </app-page-header>
 
     <div class="lf-card overflow-hidden">
@@ -178,8 +178,8 @@ export class TenantsComponent implements OnInit {
   }
 
   private service = inject(TenantsService);
-  private fb = inject(FormBuilder);
   private router = inject(Router);
+  private fb = inject(FormBuilder);
   private notify = inject(NotifyService);
 
   readonly TS = TenantStatus;
@@ -252,10 +252,9 @@ export class TenantsComponent implements OnInit {
   }
 
   openCreate(): void {
-    // Creation must use the unified application flow. The legacy tenant form
-    // could not create the payment/subscription prerequisites required by the
-    // provisioning saga and therefore produced a misleading 400/503 path.
-    void this.router.navigate(['/workspace-applications']);
+    // Creation must use the unified application, payment, approval, and
+    // provisioning workflow. The legacy form could not create its prerequisites.
+    void this.router.navigate(['/workspace-applications'], { queryParams: { create: '1' } });
   }
 
   create(): void {

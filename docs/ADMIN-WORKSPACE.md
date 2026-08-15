@@ -1,5 +1,22 @@
 # منصة الإدارة: Pagination وعمليات التحكم
 
+## اختصار قائمة لوحة الإدارة
+
+القائمة الجانبية تعرض مراكز عمل مختصرة بدلاً من عرض كل وحدة تشغيلية كعنصر مستقل:
+
+| المركز | المسار | الوحدات التابعة |
+|---|---|---|
+| مساحات العمل | /workspace-management | /workspace-applications و/tenants |
+| الباقات والميزات | /catalog | /plans و/features و/feature-overrides و/quota-definitions و/feature-dependencies |
+| الفوترة والاشتراكات | /billing | /subscriptions و/payment-requests و/payment-methods و/invoices |
+| حماية البيانات | /data-protection | /backups و/database-resources |
+| مركز التشغيل | /operations-center | /operations و/alerts |
+| الحوكمة والوصول | /governance | /administrators و/roles و/audit-logs و/documentation |
+
+المراكز لا تستبدل الصفحات أو عقود الـAPI؛ هي طبقة تنقل وتجميع فقط. تبقى المسارات الأصلية
+صالحة للروابط المباشرة والمساعد والأذونات، كما يكشف بحث القائمة الوحدات الثانوية عند
+البحث عنها. لا تُعتبر رؤية الرابط حماية؛ permissionGuard وPlatform API هما مصدر القرار.
+
 ## طابور مراجعة مساحات العمل
 
 - المسار `/workspace-applications` محمي في الواجهة بـ`ManageTenants` ومحمي بالسياسة نفسها في Platform API.

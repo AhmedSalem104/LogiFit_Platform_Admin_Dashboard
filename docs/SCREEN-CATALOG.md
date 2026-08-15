@@ -1,5 +1,22 @@
 # كتالوج شاشات لوحة المنصة
 
+## مراكز التنقل المختصرة
+
+هذه مسارات تجميعية للواجهة فقط. كل Route تشغيلي أصلي أدناه ما زال lazy-loaded ومحمياً
+بصلاحياته ويمكن فتحه مباشرة من بطاقة المركز أو من البحث في القائمة.
+
+| Route المركز | الغرض | الصلاحية الدنيا | Routes التابعة |
+|---|---|---|---|
+| /workspace-management | مركز إنشاء ومراجعة ومساحات العمل الحالية | ManageTenants | /workspace-applications, /tenants |
+| /catalog | مركز الباقات وكتالوج الميزات والحدود | ManagePlans | /plans, /features, /feature-overrides, /quota-definitions, /feature-dependencies |
+| /billing | مركز الاشتراكات والتحصيل والفواتير | واحدة من ManageTenants, ManagePaymentRequests, ManagePlatformReports | /subscriptions, /payment-requests, /payment-methods, /invoices |
+| /data-protection | مركز النسخ وموردات قواعد البيانات | ManagePlatformBackups | /backups, /database-resources |
+| /operations-center | مركز العمليات والتنبيهات | ManagePlatformReports | /operations, /alerts |
+| /governance | مركز الوصول والتدقيق والتوثيق | ManagePlatformReports | /administrators, /roles, /audit-logs, /documentation |
+
+لا يؤدي التجميع إلى دمج كيانات Backend أو حذف endpoints؛ يحافظ على عزل الصلاحيات
+وسلامة البيانات ويدعم الروابط القديمة.
+
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
 |---|---|---|---|---|---|
 | `/workspace-applications` | طابور طلبات مساحات العمل | `ManageTenants` | `/api/platform/workspace-applications` | فلترة الطلب/الدفع/المساحة/الاشتراك/التجهيز، بدء مراجعة / طلب استكمال / اعتماد / رفض | القرار نهائي ومدقق بـ`rowVersion`، ولا تظهر بيانات صحية أو تدريبية. |

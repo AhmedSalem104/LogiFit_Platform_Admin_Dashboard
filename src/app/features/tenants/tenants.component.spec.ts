@@ -54,7 +54,7 @@ describe('TenantsComponent lifecycle actions', () => {
 
     component.openCreate();
 
-    expect(component.router.navigate).toHaveBeenCalledOnceWith(['/workspace-applications']);
+    expect(component.router.navigate).toHaveBeenCalledOnceWith(['/workspace-applications'], { queryParams: { create: '1' } });
     expect(component.service.create).not.toHaveBeenCalled();
   });
 });
