@@ -62,10 +62,18 @@ interface PagedResult<T> {
 ## مركز النسخ الاحتياطي
 
 - `/backups` يستخدم صلاحية `ManagePlatformBackups` ويظل Platform API هو مصدر scope والعزل.
+- يبدأ الوضع الافتراضي من **نسخة مساحة عمل واحدة**: يختار المشغّل Gym أو FreelanceCoach واحدًا
+  فقط، مع بحث وBadge للنوع وحالة المورد. ترسل الواجهة `scope=SelectedTenants` ومعرّف Tenant واحدًا
+  فقط؛ زر التنفيذ يظل معطلاً إذا لم يكن المورد `Assigned/Allocated`.
+- وضع **نسخ المنصة والنظام** منفصل بصريًا عن النسخة الفردية ويحتوي `Platform` و`AllGyms`
+  و`AllFreelance` و`AllTenants` و`FullSystem`. لا تخلط الواجهة بين ملف Gym واحد ودفعة جماعية.
 - `FullSystem` يطلب من الخادم نسخة مستقلة لقاعدة المنصة ولكل Tenant mapping نشط؛ لا ترسل الواجهة
   connection string أو اسم قاعدة البيانات.
 - يعرض batch history والـartifacts وحالتها وحجمها و`SHA-256` وmanifest. الإنشاء وretry يحتاجان
-  تأكيدًا، والـretry محصور في `Failed` أو `Partial`.
+  تأكيدًا باسم المساحة ونوعها، والـretry محصور في `Failed` أو `Partial`.
+- يعيد الـBackend مع كل tenant artifact بيانات عرض آمنة فقط: `TenantName` و`WorkspaceIdentifier`
+  و`WorkspaceType`. أما Artifact المنصة فيبقى بلا Tenant metadata، ولا تُعرض أي قيمة اتصال أو
+  اسم قاعدة بيانات.
 - restore capability معلوماتية فقط؛ عندما تكون `ManualOnly` لا تعرض الشاشة mutation. بدء/انتهاء
   الـbatch يسجلان في Audit Log على الخادم.
 - حالات الواجهة واضحة ومقصودة: `Ready` يسمح بالإنشاء، و`Action required` يعرض سبب عدم الجاهزية، وسجل الـbatch يوضح progress ونتيجة كل هدف. لا يظهر `Retry` إلا لـ`Failed` أو `Partial`، ولا تُطبع مفاتيح التخزين أو connection material.

@@ -40,6 +40,9 @@ export interface BackupArtifact {
   storageKey: string | null;
   sha256: string | null;
   errorCode: string | null;
+  tenantName?: string | null;
+  workspaceIdentifier?: string | null;
+  workspaceType?: string | null;
 }
 
 export interface BackupBatch {

@@ -209,6 +209,7 @@ export interface PlatformTenantDto {
   id: string;
   name: string;
   subdomain: string;
+  workspaceType?: string | number | null;
   status: TenantStatus;
   email: string;
   phoneNumber: string;
