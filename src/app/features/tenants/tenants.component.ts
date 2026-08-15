@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
-import { Router } from '@angular/router';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
 import { ServerPaginatorComponent } from '../../shared/ui/server-paginator.component';
@@ -214,7 +214,7 @@ export class TenantsComponent implements OnInit {
     ownerFullName: ['', Validators.required],
     ownerEmail: ['', [Validators.required, Validators.email]],
     ownerPhoneNumber: ['', Validators.required],
-    ownerPassword: ['', [Validators.required, Validators.minLength(6)]],
+    ownerPassword: ['', [Validators.required, Validators.minLength(8)]],
   });
 
   ngOnInit(): void {
@@ -252,8 +252,8 @@ export class TenantsComponent implements OnInit {
   }
 
   openCreate(): void {
-    // New Gym/FreelanceCoach workspaces must use the unified application,
-    // payment, approval, and provisioning workflow.
+    // Creation must use the unified application, payment, approval, and
+    // provisioning workflow. The legacy form could not create its prerequisites.
     void this.router.navigate(['/workspace-applications'], { queryParams: { create: '1' } });
   }
 

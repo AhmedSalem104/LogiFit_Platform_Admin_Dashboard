@@ -132,3 +132,11 @@ npm run build
 [API-ENDPOINT-CATALOG.md](API-ENDPOINT-CATALOG.md). الكتالوج يذكر طريقة الطلب
 والمسار والصلاحية والمدخلات والاستجابة لكل عقد في المشروعين، ويُعاد توليده من
 Controllers مشروع Backend عند أي تغيير للعقد.
+# 2026-08-13 screen contract hardening (Issues #88 and #290)
+
+The `/tenants` create action routes to `/workspace-applications`, the single Gym/FreelanceCoach
+creation flow that creates plan, payment, subscription, identity, and retryable provisioning
+records together. The lifecycle list remains read/action-oriented.
+
+The Dashboard tenant widget, Tenants list, and Workspace Applications list keep visible loading,
+empty, and retry states and tolerate legacy data that previously could turn a list into HTTP 500.

@@ -81,3 +81,9 @@
 [COMPLETE-PLATFORM-ADMIN-DOCUMENTATION.md](COMPLETE-PLATFORM-ADMIN-DOCUMENTATION.md).
 هذا الملف يحتفظ بالكتالوج التشغيلي المختصر، ويجب تحديث الاثنين عند إضافة شاشة أو
 تغيير صلاحية أو Action.
+# 2026-08-13 screen contract hardening (Issues #88 and #290)
+
+`/tenants` opens the unified `/workspace-applications` creation screen. `/dashboard/tenants`,
+`/tenants`, and `/workspace-applications` consume safe paged contracts and show explicit retry
+states for API errors. `/database-resources` distinguishes validation (`400`) from a reachable-
+but-failed connection test (`422`) and never displays protected connection material after save.

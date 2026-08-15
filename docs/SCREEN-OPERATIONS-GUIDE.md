@@ -322,3 +322,9 @@ Lifecycle and destructive actions in Platform Admin use a per-operation busy gua
 
 للتفاصيل الكاملة لكل شاشة، زر، حالة، صلاحية، API، ومسار فشل راجع
 [دليل لوحة الإدارة الكامل](COMPLETE-PLATFORM-ADMIN-DOCUMENTATION.md).
+# 2026-08-13 screen contract hardening (Issues #88 and #290)
+
+Before diagnosing a screen as empty, confirm its loading/error banner and retry action. The
+Dashboard and Tenants screens use a page-safe member-count contract, while Workspace Applications
+selects the newest payment snapshot when historical duplicate rows exist. Database-resource
+registration is server-validated and never displays the protected value after save.

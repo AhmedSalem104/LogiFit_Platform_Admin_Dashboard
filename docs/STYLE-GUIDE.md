@@ -132,3 +132,9 @@
 6. الصفحات الحساسة لا تضيف delete/edit لسجل مالي أو Audit أو Outbox أو Jobs.
 7. أضف/حدّث دليل المساعد و`docs/ADMIN-WORKSPACE.md`.
 8. شغّل `npm run build` قبل تسليم التغيير.
+# 2026-08-13 resilience states (Issues #88 and #290)
+
+Every platform screen that loads remote data must retain visible loading, empty, and error/retry
+states. A failed API request must not render as a successful empty table. Sensitive forms such as
+database-resource registration may send connection material only to the server and must render
+safe status metadata after persistence.
