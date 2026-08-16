@@ -61,6 +61,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       let errorMessage = 'حدث خطأ غير متوقع';
+      const errorCode = error.error?.code;
       switch (error.status) {
         case 0:
           errorMessage = 'خطأ في الاتصال بالشبكة';
@@ -89,6 +90,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           break;
         default:
           if (error.error?.message) errorMessage = error.error.message;
+      }
+
+      if (errorCode === 'PAYMENT_PROOF_REQUIRED') {
+        errorMessage = 'أرفق إثبات الدفع واحفظه أولًا قبل اعتماد الدفع.';
       }
 
       return throwError(() => ({ ...error, translatedMessage: errorMessage }));
