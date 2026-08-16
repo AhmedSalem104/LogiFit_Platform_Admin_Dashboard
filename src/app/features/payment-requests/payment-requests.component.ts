@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -72,9 +73,9 @@ import { environment } from '../../../environments/environment';
             <td dir="ltr" class="text-left hidden md:table-cell">{{ r.transactionNumber || '—' }}</td>
             <td dir="ltr" class="text-left hidden lg:table-cell">{{ r.paymentDate | date: 'yyyy-MM-dd' }}</td>
             <td>
-              @if (r.proofFileUrl) {
+              @if (r.proofFileUrl || r.proofVersion) {
                 <button pButton icon="pi pi-image" label="معاينة" class="p-button-sm p-button-text" (click)="preview(r)"></button>
-              } @else { <span class="text-slate-300">—</span> }
+              } @else { <span class="text-amber-600 text-xs">لا يوجد إثبات</span> }
             </td>
             <td><app-status-badge [badge]="badge(r.status)"></app-status-badge></td>
             <td class="text-center whitespace-nowrap">
@@ -109,8 +110,11 @@ import { environment } from '../../../environments/environment';
           </div>
           <a [href]="proofBlobUrl() || undefined" target="_blank" rel="noopener">
             @if (proofLoading()) { <div class="p-6 text-center text-slate-500"><i class="pi pi-spin pi-spinner mr-2"></i>جاري تحميل إثبات الدفع...</div>
-            } @else if (!proofLoadError() && proofBlobUrl()) { <img [src]="proofBlobUrl()!" alt="إثبات الدفع" loading="lazy" decoding="async"
+            } @else if (!proofLoadError() && proofBlobUrl() && proofContentType().startsWith('image/')) { <img [src]="proofBlobUrl()!" alt="إثبات الدفع" loading="lazy" decoding="async"
               class="w-full rounded-lg border border-slate-200 max-h-[60vh] object-contain bg-slate-50" />
+            } @else if (!proofLoadError() && proofSafeUrl() && proofContentType() === 'application/pdf') { <iframe [src]="proofSafeUrl()!" title="إثبات الدفع PDF"
+              class="w-full h-[60vh] rounded-lg border border-slate-200 bg-slate-50"></iframe>
+            } @else if (!proofLoadError() && proofBlobUrl()) { <div class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-600"><i class="pi pi-file block mb-2 text-2xl"></i>الملف جاهز للفتح من الرابط الآمن.</div>
             } @else { <div class="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-700"><i class="pi pi-exclamation-triangle block mb-2 text-xl"></i>تعذر تحميل إثبات الدفع أو أن الملف غير موجود.</div> }
           </a>
           @if (r.notes) { <p class="text-sm text-slate-500">ملاحظات: {{ r.notes }}</p> }
@@ -141,6 +145,7 @@ import { environment } from '../../../environments/environment';
 export class PaymentRequestsComponent implements OnInit {
   private service = inject(PaymentRequestsService);
   private notify = inject(NotifyService);
+  private sanitizer = inject(DomSanitizer);
 
   readonly PRS = PaymentRequestStatus;
   readonly PRO = PaymentRequestOperation;
@@ -160,6 +165,8 @@ export class PaymentRequestsComponent implements OnInit {
   proofLoadError = signal(false);
   proofLoading = signal(false);
   proofBlobUrl = signal<string | null>(null);
+  proofSafeUrl = signal<SafeResourceUrl | null>(null);
+  proofContentType = signal('');
 
   // Reject dialog state
   showReject = false;
@@ -217,10 +224,14 @@ export class PaymentRequestsComponent implements OnInit {
     this.selected.set(r);
     this.proofLoadError.set(false);
     this.proofLoading.set(true);
+    this.proofContentType.set('');
     this.showPreview = true;
     this.service.proof(r.id).subscribe({
       next: (blob) => {
-        this.proofBlobUrl.set(URL.createObjectURL(blob));
+        this.proofContentType.set(blob.type || 'application/octet-stream');
+        const url = URL.createObjectURL(blob);
+        this.proofBlobUrl.set(url);
+        this.proofSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
         this.proofLoading.set(false);
       },
       error: () => {
@@ -234,15 +245,21 @@ export class PaymentRequestsComponent implements OnInit {
     const url = this.proofBlobUrl();
     if (url) URL.revokeObjectURL(url);
     this.proofBlobUrl.set(null);
+    this.proofSafeUrl.set(null);
+    this.proofContentType.set('');
   }
 
   proofUrl(request: PaymentRequestDto): string {
-    if (!request.proofFileUrl) return '';
+    if (!request.proofFileUrl && !request.proofVersion) return '';
     return `${environment.apiUrl}/payment-requests/${request.id}/proof`;
   }
 
   async approve(r: PaymentRequestDto): Promise<void> {
     if (this.busyId()) return;
+    if (r.applicationRequestId && !r.proofFileUrl && !r.proofVersion) {
+      this.notify.error('لا يمكن اعتماد الدفع قبل إرفاق إثبات الدفع.');
+      return;
+    }
     // SweetAlert must not render underneath the PrimeNG image dialog.
     // Temporarily hide the preview while asking for confirmation and restore it
     // unchanged if the operator cancels.

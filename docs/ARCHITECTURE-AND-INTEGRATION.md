@@ -129,6 +129,18 @@ flowchart LR
 
 `WorkspaceApplicationsService` يتصل فقط بـ`/api/platform/workspace-applications` عبر interceptor منصة الإدارة. لا يرسل `TenantId` من المتصفح ولا يحاول تنفيذ قرارات محلية. يمرر كل mutation `rowVersion` الذي أعاده الخادم، ويعتمد حالة الصف الجديدة من الاستجابة. أما مقدم الطلب فيستخدم Tenant API العامة `/api/identity` و`/api/workspace-applications` مع Tracking Token قصير العمر، لا Platform JWT.
 
+مراجعة إثبات الدفع في شاشة الطلبات تستخدم `PaymentRequestsService` المشترك: المعاينة الحالية عبر
+`GET /api/platform/payment-requests/{id}/proof`، سجل الإصدارات عبر `.../{id}/proofs`، والإصدار
+التاريخي عبر `?version=N`. رفع أو استبدال الإثبات يرسل `multipart/form-data` باسم `proof` إلى
+`POST .../{id}/proof`. الواجهة لا تبني رابط تخزين ولا تعرض storage key؛ الخادم يتحقق من النوع
+والحجم وchecksum ويحفظ النسخة القديمة. اعتماد الدفع منفصل عن `approve-workspace`، والخادم هو
+الحاجز النهائي في الحالتين.
+
+إنشاء مساحة عمل من لوحة الإدارة لا يرفع إثباتًا تلقائيًا؛ فهو ينشئ طلبًا ودفعًا معلّقًا فقط. لذلك
+توجّه شاشة `/workspace-applications` المسؤول إلى رفع الإثبات بعد الإنشاء مباشرة، أو بعد إغلاق نافذة
+بيانات الدخول المؤقتة عند إنشاء هوية جديدة. هذا تغيير UX فقط ولا يغيّر عقد الـAPI أو فصل صلاحيات اعتماد
+الدفع عن اعتماد مساحة العمل.
+
 ## الكتالوج الكامل لعقود API
 
 [API-ENDPOINT-CATALOG.md](API-ENDPOINT-CATALOG.md) يحتوي كل endpoints في Tenant API

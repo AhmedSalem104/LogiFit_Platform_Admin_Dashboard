@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Observable } from 'rxjs';
 import { TableModule } from 'primeng/table';
 import { DropdownModule } from 'primeng/dropdown';
@@ -20,6 +21,7 @@ import {
   ProvisioningJobStatus,
   TenantStatus,
   TenantSubscriptionStatus,
+  PaymentProofDto,
 } from '../../core/models/platform.models';
 import {
   CreatePlatformWorkspaceApplicationCommand,
@@ -55,12 +57,13 @@ import {
           <td><div class="type-line"><span class="type-badge" [class.coach]="isFreelance(a)"><i class="pi" [class.pi-user-edit]="isFreelance(a)" [class.pi-building]="!isFreelance(a)"></i>{{ workspaceTypeLabel(a) }}</span><span class="status" [class.pending]="isPending(a.status)" [class.accepted]="a.status === Status.Approved" [class.rejected]="a.status === Status.Rejected">{{ statusLabel(a.status) }}</span></div><b class="block mt-1">{{ a.workspaceIdentifier || 'بدون معرف' }}</b><small dir="ltr" class="block text-slate-400">{{ a.id }}</small></td>
           <td><div dir="ltr">{{ a.applicantEmail }}</div><small dir="ltr" class="text-slate-400">{{ a.applicantPhoneNumber || '—' }}</small></td>
           <td><span class="journey" [class.ready]="a.userJourneyStage === 'Ready'" [class.failed]="a.userJourneyStage === 'ProvisioningFailed' || a.userJourneyStage === 'Rejected' || a.userJourneyStage === 'PaymentRejected'">{{ journeyLabel(a.userJourneyStage) }}</span><small class="block mt-1 text-slate-500">{{ a.nextStep || '—' }}</small></td>
-          <td class="hidden lg:table-cell"><small class="block">الدفع: <b>{{ paymentLabel(a.paymentStatus) }}</b></small><small class="block">الاشتراك: <b>{{ subscriptionLabel(a.subscriptionStatus) }}</b></small></td>
+          <td class="hidden lg:table-cell"><small class="block">الدفع: <b>{{ paymentLabel(a.paymentStatus) }}</b></small><small class="block">الإثبات: <b>{{ paymentProofLabel(a) }}</b></small><small class="block">الاشتراك: <b>{{ subscriptionLabel(a.subscriptionStatus) }}</b></small></td>
           <td class="hidden xl:table-cell"><span class="database-badge" [class.good]="a.databaseStatusCode === 'Ready'" [class.bad]="a.databaseStatusCode === 'Failed'">{{ databaseLabel(a.databaseStatusCode) }}</span></td>
           <td class="hidden md:table-cell" dir="ltr">{{ (a.lastUpdatedAtUtc || a.submittedAt) | date:'yyyy-MM-dd HH:mm' }}</td>
           <td class="text-center whitespace-nowrap actions">
             @if (a.status === Status.Submitted) { <button pButton pTooltip="بدء المراجعة" icon="pi pi-eye" class="p-button-sm p-button-text" [disabled]="busyId() === a.id" (click)="startReview(a)"></button> }
-            @if (a.status === Status.UnderReview && a.paymentRequestId && a.paymentStatus === PRS.Pending) { <button pButton pTooltip="اعتماد الدفع" icon="pi pi-wallet" class="p-button-sm p-button-success p-button-text" [disabled]="busyId() === a.id" (click)="approvePayment(a)"></button><button pButton pTooltip="رفض الدفع" icon="pi pi-ban" class="p-button-sm p-button-danger p-button-text" [disabled]="busyId() === a.id" (click)="openPaymentReject(a)"></button> }
+            @if (a.status === Status.UnderReview && a.paymentRequestId) { <button pButton [pTooltip]="a.hasPaymentProof ? 'عرض إثبات الدفع' : 'لا يوجد إثبات - إرفاق الآن'" [icon]="a.hasPaymentProof ? 'pi pi-image' : 'pi pi-upload'" class="p-button-sm p-button-info p-button-text" [disabled]="busyId() === a.id" (click)="a.hasPaymentProof ? previewProof(a) : openProofUpload(a)"></button> }
+            @if (a.status === Status.UnderReview && a.paymentRequestId && a.paymentStatus === PRS.Pending) { @if (a.hasPaymentProof) { <button pButton pTooltip="استبدال الإثبات" icon="pi pi-upload" class="p-button-sm p-button-secondary p-button-text" [disabled]="busyId() === a.id" (click)="openProofUpload(a)"></button> } <button pButton pTooltip="اعتماد الدفع" icon="pi pi-wallet" class="p-button-sm p-button-success p-button-text" [disabled]="busyId() === a.id || !a.hasPaymentProof" (click)="approvePayment(a)"></button><button pButton pTooltip="رفض الدفع" icon="pi pi-ban" class="p-button-sm p-button-danger p-button-text" [disabled]="busyId() === a.id" (click)="openPaymentReject(a)"></button> }
             @if (a.status === Status.UnderReview) { <button pButton pTooltip="طلب معلومات إضافية" icon="pi pi-file-edit" class="p-button-sm p-button-warning p-button-text" [disabled]="busyId() === a.id" (click)="openInformation(a)"></button> }
             @if (isWorkspaceApplication(a) && a.status === Status.UnderReview && a.paymentStatus === PRS.Approved) { <button pButton pTooltip="اعتماد الطلب وبدء التجهيز" icon="pi pi-check" class="p-button-sm p-button-success p-button-text" [disabled]="busyId() === a.id" (click)="approve(a)"></button> }
             @if (isWorkspaceApplication(a) && a.userJourneyStage === 'ProvisioningFailed') { <button pButton pTooltip="إعادة محاولة التجهيز" icon="pi pi-refresh" class="p-button-sm p-button-warning p-button-text" [disabled]="busyId() === a.id" (click)="retry(a)"></button> }
@@ -86,13 +89,48 @@ import {
         @if (createType === PWT.FreelanceCoach) { <label class="lf-label">التخصص<input class="lf-input" [(ngModel)]="createSpecialization" /></label><label class="lf-label">طريقة التدريب<input class="lf-input" [(ngModel)]="createDeliveryMode" /></label> }
         <label class="lf-label full">الوصف<textarea class="lf-input" rows="3" [(ngModel)]="createDescription"></textarea></label>
       </div>
-      <p class="create-note"><i class="pi pi-info-circle"></i> سيُنشأ الطلب والدفع المعلّق، وتُعرض كلمة المرور المؤقتة مرة واحدة فقط إذا كانت الهوية جديدة.</p>
+      <p class="create-note"><i class="pi pi-info-circle"></i> سيُنشأ الطلب والدفع المعلّق. بعد الإنشاء يجب حفظ إثبات الدفع قبل اعتماده؛ وتُعرض كلمة المرور المؤقتة مرة واحدة فقط إذا كانت الهوية جديدة.</p>
       <ng-template pTemplate="footer"><button pButton label="إلغاء" class="p-button-text p-button-secondary" (click)="showCreate = false"></button><button pButton label="إنشاء الطلب" icon="pi pi-plus" [disabled]="creating()" (click)="createWorkspace()"></button></ng-template>
     </p-dialog>
 
-    <p-dialog header="بيانات الدخول المؤقتة" [(visible)]="showCredentials" [modal]="true" [style]="{ width: '460px', maxWidth: '94vw' }" [draggable]="false">
+    <p-dialog header="بيانات الدخول المؤقتة" [(visible)]="showCredentials" (onHide)="closeCredentials()" [modal]="true" [style]="{ width: '460px', maxWidth: '94vw' }" [draggable]="false">
       <div class="credential-warning"><i class="pi pi-exclamation-triangle"></i><span>احفظ كلمة المرور الآن؛ لن تُعرض مرة أخرى من الخادم.</span></div><div class="credential-row"><span>البريد</span><b dir="ltr">{{ credentialEmail }}</b></div><div class="credential-row"><span>كلمة المرور المؤقتة</span><b dir="ltr">{{ credentialPassword }}</b></div>
-      <ng-template pTemplate="footer"><button pButton label="تم الحفظ" icon="pi pi-check" (click)="showCredentials = false"></button></ng-template>
+      <ng-template pTemplate="footer"><button pButton label="تم الحفظ" icon="pi pi-check" (click)="closeCredentials()"></button></ng-template>
+    </p-dialog>
+
+    <p-dialog header="مراجعة إثبات الدفع" [(visible)]="showProofPreview" (onHide)="closeProofPreview()" [modal]="true" [style]="{ width: '720px', maxWidth: '96vw' }" [draggable]="false">
+      @if (proofPreviewTarget(); as application) {
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="bg-slate-50 rounded-lg px-3 py-2"><span class="text-slate-400 block text-xs">المساحة</span><b>{{ application.workspaceIdentifier || 'بدون معرف' }}</b></div>
+            <div class="bg-slate-50 rounded-lg px-3 py-2"><span class="text-slate-400 block text-xs">الإصدار الحالي</span><b>{{ application.paymentProofVersion || '—' }}</b></div>
+          </div>
+          @if (proofLoading()) { <div class="p-8 text-center text-slate-500"><i class="pi pi-spin pi-spinner mr-2"></i>جاري تحميل الإثبات المحفوظ...</div> }
+          @else if (proofLoadError()) { <div class="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-700"><i class="pi pi-exclamation-triangle block mb-2 text-xl"></i>تعذر فتح الإثبات المحفوظ. سيظل سجل الإثبات محفوظا ويمكن إعادة المحاولة.</div> }
+          @else if (proofBlobUrl() && proofContentType().startsWith('image/')) { <img [src]="proofBlobUrl()!" alt="إثبات الدفع" class="w-full rounded-lg border border-slate-200 max-h-[58vh] object-contain bg-slate-50" /> }
+          @else if (proofSafeUrl() && proofContentType() === 'application/pdf') { <iframe [src]="proofSafeUrl()!" title="إثبات الدفع PDF" class="w-full h-[58vh] rounded-lg border border-slate-200 bg-slate-50"></iframe> }
+          @else if (proofBlobUrl()) { <a [href]="proofBlobUrl()!" target="_blank" rel="noopener" class="block rounded-lg border border-slate-200 bg-slate-50 p-6 text-center text-sm text-blue-700"><i class="pi pi-file block mb-2 text-2xl"></i>فتح الملف المحفوظ</a> }
+
+          <div class="rounded-lg border border-slate-200 p-3">
+            <div class="flex items-center justify-between gap-2 mb-2"><b class="text-sm">سجل الإثباتات المحفوظة</b><span class="text-xs text-slate-500">لا يتم حذف الإصدارات السابقة</span></div>
+            @if (proofHistoryLoading()) { <p class="text-xs text-slate-500">جاري تحميل السجل...</p> }
+            @else if (proofHistoryError()) { <p class="text-xs text-amber-700">تعذر تحميل سجل الإصدارات.</p> }
+            @else if (!proofHistory().length) { <p class="text-xs text-slate-500">لا توجد إصدارات مسجلة.</p> }
+            @else { <div class="space-y-2">@for (proof of proofHistory(); track proof.id) { <div class="flex items-center justify-between gap-2 rounded-md bg-slate-50 px-3 py-2 text-xs"><span><b>الإصدار {{ proof.version }}</b> · {{ proof.originalFileName }} · {{ proof.contentType }}<small class="block text-slate-500" dir="ltr">{{ proof.uploadedAtUtc | date:'yyyy-MM-dd HH:mm' }} · SHA-256: {{ proof.sha256 }}</small></span><button pButton label="فتح" icon="pi pi-external-link" class="p-button-sm p-button-text" (click)="previewProofVersion(application, proof.version)"></button></div> }</div> }
+          </div>
+        </div>
+      }
+      <ng-template pTemplate="footer"><button pButton label="إرفاق إصدار جديد" icon="pi pi-upload" class="p-button-secondary" (click)="openProofUpload(proofPreviewTarget()!); showProofPreview = false"></button><button pButton label="إغلاق" class="p-button-text" (click)="showProofPreview = false"></button></ng-template>
+    </p-dialog>
+
+    <p-dialog header="إرفاق إثبات الدفع" [(visible)]="showProofUpload" [modal]="true" [style]="{ width: '520px', maxWidth: '94vw' }" [draggable]="false">
+      @if (proofUploadTarget(); as application) {
+        <p class="text-sm text-slate-500 mb-3">سيُحفظ الملف كإصدار جديد مرتبط بطلب الدفع {{ application.paymentRequestId }}. الإصدارات السابقة لا تُحذف.</p>
+        <label class="lf-label">الصورة أو ملف PDF *<input class="lf-input" type="file" accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf" (change)="onProofFileSelected($event)" /></label>
+        @if (proofFileName) { <div class="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm"><i class="pi pi-paperclip mr-2"></i>{{ proofFileName }}</div> }
+        <p class="mt-3 text-xs text-slate-500">الأنواع المسموحة: JPG وPNG وPDF — الحد الأقصى 10 ميجابايت.</p>
+      }
+      <ng-template pTemplate="footer"><button pButton label="إلغاء" class="p-button-text p-button-secondary" (click)="showProofUpload = false"></button><button pButton label="حفظ الإثبات" icon="pi pi-save" [disabled]="proofUploading() || !proofFile" (click)="uploadProof()"></button></ng-template>
     </p-dialog>
 
     <p-dialog header="طلب استكمال البيانات" [(visible)]="showInformation" [modal]="true" [style]="{ width: '520px', maxWidth: '94vw' }" [draggable]="false">
@@ -114,6 +152,7 @@ export class WorkspaceApplicationsComponent implements OnInit {
   private readonly plansService = inject(PlansService);
   private readonly notify = inject(NotifyService);
   private readonly route = inject(ActivatedRoute);
+  private readonly sanitizer = inject(DomSanitizer);
   readonly Status = PlatformApplicationStatus;
   readonly PRS = PaymentRequestStatus;
   readonly PWT = PlatformWorkspaceType;
@@ -125,6 +164,19 @@ export class WorkspaceApplicationsComponent implements OnInit {
   informationTarget = signal<PlatformWorkspaceApplication | null>(null);
   rejectTarget = signal<PlatformWorkspaceApplication | null>(null);
   paymentRejectTarget = signal<PlatformWorkspaceApplication | null>(null);
+  proofPreviewTarget = signal<PlatformWorkspaceApplication | null>(null);
+  proofUploadTarget = signal<PlatformWorkspaceApplication | null>(null);
+  proofHistory = signal<PaymentProofDto[]>([]);
+  proofBlobUrl = signal<string | null>(null);
+  proofSafeUrl = signal<SafeResourceUrl | null>(null);
+  proofContentType = signal('');
+  proofLoading = signal(false);
+  proofLoadError = signal(false);
+  proofHistoryLoading = signal(false);
+  proofHistoryError = signal(false);
+  proofFile: File | null = null;
+  proofFileName = '';
+  proofUploading = signal(false);
   page = 1; pageSize = 20; totalCount = 0;
   statusFilter: PlatformApplicationStatus | null = null;
   typeFilter: PlatformApplicationType | null = null;
@@ -132,12 +184,12 @@ export class WorkspaceApplicationsComponent implements OnInit {
   workspaceStatusFilter: TenantStatus | null = null;
   subscriptionStatusFilter: TenantSubscriptionStatus | null = null;
   provisioningFilter: ProvisioningJobStatus | null = null;
-  showInformation = false; showReject = false; showPaymentReject = false; showCreate = false; showCredentials = false;
+  showInformation = false; showReject = false; showPaymentReject = false; showCreate = false; showCredentials = false; showProofPreview = false; showProofUpload = false;
   informationMessage = ''; informationFields = ''; rejectReason = ''; paymentRejectReason = '';
   createType = PlatformWorkspaceType.Gym; createPlanId = ''; createWorkspaceName = ''; createWorkspaceIdentifier = '';
   createOwnerFullName = ''; createOwnerEmail = ''; createOwnerPhone = ''; createBrandName = ''; createDescription = '';
   createSpecialization = ''; createDeliveryMode = '';
-  credentialEmail = ''; credentialPassword = '';
+  credentialEmail = ''; credentialPassword = ''; private proofAfterCreate: PlatformWorkspaceApplication | null = null;
   readonly statusOptions = [
     { label: 'مسودة', value: PlatformApplicationStatus.Draft }, { label: 'مُقدّم', value: PlatformApplicationStatus.Submitted }, { label: 'قيد المراجعة', value: PlatformApplicationStatus.UnderReview }, { label: 'مطلوب استكمال', value: PlatformApplicationStatus.NeedsMoreInformation }, { label: 'مقبول', value: PlatformApplicationStatus.Approved }, { label: 'مرفوض', value: PlatformApplicationStatus.Rejected }, { label: 'ملغى', value: PlatformApplicationStatus.Cancelled }, { label: 'منتهٍ', value: PlatformApplicationStatus.Expired },
   ];
@@ -165,14 +217,92 @@ export class WorkspaceApplicationsComponent implements OnInit {
     if (!this.createPlanId || !this.createWorkspaceName.trim() || !this.createWorkspaceIdentifier.trim() || !this.createOwnerFullName.trim() || !this.createOwnerEmail.trim()) { this.notify.error('أكمل نوع المساحة والباقة وبيانات المالك والمساحة.'); return; }
     const plan = this.plans().find(item => item.id === this.createPlanId); if (!plan) { this.notify.error('اختر باقة صحيحة.'); return; }
     const command: CreatePlatformWorkspaceApplicationCommand = { workspaceType: this.createType, workspaceName: this.createWorkspaceName.trim(), workspaceIdentifier: this.createWorkspaceIdentifier.trim().toLowerCase(), ownerFullName: this.createOwnerFullName.trim(), ownerEmail: this.createOwnerEmail.trim(), ownerPhoneNumber: this.createOwnerPhone.trim() || undefined, planId: plan.id, billingCycle: plan.billingCycle, brandName: this.createBrandName.trim() || undefined, description: this.createDescription.trim() || undefined, specialization: this.createSpecialization.trim() || undefined, deliveryMode: this.createDeliveryMode.trim() || undefined };
-    this.creating.set(true); this.service.create(command).subscribe({ next: result => { this.creating.set(false); this.showCreate = false; this.credentialEmail = result.oneTimeCredentials?.email || ''; this.credentialPassword = result.oneTimeCredentials?.temporaryPassword || ''; this.showCredentials = Boolean(result.oneTimeCredentials); this.resetCreate(); this.load(); this.notify.success('تم إنشاء الطلب والدفع المعلّق.'); }, error: err => { this.creating.set(false); this.notify.error(errMsg(err)); } });
+    this.creating.set(true); this.service.create(command).subscribe({ next: result => { this.creating.set(false); this.showCreate = false; this.credentialEmail = result.oneTimeCredentials?.email || ''; this.credentialPassword = result.oneTimeCredentials?.temporaryPassword || ''; this.showCredentials = Boolean(result.oneTimeCredentials); this.proofAfterCreate = !result.application.hasPaymentProof && result.application.paymentRequestId ? result.application : null; this.resetCreate(); this.load(); const proofTarget = this.proofAfterCreate; this.proofAfterCreate = null; if (!result.oneTimeCredentials && proofTarget) this.openProofUpload(proofTarget); this.notify.success('تم إنشاء الطلب. الخطوة التالية: حفظ إثبات الدفع قبل الاعتماد.'); }, error: err => { this.creating.set(false); this.notify.error(errMsg(err)); } });
   }
+  closeCredentials(): void { this.showCredentials = false; const application = this.proofAfterCreate; this.proofAfterCreate = null; if (application) this.openProofUpload(application); }
   resetCreate(): void { this.createPlanId = ''; this.createWorkspaceName = ''; this.createWorkspaceIdentifier = ''; this.createOwnerFullName = ''; this.createOwnerEmail = ''; this.createOwnerPhone = ''; this.createBrandName = ''; this.createDescription = ''; this.createSpecialization = ''; this.createDeliveryMode = ''; }
 
   startReview(application: PlatformWorkspaceApplication): void { this.run(application, () => this.service.startReview(application), 'بدأت مراجعة الطلب.'); }
   approve(application: PlatformWorkspaceApplication): void { void this.confirmThen(application, 'اعتماد الطلب', 'سيبدأ اعتماد مساحة العمل وتجهيزها بعد اعتماد الدفع. متابعة؟', () => this.service.approve(application), 'تم اعتماد الطلب وبدء التجهيز.'); }
   retry(application: PlatformWorkspaceApplication): void { void this.confirmThen(application, 'إعادة تجهيز المساحة', 'سيعيد الخادم تشغيل التجهيز مع الحفاظ على السجلات الحالية ومنع التكرار. متابعة؟', () => this.service.retryProvisioning(application), 'تمت إعادة محاولة التجهيز.'); }
-  approvePayment(application: PlatformWorkspaceApplication): void { if (!application.paymentRequestId || this.busyId()) return; this.busyId.set(application.id); void this.notify.confirm({ header: 'اعتماد الدفع', message: 'سيصبح الطلب مؤهلاً لاعتماد المساحة والتجهيز. متابعة؟', acceptLabel: 'اعتماد الدفع', icon: 'pi pi-check-circle' }).then(ok => { if (!ok) { this.busyId.set(null); return; } this.paymentService.approve(application.paymentRequestId!).subscribe({ next: () => { this.busyId.set(null); this.notify.success('تم اعتماد الدفع.'); this.load(); }, error: err => { this.busyId.set(null); this.notify.error(errMsg(err)); } }); }); }
+  approvePayment(application: PlatformWorkspaceApplication): void { if (!application.paymentRequestId || this.busyId()) return; if (!application.hasPaymentProof) { this.notify.error('لا يمكن اعتماد الدفع قبل حفظ إثبات الدفع.'); this.openProofUpload(application); return; } this.busyId.set(application.id); void this.notify.confirm({ header: 'اعتماد الدفع', message: 'سيصبح الطلب مؤهلاً لاعتماد المساحة والتجهيز. متابعة؟', acceptLabel: 'اعتماد الدفع', icon: 'pi pi-check-circle' }).then(ok => { if (!ok) { this.busyId.set(null); return; } this.paymentService.approve(application.paymentRequestId!).subscribe({ next: () => { this.busyId.set(null); this.notify.success('تم اعتماد الدفع.'); this.load(); }, error: err => { this.busyId.set(null); this.notify.error(errMsg(err)); this.load(); } }); }); }
+
+  paymentProofLabel(application: PlatformWorkspaceApplication): string { return application.hasPaymentProof ? `محفوظ (${application.paymentProofVersion ? `إصدار ${application.paymentProofVersion}` : 'إصدار حالي'})` : 'غير مرفق'; }
+
+  previewProof(application: PlatformWorkspaceApplication): void {
+    if (!application.paymentRequestId) return;
+    this.releaseProofUrl();
+    this.proofPreviewTarget.set(application);
+    this.proofLoading.set(true);
+    this.proofLoadError.set(false);
+    this.proofHistory.set([]);
+    this.proofHistoryError.set(false);
+    this.showProofPreview = true;
+    this.loadProofHistory(application);
+    this.paymentService.proof(application.paymentRequestId).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        this.proofBlobUrl.set(url);
+        this.proofSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+        this.proofContentType.set(blob.type || 'application/octet-stream');
+        this.proofLoading.set(false);
+      },
+      error: () => { this.proofLoading.set(false); this.proofLoadError.set(true); }
+    });
+  }
+
+  previewProofVersion(application: PlatformWorkspaceApplication, version: number): void {
+    if (!application.paymentRequestId) return;
+    this.releaseProofUrl();
+    this.proofLoading.set(true);
+    this.proofLoadError.set(false);
+    this.paymentService.proofVersion(application.paymentRequestId, version).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        this.proofBlobUrl.set(url);
+        this.proofSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+        this.proofContentType.set(blob.type || 'application/octet-stream');
+        this.proofLoading.set(false);
+      },
+      error: () => { this.proofLoading.set(false); this.proofLoadError.set(true); }
+    });
+  }
+
+  openProofUpload(application: PlatformWorkspaceApplication): void { if (!application.paymentRequestId) return; this.proofUploadTarget.set(application); this.proofFile = null; this.proofFileName = ''; this.showProofUpload = true; }
+
+  onProofFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (!file) { this.proofFile = null; this.proofFileName = ''; return; }
+    const allowed = ['image/jpeg', 'image/png', 'application/pdf'];
+    if (!allowed.includes(file.type) || file.size <= 0 || file.size > 10 * 1024 * 1024) { this.notify.error('اختر ملف JPG أو PNG أو PDF بحجم لا يتجاوز 10 ميجابايت.'); input.value = ''; this.proofFile = null; this.proofFileName = ''; return; }
+    this.proofFile = file;
+    this.proofFileName = file.name;
+  }
+
+  uploadProof(): void {
+    const application = this.proofUploadTarget();
+    if (!application?.paymentRequestId || !this.proofFile || this.proofUploading()) return;
+    this.proofUploading.set(true);
+    this.paymentService.uploadProof(application.paymentRequestId, this.proofFile).subscribe({
+      next: () => { this.proofUploading.set(false); this.showProofUpload = false; this.notify.success('تم حفظ إثبات الدفع كسجل دائم.'); this.load(); },
+      error: err => { this.proofUploading.set(false); this.notify.error(errMsg(err)); }
+    });
+  }
+
+  closeProofPreview(): void { this.releaseProofUrl(); this.proofPreviewTarget.set(null); this.proofHistory.set([]); }
+
+  private loadProofHistory(application: PlatformWorkspaceApplication): void {
+    if (!application.paymentRequestId) return;
+    this.proofHistoryLoading.set(true);
+    this.paymentService.proofHistory(application.paymentRequestId).subscribe({
+      next: items => { this.proofHistory.set(items); this.proofHistoryLoading.set(false); },
+      error: () => { this.proofHistoryLoading.set(false); this.proofHistoryError.set(true); }
+    });
+  }
+
+  private releaseProofUrl(): void { const url = this.proofBlobUrl(); if (url) URL.revokeObjectURL(url); this.proofBlobUrl.set(null); this.proofSafeUrl.set(null); this.proofContentType.set(''); }
+
   openPaymentReject(application: PlatformWorkspaceApplication): void { if (this.busyId()) return; this.paymentRejectTarget.set(application); this.paymentRejectReason = ''; this.showPaymentReject = true; }
   confirmPaymentReject(): void { const application = this.paymentRejectTarget(); if (!application?.paymentRequestId || this.busyId()) { if (!application?.paymentRequestId) this.notify.error('لا يوجد طلب دفع مرتبط.'); return; } if (!this.paymentRejectReason.trim()) { this.notify.error('أدخل سبب رفض الدفع.'); return; } this.busyId.set(application.id); this.paymentService.reject(application.paymentRequestId, { rejectReason: this.paymentRejectReason.trim() }).subscribe({ next: () => { this.busyId.set(null); this.showPaymentReject = false; this.notify.success('تم رفض الدفع.'); this.load(); }, error: err => { this.busyId.set(null); this.notify.error(errMsg(err)); } }); }
   openInformation(application: PlatformWorkspaceApplication): void { this.informationTarget.set(application); this.informationMessage = ''; this.informationFields = this.fieldHint(application); this.showInformation = true; }
