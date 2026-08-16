@@ -95,6 +95,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       if (errorCode === 'PAYMENT_PROOF_REQUIRED') {
         errorMessage = 'أرفق إثبات الدفع واحفظه أولًا قبل اعتماد الدفع.';
       }
+      if (/not editable application fields/i.test(errorMessage)) {
+        errorMessage = 'اختر حقولًا مسموحة لهذا النوع من الطلبات قبل إرسال الاستكمال.';
+      }
 
       return throwError(() => ({ ...error, translatedMessage: errorMessage }));
     }),
