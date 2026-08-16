@@ -89,13 +89,13 @@ import {
         @if (createType === PWT.FreelanceCoach) { <label class="lf-label">التخصص<input class="lf-input" [(ngModel)]="createSpecialization" /></label><label class="lf-label">طريقة التدريب<input class="lf-input" [(ngModel)]="createDeliveryMode" /></label> }
         <label class="lf-label full">الوصف<textarea class="lf-input" rows="3" [(ngModel)]="createDescription"></textarea></label>
       </div>
-      <p class="create-note"><i class="pi pi-info-circle"></i> سيُنشأ الطلب والدفع المعلّق، وتُعرض كلمة المرور المؤقتة مرة واحدة فقط إذا كانت الهوية جديدة.</p>
+      <p class="create-note"><i class="pi pi-info-circle"></i> سيُنشأ الطلب والدفع المعلّق. بعد الإنشاء يجب حفظ إثبات الدفع قبل اعتماده؛ وتُعرض كلمة المرور المؤقتة مرة واحدة فقط إذا كانت الهوية جديدة.</p>
       <ng-template pTemplate="footer"><button pButton label="إلغاء" class="p-button-text p-button-secondary" (click)="showCreate = false"></button><button pButton label="إنشاء الطلب" icon="pi pi-plus" [disabled]="creating()" (click)="createWorkspace()"></button></ng-template>
     </p-dialog>
 
-    <p-dialog header="بيانات الدخول المؤقتة" [(visible)]="showCredentials" [modal]="true" [style]="{ width: '460px', maxWidth: '94vw' }" [draggable]="false">
+    <p-dialog header="بيانات الدخول المؤقتة" [(visible)]="showCredentials" (onHide)="closeCredentials()" [modal]="true" [style]="{ width: '460px', maxWidth: '94vw' }" [draggable]="false">
       <div class="credential-warning"><i class="pi pi-exclamation-triangle"></i><span>احفظ كلمة المرور الآن؛ لن تُعرض مرة أخرى من الخادم.</span></div><div class="credential-row"><span>البريد</span><b dir="ltr">{{ credentialEmail }}</b></div><div class="credential-row"><span>كلمة المرور المؤقتة</span><b dir="ltr">{{ credentialPassword }}</b></div>
-      <ng-template pTemplate="footer"><button pButton label="تم الحفظ" icon="pi pi-check" (click)="showCredentials = false"></button></ng-template>
+      <ng-template pTemplate="footer"><button pButton label="تم الحفظ" icon="pi pi-check" (click)="closeCredentials()"></button></ng-template>
     </p-dialog>
 
     <p-dialog header="مراجعة إثبات الدفع" [(visible)]="showProofPreview" (onHide)="closeProofPreview()" [modal]="true" [style]="{ width: '720px', maxWidth: '96vw' }" [draggable]="false">
@@ -189,7 +189,7 @@ export class WorkspaceApplicationsComponent implements OnInit {
   createType = PlatformWorkspaceType.Gym; createPlanId = ''; createWorkspaceName = ''; createWorkspaceIdentifier = '';
   createOwnerFullName = ''; createOwnerEmail = ''; createOwnerPhone = ''; createBrandName = ''; createDescription = '';
   createSpecialization = ''; createDeliveryMode = '';
-  credentialEmail = ''; credentialPassword = '';
+  credentialEmail = ''; credentialPassword = ''; private proofAfterCreate: PlatformWorkspaceApplication | null = null;
   readonly statusOptions = [
     { label: 'مسودة', value: PlatformApplicationStatus.Draft }, { label: 'مُقدّم', value: PlatformApplicationStatus.Submitted }, { label: 'قيد المراجعة', value: PlatformApplicationStatus.UnderReview }, { label: 'مطلوب استكمال', value: PlatformApplicationStatus.NeedsMoreInformation }, { label: 'مقبول', value: PlatformApplicationStatus.Approved }, { label: 'مرفوض', value: PlatformApplicationStatus.Rejected }, { label: 'ملغى', value: PlatformApplicationStatus.Cancelled }, { label: 'منتهٍ', value: PlatformApplicationStatus.Expired },
   ];
@@ -217,8 +217,9 @@ export class WorkspaceApplicationsComponent implements OnInit {
     if (!this.createPlanId || !this.createWorkspaceName.trim() || !this.createWorkspaceIdentifier.trim() || !this.createOwnerFullName.trim() || !this.createOwnerEmail.trim()) { this.notify.error('أكمل نوع المساحة والباقة وبيانات المالك والمساحة.'); return; }
     const plan = this.plans().find(item => item.id === this.createPlanId); if (!plan) { this.notify.error('اختر باقة صحيحة.'); return; }
     const command: CreatePlatformWorkspaceApplicationCommand = { workspaceType: this.createType, workspaceName: this.createWorkspaceName.trim(), workspaceIdentifier: this.createWorkspaceIdentifier.trim().toLowerCase(), ownerFullName: this.createOwnerFullName.trim(), ownerEmail: this.createOwnerEmail.trim(), ownerPhoneNumber: this.createOwnerPhone.trim() || undefined, planId: plan.id, billingCycle: plan.billingCycle, brandName: this.createBrandName.trim() || undefined, description: this.createDescription.trim() || undefined, specialization: this.createSpecialization.trim() || undefined, deliveryMode: this.createDeliveryMode.trim() || undefined };
-    this.creating.set(true); this.service.create(command).subscribe({ next: result => { this.creating.set(false); this.showCreate = false; this.credentialEmail = result.oneTimeCredentials?.email || ''; this.credentialPassword = result.oneTimeCredentials?.temporaryPassword || ''; this.showCredentials = Boolean(result.oneTimeCredentials); this.resetCreate(); this.load(); this.notify.success('تم إنشاء الطلب والدفع المعلّق.'); }, error: err => { this.creating.set(false); this.notify.error(errMsg(err)); } });
+    this.creating.set(true); this.service.create(command).subscribe({ next: result => { this.creating.set(false); this.showCreate = false; this.credentialEmail = result.oneTimeCredentials?.email || ''; this.credentialPassword = result.oneTimeCredentials?.temporaryPassword || ''; this.showCredentials = Boolean(result.oneTimeCredentials); this.proofAfterCreate = !result.application.hasPaymentProof && result.application.paymentRequestId ? result.application : null; this.resetCreate(); this.load(); const proofTarget = this.proofAfterCreate; this.proofAfterCreate = null; if (!result.oneTimeCredentials && proofTarget) this.openProofUpload(proofTarget); this.notify.success('تم إنشاء الطلب. الخطوة التالية: حفظ إثبات الدفع قبل الاعتماد.'); }, error: err => { this.creating.set(false); this.notify.error(errMsg(err)); } });
   }
+  closeCredentials(): void { this.showCredentials = false; const application = this.proofAfterCreate; this.proofAfterCreate = null; if (application) this.openProofUpload(application); }
   resetCreate(): void { this.createPlanId = ''; this.createWorkspaceName = ''; this.createWorkspaceIdentifier = ''; this.createOwnerFullName = ''; this.createOwnerEmail = ''; this.createOwnerPhone = ''; this.createBrandName = ''; this.createDescription = ''; this.createSpecialization = ''; this.createDeliveryMode = ''; }
 
   startReview(application: PlatformWorkspaceApplication): void { this.run(application, () => this.service.startReview(application), 'بدأت مراجعة الطلب.'); }
