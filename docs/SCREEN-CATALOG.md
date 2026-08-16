@@ -37,7 +37,7 @@
 | `/payment-methods` | طرق الدفع | `ManagePaymentRequests` | `/payment-methods` | CRUD طرق الدفع اليدوي | لا تضع أسراراً ظاهرة. |
 | `/payment-requests` | طلبات الدفع | `ManagePaymentRequests` | `/payment-requests` و`/{id}/proof` و`/{id}/proofs` | معاينة الإثبات الحالي/التاريخي، موافقة/رفض بسبب | الملفات خاصة، والبيانات المعروضة لا تحتوي storage key؛ قرار الدفع منفصل عن اعتماد Workspace. |
 | `/backups` | النسخ الاحتياطية | `ManagePlatformBackups` | `/backups`, `/batch`, `/batches`, `/restores/capabilities` | وضع افتراضي لنسخة مساحة عمل واحدة Gym/FreelanceCoach، ووضع منفصل للنطاقات الجماعية؛ متابعة artifacts، checksum/manifest، retry آمن | السجلات immutable؛ لا connection material أو اسم قاعدة بيانات؛ `ManualOnly` لا يضيف زر restore. |
-| `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `GET/POST /api/platform/database-resources` | مراجعة Pool وتسجيل مورد مشفر، مع عرض الحالة والصحة والتخصيص | لا تعرض connection string أو اسم قاعدة البيانات أو القيمة المشفرة؛ التسجيل write-once من الخادم ويعرض `hasProtectedConnection` فقط. |
+| `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `GET/POST/DELETE /api/platform/database-resources`، `test-connection`، `repair-connection`، `status`، `migrations`، `backup` | مراجعة Pool وتسجيل/اختبار/إصلاح مورد مشفر، مع عرض اسم DB والتشخيص والصحة والتخصيص | تعرض اسم DB وhost/port الآمنين وكود/سبب آخر فحص، ولا تعرض connection string أو القيمة المشفرة؛ الحذف النهائي محمي بالخادم. |
 | `/audit-logs` | سجل المراجعة | `ManagePlatformReports` | `/audit-logs` | بحث وقراءة | immutable؛ لا CRUD. |
 | `/invoices` | الفواتير | `ManagePlatformReports` | `/invoices` | بحث وقراءة | تصحيح بعكس مالي جديد. |
 | `/administrators` | مدراء المنصة | `ManagePlatformReports` | `/administrators` | إنشاء/تفعيل/تعطيل | أقل صلاحية؛ لا مشاركة حساب. |
@@ -55,7 +55,7 @@
 المحاولة لدفعات `Failed` أو `Partial` فقط وبنطاق الأهداف الذي يحدده الخادم. ولا تعرض الشاشة سلسلة
 اتصال أو اسم قاعدة بيانات أو مسار تخزين أو بيانات اعتماد للمزود.
 
-تدعم شاشة `/database-resources` فلاتر دورة الحياة ومعرّف مساحة العمل من الخادم. أرقام الملخص مرتبطة بالصفحة الحالية لأن الجدول يستخدم الترقيم. يتاح `إصلاح` للصفوف `Available` و`Allocated` و`Failed` و`Disabled`؛ ويتحقق الخادم من القيمة البديلة ويحميها ويحدّث الربط المخصص داخل معاملة. لا تعرض الواجهة القيمة المحمية أو بيانات تعريف قاعدة البيانات.
+تدعم شاشة `/database-resources` فلاتر دورة الحياة ومعرّف مساحة العمل من الخادم. أرقام الملخص مرتبطة بالصفحة الحالية لأن الجدول يستخدم الترقيم. يتاح `فحص الاتصال` لكل صف، ويتاح `إصلاح` للصفوف `Available` و`Allocated` و`Failed` و`Disabled`؛ ويتحقق الخادم من القيمة البديلة ويحميها ويحدّث الربط المخصص. يعرض الصف اسم قاعدة البيانات وhost/port الآمنين ووقت ومدة وكود ورسالة آخر فحص، بينما لا تعرض الواجهة القيمة المحمية. يظهر `حذف نهائي` فقط عندما يعيد الخادم `canDelete=true`، وإلا يظهر سبب الحماية.
 | `/reports` | التقارير | `ManagePlatformReports` | `/reports/overview`, `/reports/catalog` | قراءة المؤشرات والكتالوج، إعادة محاولة المصدر الفاشل، طباعة/CSV | فشل مصدر لا يخفي نجاح المصدر الآخر؛ افتح المصدر قبل القرار. |
 | `/alerts` | التنبيهات | `ManagePlatformReports` | `/alerts` | فرز/متابعة مصدر التنبيه | 500/503 تحتاج Logs وخادم. |
 | `/documentation` | المرجع والدليل | `ManagePlatformReports` | محتوى الواجهة الموثق | بحث وفتح شاشة | لا يحل محل تحقق Backend. |

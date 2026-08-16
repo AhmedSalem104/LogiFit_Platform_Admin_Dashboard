@@ -25,17 +25,21 @@ export type DatabaseResourceLifecycleStatus =
   | 'RestorePending'
   | string;
 
-/** Safe DTO. The API deliberately never returns database names or connection material. */
+/** Safe DTO. The API returns operational metadata and sanitized diagnostics, never connection material. */
 export interface DatabaseResource {
   id: string;
   resourceCode: string;
+  databaseName: string;
   provider: string;
+  serverKey: string | null;
+  serverHost: string | null;
+  serverPort: number | null;
   hasProtectedConnection: boolean;
   status: DatabaseResourceStatus;
   lifecycleStatus: DatabaseResourceLifecycleStatus;
   tenantId: string | null;
   tenantName: string | null;
-  workspaceType: string | null;
+  workspaceType: number | string | null;
   workspaceStatus: number | string | null;
   subscriptionStatus: number | string | null;
   provisioningStatus: number | string | null;
@@ -43,12 +47,21 @@ export interface DatabaseResource {
   reservedAtUtc: string | null;
   assignedAtUtc: string | null;
   lastHealthCheckAtUtc: string | null;
+  lastConnectionTestAtUtc: string | null;
+  lastConnectionTestSucceeded: boolean | null;
+  lastConnectionTestDurationMs: number | null;
+  lastConnectionErrorCode: string | null;
+  lastConnectionErrorMessage: string | null;
+  lastError: string | null;
   sizeBytes: number | null;
   schemaVersion: string | null;
-  lastError: string | null;
   backupCount: number;
-  lastBackupStatus: string | null;
+  lastBackupStatus: string | number | null;
   lastBackupCompletedAtUtc: string | null;
+  canDelete: boolean;
+  deletionBlockedReason: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string | null;
 }
 
 export interface RegisterDatabaseResourceCommand {
@@ -61,9 +74,13 @@ export interface RegisterDatabaseResourceCommand {
 export interface ConnectionTestResult {
   succeeded: boolean;
   databaseName: string;
-  serverKey: string | null;
+  serverHost: string | null;
+  serverPort: number | null;
+  actualDatabaseName: string | null;
   errorCode: string | null;
   message: string;
+  durationMs: number | null;
+  testedAtUtc: string;
 }
 
 export interface ResourceOperationResult {
@@ -94,6 +111,10 @@ export class DatabaseResourcesService {
     return this.http.post<ConnectionTestResult>(`${this.base}/test-connection`, { databaseName, connectionString });
   }
 
+  testStoredConnection(id: string): Observable<ConnectionTestResult> {
+    return this.http.post<ConnectionTestResult>(`${this.base}/${id}/test-connection`, {});
+  }
+
   register(command: RegisterDatabaseResourceCommand): Observable<DatabaseResource> {
     return this.http.post<DatabaseResource>(this.base, command);
   }
@@ -115,5 +136,9 @@ export class DatabaseResourcesService {
 
   setStatus(id: string, status: 'Available' | 'Disabled' | 'Failed'): Observable<DatabaseResource> {
     return this.http.post<DatabaseResource>(`${this.base}/${id}/status`, { status });
+  }
+
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`);
   }
 }

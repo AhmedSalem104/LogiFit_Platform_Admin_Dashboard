@@ -2,7 +2,7 @@
 
 > **Source of truth:** this document is generated from the API controllers by `Scripts/Export-ApiEndpointCatalog.ps1`. Do not edit endpoint rows manually; change the controller, rerun the script, and include the refreshed catalog in the same Pull Request.
 
-Generated: `2026-08-15 11:20 UTC`  |  Total endpoints: **396**
+Generated: `2026-08-16 14:15 UTC`  |  Total endpoints: **406**
 
 ## Contract rules
 
@@ -138,8 +138,50 @@ Generated: `2026-08-15 11:20 UTC`  |  Total endpoints: **396**
 #### `POST /api/platform/database-resources` - `Register`
 
 - **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
-- **Inputs:** Body `request`: `RegisterDatabaseResourceRequest`<br>Handler signature: `[FromBody] RegisterDatabaseResourceRequest request, [FromServices] IConnectionStringProtector connectionStringProtector`
+- **Inputs:** Body `request`: `RegisterDatabaseResourceRequest`<br>Handler signature: `[FromBody] RegisterDatabaseResourceRequest request`
 - **Declared response:** typeof(PlatformDatabaseResourceDto), StatusCodes.Status201Created
+
+#### `DELETE /api/platform/database-resources/{id:guid}` - `Delete`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<IActionResult>
+
+#### `POST /api/platform/database-resources/{id:guid}/backup` - `CreateBackup`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<ActionResult<BackupBatchDto>>
+
+#### `POST /api/platform/database-resources/{id:guid}/migrations` - `RunMigrations`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<ActionResult<PlatformResourceOperationDto>>
+
+#### `POST /api/platform/database-resources/{id:guid}/repair-connection` - `RepairConnection`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
+- **Inputs:** Body `request`: `RepairConnectionRequest`<br>Handler signature: `Guid id, [FromBody] RepairConnectionRequest request`
+- **Declared response:** Task<ActionResult<PlatformResourceOperationDto>>
+
+#### `POST /api/platform/database-resources/{id:guid}/status` - `SetStatus`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
+- **Inputs:** Body `request`: `SetResourceStatusRequest`<br>Handler signature: `Guid id, [FromBody] SetResourceStatusRequest request`
+- **Declared response:** Task<ActionResult<PlatformDatabaseResourceDto>>
+
+#### `POST /api/platform/database-resources/{id:guid}/test-connection` - `TestStoredConnection`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** Task<ActionResult<PlatformConnectionTestDto>>
+
+#### `POST /api/platform/database-resources/test-connection` - `TestConnection`
+
+- **Access:** JWT + Policy: `Permissions.ManagePlatformBackups`
+- **Inputs:** Body `request`: `TestConnectionRequest`<br>Handler signature: `[FromBody] TestConnectionRequest request`
+- **Declared response:** Task<ActionResult<PlatformConnectionTestDto>>
 
 ### PlatformDiagnostics
 
@@ -308,8 +350,20 @@ Generated: `2026-08-15 11:20 UTC`  |  Total endpoints: **396**
 #### `GET /api/platform/payment-requests/{id:guid}/proof` - `Proof`
 
 - **Access:** JWT + Policy: `Permissions.ManagePaymentRequests`
-- **Inputs:** Handler signature: `Guid id`
+- **Inputs:** Query `version`: `int?`<br>Handler signature: `Guid id, [FromQuery] int? version`
 - **Declared response:** Task<IActionResult>
+
+#### `POST /api/platform/payment-requests/{id:guid}/proof` - `UploadProof`
+
+- **Access:** JWT + Policy: `Permissions.ManagePaymentRequests`
+- **Inputs:** Handler signature: `Guid id, [FromForm(Name = "proof")] IFormFile? proof`
+- **Declared response:** typeof(PaymentRequestDto), StatusCodes.Status200OK
+
+#### `GET /api/platform/payment-requests/{id:guid}/proofs` - `ProofHistory`
+
+- **Access:** JWT + Policy: `Permissions.ManagePaymentRequests`
+- **Inputs:** Handler signature: `Guid id`
+- **Declared response:** typeof(IReadOnlyList<PaymentProofDto>), StatusCodes.Status200OK
 
 #### `POST /api/platform/payment-requests/{id:guid}/reject` - `Reject`
 
@@ -2470,6 +2524,12 @@ Generated: `2026-08-15 11:20 UTC`  |  Total endpoints: **396**
 - **Access:** Server default (not declared explicitly)
 - **Inputs:** Body `System`: `IReadOnlyDictionary<string,`<br>Handler signature: `[FromBody] IReadOnlyDictionary<string, System.Text.Json.JsonElement> fields`
 - **Declared response:** typeof(ApplicationTrackingStatusDto), StatusCodes.Status200OK
+
+#### `POST /api/workspace-applications/tracking/payment-proof` - `UploadTrackingPaymentProof`
+
+- **Access:** Server default (not declared explicitly)
+- **Inputs:** Handler signature: `[FromForm(Name = "proof")] IFormFile? proof`
+- **Declared response:** typeof(ApplicationPaymentProofUploadedDto), StatusCodes.Status200OK
 
 #### `POST /api/workspace-applications/tracking/resubmit` - `Resubmit`
 

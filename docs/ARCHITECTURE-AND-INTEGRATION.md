@@ -70,12 +70,14 @@ flowchart LR
 - لا تنفذ Sorting/Filtering محلياً على بيانات لم تحمل كاملة.
 - تقرأ الشاشات المالية والتدقيق والعمليات والنسخ سجلات تاريخية فقط، ولا تضيف CRUD
   عاماً إليها.
-- شاشة `/database-resources` تستخدم `GET /api/platform/database-resources` وتعرض
-  `hasProtectedConnection` كمؤشر Boolean آمن لوجود قيمة محمية؛ لا تعتمد على `DatabaseName` ولا
-  تقرأ أو تعرض مادة الاتصال. يستدعي التسجيل `POST /api/platform/database-resources`، ويستدعي اختبار
-  الاتصال `POST /api/platform/database-resources/test-connection`، بينما يستدعي الإصلاح والترحيلات
-  وفحص الصحة والنسخ نقاط الخادم المحمية. يشفر الخادم القيمة ولا يعيدها؛ ولا توجد edit/delete عامة،
-  ويظل التخصيص والنسخ تحت سلطة الخادم.
+- شاشة `/database-resources` تستخدم `GET /api/platform/database-resources` وتعرض اسم قاعدة
+  البيانات وmetadata الخادم الآمنة و`hasProtectedConnection` والتشخيص المحفوظ؛ لا تقرأ أو تعرض
+  مادة الاتصال. يستدعي التسجيل `POST /api/platform/database-resources`، واختبار قيمة جديدة
+  `POST /api/platform/database-resources/test-connection`، وفحص القيمة المحفوظة
+  `POST /api/platform/database-resources/{id}/test-connection`. يستدعي الإصلاح والترحيلات
+  وفحص الصحة والنسخ نقاط الخادم المحمية، بينما `DELETE /api/platform/database-resources/{id}`
+  حذف نهائي مشروط يعيده الخادم فقط للمورد غير المستخدم. يشفر الخادم القيمة ولا يعيدها؛ ويظل
+  التخصيص والنسخ تحت سلطة الخادم.
 
 ## تكامل النسخ الاحتياطي
 

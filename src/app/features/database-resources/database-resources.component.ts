@@ -120,8 +120,13 @@ interface ResourceEditor {
         <ng-template pTemplate="body" let-row>
           <tr>
             <td>
-              <div class="font-bold text-slate-800" dir="ltr">{{ row.resourceCode || shortId(row.id) }}</div>
+              <div class="font-bold text-slate-800" dir="ltr">{{ row.databaseName || row.resourceCode || shortId(row.id) }}</div>
+              <div class="mt-1 text-xs text-slate-500" dir="ltr">المورد: {{ row.resourceCode || shortId(row.id) }}</div>
               <div class="mt-1 text-xs text-slate-500" dir="ltr">{{ providerLabel(row.provider) }}</div>
+              @if (row.serverHost) {
+                <div class="mt-1 text-xs text-slate-500" dir="ltr"><i class="pi pi-cloud me-1"></i>{{ row.serverHost }}{{ row.serverPort ? ':' + row.serverPort : '' }}</div>
+              }
+              @if (row.serverKey) { <div class="mt-1 text-[11px] text-slate-400" dir="ltr">{{ row.serverKey }}</div> }
               <div class="mt-1 text-[11px]" [class.text-emerald-600]="row.hasProtectedConnection" [class.text-amber-600]="!row.hasProtectedConnection">
                 <i [class]="row.hasProtectedConnection ? 'pi pi-lock' : 'pi pi-exclamation-triangle'"></i>
                 {{ row.hasProtectedConnection ? 'تم حفظ الاتصال المحمي' : 'الاتصال غير موجود' }}
@@ -137,10 +142,19 @@ interface ResourceEditor {
               }
             </td>
             <td>
-                <div class="text-sm text-slate-700">{{ provisioningLabel(row) }}</div>
-                @if (row.provisioningError || row.lastError) {
+              <div class="text-sm text-slate-700">{{ provisioningLabel(row) }}</div>
+              @if (row.provisioningError || row.lastError) {
                 <div class="text-xs font-semibold text-rose-600">{{ errorLabel(row.provisioningError || row.lastError) }}</div>
               }
+              @if (row.lastConnectionTestSucceeded === true) {
+                <div class="mt-2 text-xs font-semibold text-emerald-600"><i class="pi pi-check-circle me-1"></i>آخر فحص ناجح{{ row.lastConnectionTestDurationMs ? ' · ' + row.lastConnectionTestDurationMs + 'ms' : '' }}</div>
+              } @else if (row.lastConnectionTestSucceeded === false) {
+                <div class="mt-2 text-xs font-semibold text-rose-600"><i class="pi pi-times-circle me-1"></i>{{ errorLabel(row.lastConnectionErrorCode) || row.lastConnectionErrorMessage || 'آخر فحص فشل' }}</div>
+                @if (row.lastConnectionErrorMessage && row.lastConnectionErrorMessage !== errorLabel(row.lastConnectionErrorCode)) {
+                  <div class="mt-1 max-w-xs text-[11px] text-rose-500">{{ row.lastConnectionErrorMessage }}</div>
+                }
+              }
+              <div class="mt-1 text-xs text-slate-500">آخر فحص: {{ row.lastConnectionTestAtUtc ? formatDate(row.lastConnectionTestAtUtc) : 'لم يتم الاختبار' }}</div>
               <div class="mt-1 text-xs text-slate-500">الصحة: {{ row.lastHealthCheckAtUtc ? formatDate(row.lastHealthCheckAtUtc) : 'لم يتم التحقق' }}</div>
               @if (row.schemaVersion) { <div class="text-[11px] text-slate-400" dir="ltr">{{ row.schemaVersion }}</div> }
             </td>
@@ -151,6 +165,7 @@ interface ResourceEditor {
             </td>
             <td class="whitespace-nowrap text-center">
               <div class="flex flex-wrap justify-center gap-1">
+                <button pButton type="button" label="فحص الاتصال" icon="pi pi-link" class="p-button-sm p-button-outlined" [loading]="busyId() === row.id && busyAction() === 'test'" [disabled]="busyId() !== null" (click)="testStoredConnection(row)"></button>
                 @if (canRepair(row)) {
                   <button pButton type="button" label="إصلاح" icon="pi pi-wrench" class="p-button-sm p-button-warning p-button-outlined" title="إصلاح الاتصال المحمي" [disabled]="busyId() !== null" (click)="openRepair(row)"></button>
                 }
@@ -166,7 +181,12 @@ interface ResourceEditor {
                 @if (isDisabled(row)) {
                   <button pButton type="button" label="تفعيل" icon="pi pi-check" class="p-button-sm p-button-success p-button-text" [loading]="busyId() === row.id && busyAction() === 'status'" [disabled]="busyId() !== null" (click)="setStatus(row, 'Available')"></button>
                 }
-                @if (!canRepair(row) && !canRunMigrations(row) && !isAllocated(row) && !canDisable(row) && !isDisabled(row)) {
+                @if (row.canDelete) {
+                  <button pButton type="button" label="حذف نهائي" icon="pi pi-trash" class="p-button-sm p-button-danger p-button-outlined" [loading]="busyId() === row.id && busyAction() === 'delete'" [disabled]="busyId() !== null" (click)="deleteResource(row)"></button>
+                } @else if (row.deletionBlockedReason) {
+                  <span class="text-[11px] text-slate-400" [title]="errorLabel(row.deletionBlockedReason)"><i class="pi pi-lock me-1"></i>الحذف محمي</span>
+                }
+                @if (!canRepair(row) && !canRunMigrations(row) && !isAllocated(row) && !canDisable(row) && !isDisabled(row) && !row.canDelete) {
                   <span class="text-xs text-slate-400">يديرها الخادم</span>
                 }
               </div>
@@ -231,7 +251,7 @@ interface ResourceEditor {
         @if (!repairMode) {
           <button pButton type="button" label="اختبار الاتصال" icon="pi pi-link" class="p-button-outlined" [loading]="testing()" [disabled]="!editor.databaseName.trim() || !editor.connectionString.trim()" (click)="testConnection()"></button>
         }
-        <button pButton type="submit" [label]="repairMode ? 'إصلاح وحماية' : 'تسجيل آمن'" icon="pi pi-lock" [loading]="saving() || registering()" [disabled]="saving() || registering() || !editor.connectionString.trim() || (!repairMode && (!editor.provider.trim() || !editor.databaseName.trim()))" (click)="save()"></button>
+        <button pButton type="submit" [label]="repairMode ? 'إصلاح وحماية' : 'تسجيل آمن'" icon="pi pi-lock" [loading]="saving() || registering()" [disabled]="saving() || registering() || !editor.connectionString.trim() || (!repairMode && (!editor.provider.trim() || !editor.databaseName.trim()))"></button>
       </ng-template>
     </p-dialog>
   `,
@@ -382,6 +402,20 @@ export class DatabaseResourcesComponent implements OnInit {
     });
   }
 
+  testStoredConnection(row: DatabaseResource): void {
+    if (!this.startBusy(row.id, 'test')) return;
+    this.service.testStoredConnection(row.id).subscribe({
+      next: result => {
+        this.finishBusy();
+        result.succeeded
+          ? this.notify.success(`${this.connectionTestMessage(result)}${result.durationMs ? ` (${result.durationMs}ms)` : ''}`)
+          : this.notify.error(this.connectionTestMessage(result));
+        this.load();
+      },
+      error: error => { this.finishBusy(); this.notify.error(errMsg(error)); this.load(); },
+    });
+  }
+
   save(): void {
     if (this.saving() || this.registering()) return;
     if (this.repairMode && this.editingId) {
@@ -422,6 +456,24 @@ export class DatabaseResourcesComponent implements OnInit {
       },
       error: error => { this.registering.set(false); this.notify.error(errMsg(error)); },
     });
+  }
+
+  deleteResource(row: DatabaseResource): void {
+    if (!row.canDelete || !this.startBusy(row.id, 'delete')) return;
+    void this.notify.confirm({
+      header: 'هل تريد حذف مورد قاعدة البيانات نهائيًا؟',
+      message: `سيُحذف المورد «${row.databaseName || row.resourceCode || this.shortId(row.id)}» وسلسلة الاتصال المحمية من قاعدة المنصة. لا يمكن التراجع عن هذا الإجراء.`,
+      acceptLabel: 'حذف نهائي',
+      rejectLabel: 'إلغاء',
+      danger: true,
+      icon: 'pi pi-trash',
+    }).then(confirmed => {
+      if (!confirmed) { this.finishBusy(); return; }
+      this.service.delete(row.id).subscribe({
+        next: () => { this.finishBusy(); this.notify.success('تم حذف مورد قاعدة البيانات نهائيًا.'); this.load(); },
+        error: error => { this.finishBusy(); this.notify.error(errMsg(error)); this.load(); },
+      });
+    }).catch(() => this.finishBusy());
   }
 
   runMigrations(row: DatabaseResource): void {
@@ -521,6 +573,11 @@ export class DatabaseResourcesComponent implements OnInit {
     if (row.provisioningError || row.lastError) return 'فشل';
     if (row.provisioningStatus === null || row.provisioningStatus === undefined) return 'لم يبدأ';
     switch (String(row.provisioningStatus)) {
+      case '1': return 'قيد الانتظار';
+      case '2': return 'بانتظار سعة قاعدة بيانات';
+      case '3': return 'جارٍ التجهيز';
+      case '4': return 'اكتمل';
+      case '5': return 'فشل';
       case 'Pending': return 'قيد الانتظار';
       case 'AwaitingDatabaseCapacity': return 'بانتظار سعة قاعدة بيانات';
       case 'Provisioning': return 'جارٍ التجهيز';
@@ -530,9 +587,9 @@ export class DatabaseResourcesComponent implements OnInit {
     }
   }
 
-  workspaceLabel(workspaceType: string | null): string {
-    if (workspaceType === 'FreelanceCoach') return 'مساحة مدرب حر';
-    if (workspaceType === 'Gym') return 'مساحة جيم';
+  workspaceLabel(workspaceType: number | string | null): string {
+    if (workspaceType === 'FreelanceCoach' || workspaceType === 2 || workspaceType === '2') return 'مساحة مدرب حر';
+    if (workspaceType === 'Gym' || workspaceType === 1 || workspaceType === '1') return 'مساحة جيم';
     return 'مساحة العمل المخصصة';
   }
 
@@ -542,8 +599,13 @@ export class DatabaseResourcesComponent implements OnInit {
     return provider;
   }
 
-  backupStatusLabel(status: string | null | undefined): string {
+  backupStatusLabel(status: string | number | null | undefined): string {
     switch (status) {
+      case 3: return 'مكتملة';
+      case 2: return 'قيد التنفيذ';
+      case 4: return 'مكتملة جزئيًا';
+      case 5: return 'فاشلة';
+      case 1: return 'قيد الانتظار';
       case 'Completed': return 'مكتملة';
       case 'Running': return 'قيد التنفيذ';
       case 'Partial': return 'مكتملة جزئيًا';
@@ -553,7 +615,7 @@ export class DatabaseResourcesComponent implements OnInit {
       case null:
       case undefined:
       case '': return 'لا توجد نسخة بعد';
-      default: return status;
+      default: return String(status);
     }
   }
 
@@ -561,12 +623,30 @@ export class DatabaseResourcesComponent implements OnInit {
     if (!error) return '';
     switch (error) {
       case 'DATABASE_CONNECTION_NOT_CONFIGURED': return 'لم يتم إعداد اتصال قاعدة البيانات.';
+      case 'DATABASE_CONNECTION_STRING_REQUIRED': return 'سلسلة الاتصال مطلوبة.';
+      case 'DATABASE_CONNECTION_REPAIR_CONFIRMATION_REQUIRED': return 'يجب تأكيد استبدال اتصال قاعدة البيانات.';
       case 'DATABASE_CONNECTION_FAILED': return 'فشل الاتصال بقاعدة البيانات.';
       case 'DATABASE_HEALTH_CHECK_FAILED': return 'فشل فحص صحة قاعدة البيانات.';
       case 'TENANT_DATABASE_HEALTH_CHECK_FAILED': return 'فشل فحص صحة قاعدة بيانات مساحة العمل.';
       case 'DATABASE_RESOURCE_UNAVAILABLE': return 'مورد قاعدة البيانات غير متاح.';
       case 'DATABASE_CAPACITY_UNAVAILABLE': return 'لا توجد سعة متاحة في Pool قواعد البيانات.';
       case 'PROVISIONING_FAILED': return 'فشل تجهيز قاعدة البيانات.';
+      case 'DATABASE_CONNECTION_STRING_INVALID': return 'صيغة سلسلة الاتصال غير صحيحة.';
+      case 'DATABASE_CONNECTION_SERVER_REQUIRED': return 'لم يتم تحديد خادم قاعدة البيانات.';
+      case 'DATABASE_CONNECTION_TIMEOUT': return 'انتهت مهلة الاتصال؛ تحقق من الخادم والمنفذ.';
+      case 'DATABASE_AUTHENTICATION_FAILED': return 'فشل التحقق من بيانات دخول قاعدة البيانات.';
+      case 'DATABASE_NOT_FOUND': return 'قاعدة البيانات المطلوبة غير موجودة أو غير متاحة.';
+      case 'DATABASE_CONNECTION_REFUSED': return 'تعذر الوصول إلى خادم قاعدة البيانات.';
+      case 'DATABASE_TLS_FAILED': return 'فشل الاتصال الآمن؛ تحقق من إعدادات الشهادة.';
+      case 'DATABASE_CONNECTION_UNPROTECT_FAILED': return 'تعذر قراءة الاتصال المحمي على الخادم.';
+      case 'TENANT_MIGRATION_FAILED': return 'فشلت الترحيلات أو فحص صحة قاعدة البيانات.';
+      case 'DATABASE_RESOURCE_RESERVED': return 'المورد محجوز أو قيد الاستخدام.';
+      case 'DATABASE_RESOURCE_ASSIGNED': return 'المورد مرتبط بمساحة عمل.';
+      case 'DATABASE_RESOURCE_PROVISIONING': return 'المورد مرتبط بعملية تجهيز نشطة.';
+      case 'DATABASE_RESOURCE_RESTORE_ACTIVE': return 'المورد مرتبط بعملية استعادة نشطة.';
+      case 'DATABASE_RESOURCE_HAS_BACKUPS': return 'للمورد نسخ احتياطية محفوظة؛ الحذف محمي.';
+      case 'DATABASE_RESOURCE_NOT_ASSIGNED': return 'لا يمكن إنشاء نسخة قبل تخصيص المورد لمساحة عمل جاهزة.';
+      case 'BACKUP_SERVICE_UNAVAILABLE': return 'خدمة النسخ الاحتياطي غير جاهزة حاليًا.';
       default: return error;
     }
   }
