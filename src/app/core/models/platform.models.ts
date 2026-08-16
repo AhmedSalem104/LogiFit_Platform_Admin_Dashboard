@@ -351,12 +351,14 @@ export interface PaymentRequestDto {
   planId: string;
   planName: string;
   tenantSubscriptionId: string;
+  applicationRequestId: string | null;
   amount: number;
   currency: string;
   paymentMethodId: string;
   transactionNumber: string;
   paymentDate: string;
-  proofFileUrl: string;
+  proofFileUrl: string | null;
+  proofVersion: number;
   notes: string | null;
   status: PaymentRequestStatus;
   operation: PaymentRequestOperation;
@@ -364,6 +366,18 @@ export interface PaymentRequestDto {
   reviewedAt: string | null;
   rejectReason: string | null;
   createdAt: string;
+}
+
+export interface PaymentProofDto {
+  id: string;
+  version: number;
+  originalFileName: string;
+  contentType: string;
+  sizeBytes: number;
+  sha256: string;
+  isCurrent: boolean;
+  uploadedBy: string | null;
+  uploadedAtUtc: string;
 }
 
 export interface RejectPaymentRequestCommand {

@@ -19,7 +19,7 @@
 
 | Route | الشاشة | Permission | مصدر البيانات | الإجراء الأساسي | حد الأعمال |
 |---|---|---|---|---|---|
-| `/workspace-applications` | طابور طلبات مساحات العمل | `ManageTenants` | `/api/platform/workspace-applications` | فلترة الطلب/الدفع/المساحة/الاشتراك/التجهيز، بدء مراجعة / طلب استكمال / اعتماد / رفض | القرار نهائي ومدقق بـ`rowVersion`، ولا تظهر بيانات صحية أو تدريبية. |
+| `/workspace-applications` | طابور طلبات مساحات العمل | `ManageTenants` | `/api/platform/workspace-applications` و`/api/platform/payment-requests/{id}/proof*` | فلترة الطلب/الدفع/المساحة/الاشتراك/التجهيز، معاينة إثبات الدفع، عرض سجل الإصدارات، إرفاق إصدار محفوظ، اعتماد/رفض الدفع ثم اعتماد المساحة/بدء التجهيز | لا يُسمح باعتماد دفع مساحة عمل بلا إثبات حالي؛ كل إصدار محفوظ مع SHA-256 ولا تُحذف النسخ السابقة. القرار النهائي مدقق بـ`rowVersion`، ولا تظهر بيانات صحية أو تدريبية. |
 
 كل Route أدناه lazy-loaded ومحمٍ على مستوى الواجهة والخادم. القائمة الجانبية والمساعد
 يخفيان ما لا يملكه المستخدم، لكن الـPlatform API هو الحاجز الأمني النهائي.
@@ -35,7 +35,7 @@
 | `/quota-definitions` | حدود الاستخدام | `ManagePlans` | `/features/quota-definitions` | تعريف/تعديل/تعطيل حد | الخادم يفرض Quota وConcurrency. |
 | `/feature-dependencies` | اعتماديات الميزات | `ManagePlans` | `/features/dependencies` | إضافة/إزالة علاقة إعداد | لا دوائر أو self-dependency. |
 | `/payment-methods` | طرق الدفع | `ManagePaymentRequests` | `/payment-methods` | CRUD طرق الدفع اليدوي | لا تضع أسراراً ظاهرة. |
-| `/payment-requests` | طلبات الدفع | `ManagePaymentRequests` | `/payment-requests` | موافقة/رفض سبب | قرار معتمد لا يعدل. |
+| `/payment-requests` | طلبات الدفع | `ManagePaymentRequests` | `/payment-requests` و`/{id}/proof` و`/{id}/proofs` | معاينة الإثبات الحالي/التاريخي، موافقة/رفض بسبب | الملفات خاصة، والبيانات المعروضة لا تحتوي storage key؛ قرار الدفع منفصل عن اعتماد Workspace. |
 | `/backups` | النسخ الاحتياطية | `ManagePlatformBackups` | `/backups`, `/batch`, `/batches`, `/restores/capabilities` | وضع افتراضي لنسخة مساحة عمل واحدة Gym/FreelanceCoach، ووضع منفصل للنطاقات الجماعية؛ متابعة artifacts، checksum/manifest، retry آمن | السجلات immutable؛ لا connection material أو اسم قاعدة بيانات؛ `ManualOnly` لا يضيف زر restore. |
 | `/database-resources` | موارد قواعد البيانات | `ManagePlatformBackups` | `GET/POST /api/platform/database-resources` | مراجعة Pool وتسجيل مورد مشفر، مع عرض الحالة والصحة والتخصيص | لا تعرض connection string أو اسم قاعدة البيانات أو القيمة المشفرة؛ التسجيل write-once من الخادم ويعرض `hasProtectedConnection` فقط. |
 | `/audit-logs` | سجل المراجعة | `ManagePlatformReports` | `/audit-logs` | بحث وقراءة | immutable؛ لا CRUD. |

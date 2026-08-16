@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   PaymentRequestDto,
+  PaymentProofDto,
   PaymentRequestStatus,
   PagedResult,
   RejectPaymentRequestCommand,
@@ -31,5 +32,19 @@ export class PaymentRequestsService {
   /** Loads the protected proof through HttpClient so the JWT interceptor is applied. */
   proof(id: string): Observable<Blob> {
     return this.http.get(`${this.base}/${id}/proof`, { responseType: 'blob' });
+  }
+
+  proofHistory(id: string): Observable<PaymentProofDto[]> {
+    return this.http.get<PaymentProofDto[]>(`${this.base}/${id}/proofs`);
+  }
+
+  proofVersion(id: string, version: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/proof?version=${version}`, { responseType: 'blob' });
+  }
+
+  uploadProof(id: string, file: File): Observable<PaymentRequestDto> {
+    const body = new FormData();
+    body.append('proof', file, file.name);
+    return this.http.post<PaymentRequestDto>(`${this.base}/${id}/proof`, body);
   }
 }
