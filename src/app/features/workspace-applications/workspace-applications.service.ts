@@ -53,6 +53,8 @@ export interface PlatformWorkspaceApplication {
   workspaceType: PlatformWorkspaceType | null;
   paymentRequestId: string | null;
   paymentStatus: PaymentRequestStatus | null;
+  hasPaymentProof: boolean;
+  paymentProofVersion: number;
   workspaceStatus: TenantStatus | null;
   subscriptionStatus: TenantSubscriptionStatus | null;
   databaseStatus: number | null;
