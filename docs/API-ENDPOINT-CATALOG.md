@@ -2475,6 +2475,13 @@ Generated: `2026-08-15 11:20 UTC`  |  Total endpoints: **396**
 
 - **Access:** Server default (not declared explicitly)
 - **Inputs:** No request input.
+
+#### `POST /api/workspace-applications/tracking/payment-proof` - `UploadTrackingPaymentProof`
+
+- **Access:** Server default (not declared explicitly); requires the short-lived `X-Application-Tracking-Token` header.
+- **Inputs:** Multipart form field `proof` (`JPG`, `PNG`, or `PDF`, maximum 10 MB).
+- **Declared response:** typeof(ApplicationPaymentProofUploadedDto), StatusCodes.Status200OK
+- **Purpose:** Lets a Gym/FreelanceCoach owner complete a `NeedsMoreInformation` application. The server resolves the payment request from the tracking session, stores a private versioned proof with checksum and audit data, and never accepts a client-supplied payment-request id.
 - **Declared response:** typeof(ApplicationTrackingStatusDto), StatusCodes.Status200OK
 
 ### WorkspaceClientJoinCodes
