@@ -32,6 +32,13 @@ import {
   WorkspaceApplicationsService,
 } from './workspace-applications.service';
 
+const WORKSPACE_EDITABLE_APPLICATION_FIELDS = [
+  'WorkspaceName', 'OwnerFullName', 'BrandName', 'LogoUrl', 'PhotoUrl',
+  'CoverImageUrl', 'BackgroundImageUrl', 'PrimaryColor', 'SecondaryColor',
+  'Bio', 'Specialties', 'Certifications', 'SocialLinks', 'WelcomeMessage',
+  'BookingSettings',
+] as const;
+
 /** Operator workflow for both Gym and FreelanceCoach applications. */
 @Component({
   selector: 'app-workspace-applications',
@@ -305,10 +312,10 @@ export class WorkspaceApplicationsComponent implements OnInit {
 
   openPaymentReject(application: PlatformWorkspaceApplication): void { if (this.busyId()) return; this.paymentRejectTarget.set(application); this.paymentRejectReason = ''; this.showPaymentReject = true; }
   confirmPaymentReject(): void { const application = this.paymentRejectTarget(); if (!application?.paymentRequestId || this.busyId()) { if (!application?.paymentRequestId) this.notify.error('لا يوجد طلب دفع مرتبط.'); return; } if (!this.paymentRejectReason.trim()) { this.notify.error('أدخل سبب رفض الدفع.'); return; } this.busyId.set(application.id); this.paymentService.reject(application.paymentRequestId, { rejectReason: this.paymentRejectReason.trim() }).subscribe({ next: () => { this.busyId.set(null); this.showPaymentReject = false; this.notify.success('تم رفض الدفع.'); this.load(); }, error: err => { this.busyId.set(null); this.notify.error(errMsg(err)); } }); }
-  openInformation(application: PlatformWorkspaceApplication): void { this.informationTarget.set(application); this.informationMessage = ''; this.informationFields = this.fieldHint(application); this.showInformation = true; }
+  openInformation(application: PlatformWorkspaceApplication): void { this.informationTarget.set(application); this.informationMessage = ''; this.informationFields = this.defaultInformationFields(application); this.showInformation = true; }
   openReject(application: PlatformWorkspaceApplication): void { this.rejectTarget.set(application); this.rejectReason = ''; this.showReject = true; }
   confirmReject(): void { const application = this.rejectTarget(); if (!application || !this.rejectReason.trim()) { this.notify.error('أدخل سبب الرفض قبل التأكيد.'); return; } this.run(application, () => this.service.reject(application, this.rejectReason.trim()), 'تم رفض الطلب.'); this.showReject = false; }
-  sendInformationRequest(): void { const application = this.informationTarget(); const fields = this.informationFields.split(',').map(item => item.trim()).filter(Boolean); if (!application || !this.informationMessage.trim() || !fields.length) { this.notify.error('أدخل رسالة الاستكمال وحقلًا واحدًا على الأقل.'); return; } this.run(application, () => this.service.requestInformation(application, this.informationMessage.trim(), fields), 'أُرسل طلب الاستكمال.'); this.showInformation = false; }
+  sendInformationRequest(): void { const application = this.informationTarget(); const fields = [...new Set(this.informationFields.split(',').map(item => item.trim()).filter(Boolean))]; if (!application || !this.informationMessage.trim() || !fields.length) { this.notify.error('أدخل رسالة الاستكمال وحقلًا واحدًا على الأقل.'); return; } const allowedFields = this.editableApplicationFields(application); const invalidFields = fields.filter(field => !allowedFields.includes(field)); if (invalidFields.length) { this.notify.error(`الحقول غير متاحة لهذا النوع: ${invalidFields.join(', ')}. الحقول المسموحة: ${allowedFields.join(', ')}`); return; } this.run(application, () => this.service.requestInformation(application, this.informationMessage.trim(), fields), 'أُرسل طلب الاستكمال.'); this.showInformation = false; }
 
   isWorkspaceApplication(application: PlatformWorkspaceApplication): boolean { return application.applicationType === PlatformApplicationType.GymWorkspaceCreation || application.applicationType === PlatformApplicationType.FreelanceWorkspaceCreation; }
   isFreelance(application: PlatformWorkspaceApplication): boolean { return application.workspaceType === PlatformWorkspaceType.FreelanceCoach || application.applicationType === PlatformApplicationType.FreelanceWorkspaceCreation; }
@@ -320,7 +327,9 @@ export class WorkspaceApplicationsComponent implements OnInit {
   subscriptionLabel(status: TenantSubscriptionStatus | null): string { return ({ 1: 'بانتظار الدفع', 2: 'تجريبي', 3: 'نشط', 4: 'متأخر', 5: 'موقوف', 6: 'ملغى', 7: 'منتهٍ', 8: 'فترة سماح' } as Record<number, string>)[status ?? 0] || 'غير مسجل'; }
   databaseLabel(status: string | null): string { return ({ Unassigned: 'غير مخصصة', Provisioning: 'جاري التجهيز', Ready: 'جاهزة', Unavailable: 'غير متاحة', Failed: 'فشل', Released: 'محررة' } as Record<string, string>)[status || 'Unassigned'] || 'غير مكتملة'; }
   journeyLabel(stage: string): string { return ({ Submitted: 'تم الإرسال', UnderReview: 'قيد المراجعة', MoreInformation: 'مطلوب معلومات', Preparing: 'جاري التجهيز', ProvisioningFailed: 'فشل التجهيز', PaymentRejected: 'الدفع مرفوض', Rejected: 'الطلب مرفوض', Ready: 'جاهزة للدخول' } as Record<string, string>)[stage] || 'غير مكتملة'; }
-  fieldHint(application: PlatformWorkspaceApplication): string { return this.isFreelance(application) ? 'مثال: BrandName, Bio, Specialties' : 'مثال: WorkspaceName, Address'; }
+  private editableApplicationFields(application: PlatformWorkspaceApplication): readonly string[] { return this.isWorkspaceApplication(application) ? WORKSPACE_EDITABLE_APPLICATION_FIELDS : ['FullName']; }
+  private defaultInformationFields(application: PlatformWorkspaceApplication): string { return this.isWorkspaceApplication(application) ? this.isFreelance(application) ? 'BrandName, Bio, Specialties' : 'WorkspaceName' : 'FullName'; }
+  fieldHint(application: PlatformWorkspaceApplication): string { return `مثال: ${this.defaultInformationFields(application)}`; }
 
   private async confirmThen(application: PlatformWorkspaceApplication, header: string, message: string, request: () => Observable<PlatformWorkspaceApplication>, success: string): Promise<void> { if (this.busyId()) return; this.busyId.set(application.id); if (!(await this.notify.confirm({ header, message, acceptLabel: 'تأكيد', icon: 'pi pi-check-circle' }))) { this.busyId.set(null); return; } this.execute(application, request, success); }
   private execute(application: PlatformWorkspaceApplication, request: () => Observable<PlatformWorkspaceApplication>, success: string): void { request().subscribe({ next: () => { this.busyId.set(null); this.notify.success(success); this.load(); }, error: err => { this.busyId.set(null); this.notify.error(errMsg(err)); this.load(); } }); }
