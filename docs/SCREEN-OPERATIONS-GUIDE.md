@@ -338,3 +338,7 @@ Before diagnosing a screen as empty, confirm its loading/error banner and retry 
 Dashboard and Tenants screens use a page-safe member-count contract, while Workspace Applications
 selects the newest payment snapshot when historical duplicate rows exist. Database-resource
 registration is server-validated and never displays the protected value after save.
+
+## بوابة التشغيل والاختبار — Issue #103
+
+لا تُنفذ إجراءات الاعتماد أو الرفض أو provisioning أو النسخ على Production كجزء من اختبار آلي. استخدم حساب Staging وfixture مصرحاً، أثبت الاستجابة والحالة النهائية وعدم التكرار وسجل التدقيق، ثم شغّل Release/Health gates. عند timeout تكون النتيجة Unknown ويجب فحص الحالة قبل إعادة المحاولة.

@@ -94,3 +94,7 @@
 `/tenants`, and `/workspace-applications` consume safe paged contracts and show explicit retry
 states for API errors. `/database-resources` distinguishes validation (`400`) from a reachable-
 but-failed connection test (`422`) and never displays protected connection material after save.
+
+## بوابة QA للشاشات — Issue #103
+
+كل شاشة remote data تدخل مصفوفة QA متعددة الوكلاء: Contract يطابق endpoint وpermission، Flow/E2E يختبر الرحلة، Security يراجع الوصول والبيانات الحساسة، UX/State يمنع الصفحة الفارغة، Resilience يختبر retry والتزامن، وRelease/Health يتحقق من الاختبارات والبناء وصحة الخادم. تفاصيل المدخلات والمخرجات وحالات الاختبار في [QA-AGENT-ORCHESTRATION.md](QA-AGENT-ORCHESTRATION.md).

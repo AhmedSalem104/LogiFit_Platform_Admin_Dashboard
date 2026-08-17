@@ -138,3 +138,7 @@ Every platform screen that loads remote data must retain visible loading, empty,
 states. A failed API request must not render as a successful empty table. Sensitive forms such as
 database-resource registration may send connection material only to the server and must render
 safe status metadata after persistence.
+
+## حالات QA والإجراءات الحساسة — Issue #103
+
+يجب أن تعرض كل شاشة حالات Loading وEmpty وError وRetry وBlocked بوضوح، وألا تحول فشل API إلى قائمة فارغة أو نجاح زائف. أزرار mutations تستخدم label/tooltip وconfirmation عند الحاجة، وتعطل أثناء الطلب. لا تظهر رسائل الخطأ stack trace أو connection material أو مفاتيح إثبات الدفع. مرجع الاختبارات الكامل هو [QA-AGENT-ORCHESTRATION.md](QA-AGENT-ORCHESTRATION.md).

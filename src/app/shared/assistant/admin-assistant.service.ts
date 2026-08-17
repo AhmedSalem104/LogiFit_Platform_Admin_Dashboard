@@ -109,22 +109,51 @@ export class AdminAssistantService {
   }
 
   run(action: AssistantAction): void {
-    if (!this.isAllowed(action.permissions)) return;
+    // Never execute route/invoke values supplied by an arbitrary caller. The
+    // search UI currently creates actions from the static catalog, but keeping
+    // this boundary canonical also protects future integrations from prompt or
+    // command injection and open-redirect style navigation.
+    const safeAction = this.resolveCatalogAction(action);
+    if (!safeAction || !this.isAllowed(safeAction.permissions)) return;
 
-    if (action.kind === 'refresh') {
+    if (safeAction.kind === 'refresh') {
       // A full reload deliberately uses the same authenticated session and is safe for read-only refresh actions.
       window.location.reload();
       return;
     }
 
-    void this.router.navigateByUrl(action.route).then(() => {
+    void this.router.navigateByUrl(safeAction.route).then(() => {
       this.close();
-      if (action.kind === 'invoke' && action.invoke) {
+      if (safeAction.kind === 'invoke' && safeAction.invoke) {
         window.setTimeout(() => {
-          window.dispatchEvent(new CustomEvent(ADMIN_ASSISTANT_COMMAND_EVENT, { detail: { command: action.invoke } }));
+          window.dispatchEvent(new CustomEvent(ADMIN_ASSISTANT_COMMAND_EVENT, { detail: { command: safeAction.invoke } }));
         }, 80);
       }
     });
+  }
+
+  private resolveCatalogAction(action: AssistantAction | null | undefined): AssistantAction | null {
+    if (!action?.id) return null;
+
+    for (const guide of ADMIN_ASSISTANT_GUIDES) {
+      if (action.id === `page:${guide.route}`) {
+        return {
+          id: `page:${guide.route}`,
+          title: guide.title,
+          description: guide.summary,
+          icon: guide.icon,
+          keywords: [...guide.keywords],
+          route: guide.route,
+          permissions: [...guide.permissions],
+          kind: 'navigate',
+        };
+      }
+
+      const quickAction = guide.quickActions.find((candidate) => candidate.id === action.id);
+      if (quickAction) return { ...quickAction, keywords: [...quickAction.keywords], permissions: [...quickAction.permissions] };
+    }
+
+    return null;
   }
 
   private searchScore(result: AssistantSearchResult, term: string): number {
