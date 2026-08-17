@@ -57,14 +57,13 @@ import { NotificationService } from '../../shared/ui/notification.service';
     .lf-nav-group-heading::before { content:''; width:.35rem; height:.35rem; flex:none; border-radius:999px; background:#38bdf8; box-shadow:0 0 0 3px rgba(56,189,248,.12); }
     .lf-nav-group-heading > span:first-of-type { flex:1; }
     .lf-nav-group-count { min-width:1.25rem; padding:.12rem .3rem; border:1px solid rgba(148,163,184,.18); border-radius:999px; color:#64748b; text-align:center; font-size:.58rem; }
-    .lf-nav-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.55rem; margin-bottom:.35rem; }
-    .lf-nav-item { min-height:5.1rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.42rem; padding:.65rem .35rem; border:1px solid transparent; border-radius:1rem; color:#cbd5e1; text-align:center; font-size:.68rem; line-height:1.2; font-weight:700; transition:transform .18s, background .18s, border-color .18s, color .18s; }
-    .lf-nav-item i { width:auto; text-align:center; font-size:1.45rem; line-height:1; }
+    .lf-nav-grid { display:flex; flex-direction:column; gap:.3rem; margin-bottom:.35rem; }
+    .lf-nav-item { min-height:2.7rem; display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:.7rem; padding:.65rem .75rem; border:1px solid transparent; border-radius:.75rem; color:#cbd5e1; text-align:right; font-size:.75rem; line-height:1.25; font-weight:700; transition:transform .18s, background .18s, border-color .18s, color .18s; }
+    .lf-nav-item i { width:1.25rem; flex:none; text-align:center; color:#93c5fd; font-size:1rem; line-height:1; }
     .lf-nav-item:hover { color:#fff; background:rgba(255,255,255,.1); border-color:rgba(147,197,253,.18); transform:translateY(-2px); }
     .lf-nav-active { color:#fff!important; background:linear-gradient(145deg,rgba(59,130,246,.42),rgba(99,102,241,.28))!important; border-color:rgba(147,197,253,.42)!important; box-shadow:0 8px 18px rgba(15,23,42,.2), inset 0 0 0 1px rgba(96,165,250,.16); }
-    .lf-sidebar-collapsed .lf-nav-grid { grid-template-columns:1fr; }
-    .lf-sidebar-collapsed .lf-nav-item { min-height:3.2rem; padding:.5rem 0; }
-    .lf-sidebar-collapsed .lf-nav-item i { font-size:1.2rem; }
+    .lf-sidebar-collapsed .lf-nav-item { min-height:3rem; justify-content:center; padding:.5rem 0; }
+    .lf-sidebar-collapsed .lf-nav-item i { color:#cbd5e1; font-size:1.2rem; }
     .lf-sidebar-footer { display:flex; align-items:center; gap:.55rem; padding:1rem; border-top:1px solid rgba(255,255,255,.08); color:#94a3b8; font-size:.7rem; }
     .lf-topbar { height:5rem; position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; padding:0 1.25rem; background:rgba(255,255,255,.88); backdrop-filter:blur(16px); border-bottom:1px solid #e8edf5; }.lf-topbar h2 { margin:.1rem 0 0; color:#172033; font-size:.95rem; font-weight:800; }
     .lf-icon-btn { width:2.5rem; height:2.5rem; display:grid; place-items:center; border-radius:.75rem; color:#475569; transition:.16s; }.lf-icon-btn:hover { background:#eff6ff; color:#2563eb; }.lf-user { display:flex; align-items:center; gap:.6rem; }.lf-user b { display:block; color:#334155; font-size:.78rem; }.lf-user span:not(.lf-avatar) { display:block; color:#94a3b8; font-size:.67rem; }.lf-avatar { width:2.35rem; height:2.35rem; display:grid; place-items:center; border-radius:.8rem; color:#1d4ed8; background:#dbeafe; font-weight:800; font-size:.75rem; }
