@@ -156,3 +156,7 @@ Platform list screens remain cross-tenant reads only on the server. Tenant rows 
 member counts are fetched in a separate explicitly unfiltered query and merged into the bounded
 page. This avoids fragile correlated EF translation while tenant-scoped application APIs remain
 isolated. The UI consumes the stable `items`/`totalCount` page contract.
+
+## حوكمة QA داخل لوحة الإدارة — Issue #103
+
+أضيف سجل QA deterministic داخل `src/app/shared/quality/qa-agent-catalog.ts` يعرّف ستة أدوار مستقلة وحدودها وأدلتها وبوابات الإصدار. لا يغيّر السجل عقد Backend ولا يستدعي خدمة AI. حُصّنت خدمة المساعد بحيث لا تنفذ إلا action ID موجوداً في الكتالوج وبـroute وinvoke وpermissions canonical؛ وتظل المصادقة والتفويض والعزل النهائي مسؤولية Backend.

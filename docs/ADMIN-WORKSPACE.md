@@ -161,3 +161,7 @@ records together. The lifecycle list remains read/action-oriented.
 
 The Dashboard tenant widget, Tenants list, and Workspace Applications list keep visible loading,
 empty, and retry states and tolerate legacy data that previously could turn a list into HTTP 500.
+
+## إطار ضمان الجودة متعدد الوكلاء — Issue #103
+
+تتبع لوحة الإدارة ستة أدوار QA موثقة في [QA-AGENT-ORCHESTRATION.md](QA-AGENT-ORCHESTRATION.md): Contract، Flow/E2E، Security، UX/State، Resilience/Performance، وRelease/Health. هذه أدوار اختبار وحوكمة deterministic وليست خدمة AI runtime. لا تُنفذ mutations على Production ضمن الاختبار الآلي، ولا تُعتبر أي رحلة ناجحة قبل وجود أدلة API والحالة النهائية وAudit وTenant isolation من Staging.
