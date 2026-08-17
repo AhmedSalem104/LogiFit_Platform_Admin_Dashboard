@@ -1,25 +1,16 @@
 import { NAV_GROUPS, NAV_ITEMS } from './nav-items';
 
 describe('platform navigation consolidation', () => {
-  it('exposes section hubs instead of every secondary screen in the default sidebar', () => {
+  it('exposes every registered permitted resource as a direct sidebar link', () => {
     const visibleRoutes = NAV_ITEMS.filter((item) => item.visible !== false).map((item) => item.route);
 
-    expect(visibleRoutes).toEqual([
-      '/dashboard',
-      '/reports',
-      '/workspace-management',
-      '/catalog',
-      '/billing',
-      '/data-protection',
-      '/operations-center',
-      '/governance',
-    ]);
+    expect(visibleRoutes).toEqual(NAV_ITEMS.map((item) => item.route));
   });
 
-  it('keeps every existing operational route available as a secondary route', () => {
-    const secondaryRoutes = NAV_ITEMS.filter((item) => item.visible === false).map((item) => item.route);
+  it('keeps every existing operational route in the grouped navigation registry', () => {
+    const registeredRoutes = NAV_ITEMS.map((item) => item.route);
 
-    expect(secondaryRoutes).toEqual(jasmine.arrayContaining([
+    expect(registeredRoutes).toEqual(jasmine.arrayContaining([
       '/tenants',
       '/workspace-applications',
       '/plans',
@@ -45,6 +36,13 @@ describe('platform navigation consolidation', () => {
   it('defines a visible Arabic label for every navigation group', () => {
     for (const group of new Set(NAV_ITEMS.map((item) => item.group))) {
       expect(NAV_GROUPS[group]).toBeTruthy();
+    }
+  });
+
+  it('keeps a label and icon on every direct link', () => {
+    for (const item of NAV_ITEMS) {
+      expect(item.label).toBeTruthy();
+      expect(item.icon).toMatch(/^pi pi-/);
     }
   });
 });
