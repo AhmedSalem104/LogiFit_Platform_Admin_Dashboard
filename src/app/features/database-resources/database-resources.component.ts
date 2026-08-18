@@ -251,7 +251,7 @@ interface ResourceEditor {
         @if (!repairMode) {
           <button pButton type="button" label="اختبار الاتصال" icon="pi pi-link" class="p-button-outlined" [loading]="testing()" [disabled]="!editor.databaseName.trim() || !editor.connectionString.trim()" (click)="testConnection()"></button>
         }
-        <button pButton type="submit" [label]="repairMode ? 'إصلاح وحماية' : 'تسجيل آمن'" icon="pi pi-lock" [loading]="saving() || registering()" [disabled]="saving() || registering() || !editor.connectionString.trim() || (!repairMode && (!editor.provider.trim() || !editor.databaseName.trim()))"></button>
+        <button pButton type="button" [label]="repairMode ? 'إصلاح وحماية' : 'تسجيل آمن'" icon="pi pi-lock" [loading]="saving() || registering()" [disabled]="saving() || registering() || !editor.connectionString.trim() || (!repairMode && (!editor.provider.trim() || !editor.databaseName.trim()))" (click)="save()"></button>
       </ng-template>
     </p-dialog>
   `,
