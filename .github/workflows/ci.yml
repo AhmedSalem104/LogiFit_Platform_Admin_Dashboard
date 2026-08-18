@@ -1,0 +1,30 @@
+name: Platform Admin UI CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-admin-ui-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Block critical production dependency vulnerabilities
+        run: npm audit --omit=dev --audit-level=critical
+      - run: npm test -- --watch=false --browsers=ChromeHeadless
+      - run: npm run build
