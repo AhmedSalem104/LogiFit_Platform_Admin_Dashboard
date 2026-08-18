@@ -20,6 +20,25 @@
   --brand-600: #1d4ed8;
   --radius: 1rem;
 
+  /* Canonical UI tokens. Feature pages may compose these tokens, but should
+     not introduce a second value for the same visual primitive. */
+  --font-sans: 'Cairo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --text-strong: #172033;
+  --text-subtle: #94a3b8;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #0284c7;
+  --radius-sm: 0.55rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --control-height: 2.75rem;
+  --content-max-width: 1600px;
+  --space-page: clamp(1rem, 2.4vw, 2rem);
+  --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.035);
+  --shadow-dialog: 0 24px 70px rgba(15, 23, 42, 0.2);
+
   /* Re-point PrimeNG (Lara) accents to the indigo brand */
   --primary-color: #4f46e5;
   --primary-color-text: #ffffff;
@@ -28,17 +47,32 @@
   --focus-ring: 0 0 0 0.2rem rgba(99, 102, 241, 0.35);
 }
 
-* { -webkit-tap-highlight-color: transparent; }
+*, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
   height: 100%;
   margin: 0;
-  font-family: 'Cairo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  min-width: 320px;
+  max-width: 100%;
+  overflow-x: clip;
+  font-family: var(--font-sans);
   background: var(--bg-page);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+body { line-height: 1.55; }
+
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea, [tabindex]:not([tabindex='-1']) { outline-offset: 3px; }
+:where(button, a, input, select, textarea, [tabindex]:not([tabindex='-1'])):focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: not-allowed; }
+img, svg, video, canvas { max-width: 100%; }
+main, section, article, form, .lf-page, .lf-card { min-width: 0; }
 
 /* Slimmer, quieter scrollbars */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -56,9 +90,10 @@ html, body {
 .lf-label { display: block; font-size: 0.8rem; font-weight: 600; color: #475569; margin-bottom: 0.3rem; }
 .lf-input {
   width: 100%;
+  min-height: var(--control-height);
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--border-strong);
-  border-radius: 0.6rem;
+  border-radius: var(--radius-md);
   outline: none;
   font-family: inherit;
   font-size: 0.9rem;
@@ -67,9 +102,11 @@ html, body {
 }
 .lf-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14); }
 .lf-input::placeholder { color: #94a3b8; }
+.lf-input:disabled { color: #94a3b8; background: #f8fafc; }
 
-.lf-btn { display:inline-flex; align-items:center; justify-content:center; gap:.55rem; min-height:2.6rem; padding:.55rem 1rem; border-radius:.75rem; font:700 .84rem inherit; cursor:pointer; transition:transform .16s ease,box-shadow .16s ease,background .16s ease; }
+.lf-btn { display:inline-flex; align-items:center; justify-content:center; gap:.55rem; min-height:var(--control-height); padding:.55rem 1rem; border:1px solid transparent; border-radius:var(--radius-md); font:700 .84rem inherit; cursor:pointer; transition:transform .16s ease,box-shadow .16s ease,background .16s ease; }
 .lf-btn:hover { transform:translateY(-1px); }
+.lf-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; box-shadow:none; }
 .lf-btn-primary { color:#fff; background:linear-gradient(135deg,#2563eb,#4f46e5); box-shadow:0 8px 18px rgba(37,99,235,.22); }
 .lf-btn-secondary { color:#334155; background:#fff; border:1px solid #dbe4f0; }
 .lf-empty-state { display:flex; flex-direction:column; align-items:center; text-align:center; padding:3rem 1.5rem; background:#fff; border:1px dashed #cbd5e1; border-radius:1rem; color:#64748b; }
@@ -104,7 +141,7 @@ html, body {
 /* ============================ PrimeNG overrides ============================ */
 .p-button { font-family: inherit; font-weight: 700; border-radius: 0.75rem; }
 .p-button {
-  min-height: 2.65rem;
+  min-height: var(--control-height);
   padding-inline: 1rem;
   box-shadow: 0 1px 2px rgba(15,23,42,.05);
   transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
@@ -134,9 +171,18 @@ html, body {
 .p-datatable .p-datatable-tbody > tr:hover { background: #f8fbff; }
 .p-datatable .p-datatable-tbody > tr { transition: background 0.12s; }
 
-.p-dialog { border-radius: var(--radius); overflow: hidden; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.16); }
+/* PrimeNG controls and data surfaces share the same rhythm as native forms. */
+.p-inputtext, .p-inputnumber, .p-dropdown, .p-multiselect, .p-calendar,
+.p-checkbox, .p-radiobutton { font-family: inherit; }
+.p-inputtext, .p-dropdown, .p-multiselect, .p-calendar .p-inputtext { min-height: var(--control-height); }
+.p-inputtext:disabled, .p-dropdown.p-disabled, .p-multiselect.p-disabled { opacity: .7; }
+.p-datatable { min-width: 0; }
+.p-datatable-wrapper { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; }
+.p-datatable-table { min-width: max-content; }
+
+.p-dialog { width: min(42rem, calc(100vw - 2rem)); max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-dialog); }
 .p-dialog .p-dialog-header { padding: 1.1rem 1.35rem; border-bottom: 1px solid var(--border); }
-.p-dialog .p-dialog-content { padding: 1.35rem; }
+.p-dialog .p-dialog-content { max-height: calc(100vh - 11rem); overflow-y: auto; overflow-x: hidden; padding: 1.35rem; }
 .p-dialog .p-dialog-footer { padding: 0.9rem 1.35rem; border-top: 1px solid var(--border); }
 
 .p-dropdown, .p-multiselect { border-radius: 0.6rem; border-color: var(--border-strong); }
@@ -170,6 +216,7 @@ html, body {
 .lf-stat { position: relative; overflow: hidden; padding: 1.1rem; }
 .lf-stat::after { content: ''; position: absolute; width: 7rem; height: 7rem; border-radius: 50%; background: rgba(99,102,241,.08); inset-inline-end: -2.5rem; top: -3rem; }
 .lf-table-shell { overflow: hidden; border: 1px solid #e3eaf3; border-radius: var(--radius); background: #fff; box-shadow: 0 8px 24px rgba(15,23,42,.035); }
+.lf-table-shell > .p-datatable, .lf-table-shell > table, .lf-table-shell .p-datatable-wrapper { max-width: 100%; }
 
 /* Executive dashboard composition */
 .lf-dashboard-hero { position: relative; overflow: hidden; padding: 1.1rem 1.25rem 1.35rem; border: 1px solid rgba(129,140,248,.22); border-radius: 1.25rem; color: #eef2ff; background: radial-gradient(circle at 8% 12%,rgba(129,140,248,.36),transparent 27%), linear-gradient(135deg,#172554 0%,#312e81 54%,#4338ca 100%); box-shadow: 0 18px 42px rgba(49,46,129,.18); }
@@ -236,6 +283,34 @@ html, body {
   .lf-dashboard-hero .lf-last-updated { justify-content: flex-start; }
   .lf-donut-layout { grid-template-columns: 1fr; justify-items: center; }
   .lf-donut-layout > div:last-child { width: 100%; }
+}
+
+/* Shared responsive guardrails for every list, form and action toolbar. */
+@media (max-width: 1023px) {
+  main { width: 100%; }
+  .lf-page { gap: 1rem; }
+  .lf-table-shell { overflow-x: auto; }
+  .lf-dialog-actions, .p-dialog .p-dialog-footer { display: flex; flex-wrap: wrap; gap: .5rem; }
+}
+
+@media (max-width: 639px) {
+  .lf-page { gap: .85rem; }
+  .lf-toolbar, .lf-section-heading { align-items: stretch; }
+  .lf-toolbar > *, .lf-section-heading > * { min-width: 0; }
+  .lf-section-heading { flex-direction: column; gap: .55rem; }
+  .lf-section-heading > :last-child { align-self: flex-start; }
+  .lf-input, .lf-btn { min-height: 2.85rem; }
+  .p-dialog { width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); margin: .5rem; }
+  .p-dialog .p-dialog-header, .p-dialog .p-dialog-content, .p-dialog .p-dialog-footer { padding-inline: 1rem; }
+  .p-dialog .p-dialog-content { max-height: calc(100vh - 10rem); }
+}
+
+@media (max-width: 480px) {
+  .lf-card { border-radius: .85rem; }
+  .lf-card:hover { transform: none; }
+  .lf-kpi-card, .lf-executive-kpi { padding: .95rem; }
+  .lf-kpi-value { font-size: 1.45rem; }
+  .lf-donut-layout { gap: 1rem; }
 }
 
 /* Layout and authentication polish */

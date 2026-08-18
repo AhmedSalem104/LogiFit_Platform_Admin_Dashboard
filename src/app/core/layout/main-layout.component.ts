@@ -16,10 +16,10 @@ import { NotificationService } from '../../shared/ui/notification.service';
   template: `
     <div class="min-h-screen bg-[var(--bg-page)]">
       @if (mobileOpen()) { <div class="fixed inset-0 z-30 bg-slate-950/50 backdrop-blur-sm lg:hidden" (click)="mobileOpen.set(false)"></div> }
-      <aside class="lf-sidebar" [style.width.px]="railWidth()" [class.lf-sidebar-collapsed]="effectiveCollapsed()" [class.lf-mobile-open]="mobileOpen()" (mouseenter)="sidebarHover.set(true)" (mouseleave)="sidebarHover.set(false)">
+      <aside id="admin-sidebar" class="lf-sidebar" [style.width.px]="railWidth()" [class.lf-sidebar-collapsed]="effectiveCollapsed()" [class.lf-mobile-open]="mobileOpen()" (mouseenter)="sidebarHover.set(true)" (mouseleave)="sidebarHover.set(false)">
         <div class="lf-brand"><div class="lf-brand-mark"><i class="pi pi-bolt"></i></div>@if (!effectiveCollapsed()) { <div><b>LogicFit</b><span>إدارة المنصة</span></div> }</div>
         @if (!effectiveCollapsed()) { <div class="lf-nav-search"><i class="pi pi-search"></i><input [(ngModel)]="navQuery" placeholder="ابحث في القائمة" aria-label="البحث في القائمة"><kbd>Ctrl /</kbd></div> }
-        <nav class="flex-1 overflow-y-auto px-3 py-4">
+        <nav class="flex-1 overflow-y-auto px-3 py-4" aria-label="التنقل الرئيسي">
           @for (group of visibleGroups(); track group) {
             @if (!effectiveCollapsed()) { <div class="lf-nav-group-heading"><span>{{ groupLabel(group) }}</span><span class="lf-nav-group-count">{{ groupedNav()[group].length }}</span></div> }
             <div class="lf-nav-grid">
@@ -47,7 +47,7 @@ import { NotificationService } from '../../shared/ui/notification.service';
     <app-admin-assistant></app-admin-assistant>
   `,
   styles: [`
-    :host { display:block; }
+    :host { display:block; min-width:0; }
     .lf-sidebar { position:fixed; inset:0 0 0 auto; z-index:40; display:flex; flex-direction:column; color:#cbd5e1; background:linear-gradient(180deg,#0f172a 0%,#172554 100%); box-shadow:0 0 28px rgba(15,23,42,.18); transition:transform .3s ease,width .3s ease; }
     .lf-brand { height:5rem; display:flex; align-items:center; gap:.8rem; padding:0 1.15rem; border-bottom:1px solid rgba(255,255,255,.08); overflow:hidden; }
     .lf-brand-mark { width:2.6rem; height:2.6rem; display:grid; place-items:center; flex:none; border-radius:.85rem; color:#fff; background:linear-gradient(135deg,#38bdf8,#6366f1); box-shadow:0 8px 18px rgba(56,189,248,.2); }
@@ -67,8 +67,14 @@ import { NotificationService } from '../../shared/ui/notification.service';
     .lf-sidebar-footer { display:flex; align-items:center; gap:.55rem; padding:1rem; border-top:1px solid rgba(255,255,255,.08); color:#94a3b8; font-size:.7rem; }
     .lf-topbar { height:5rem; position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; padding:0 1.25rem; background:rgba(255,255,255,.88); backdrop-filter:blur(16px); border-bottom:1px solid #e8edf5; }.lf-topbar h2 { margin:.1rem 0 0; color:#172033; font-size:.95rem; font-weight:800; }
     .lf-icon-btn { width:2.5rem; height:2.5rem; display:grid; place-items:center; border-radius:.75rem; color:#475569; transition:.16s; }.lf-icon-btn:hover { background:#eff6ff; color:#2563eb; }.lf-user { display:flex; align-items:center; gap:.6rem; }.lf-user b { display:block; color:#334155; font-size:.78rem; }.lf-user span:not(.lf-avatar) { display:block; color:#94a3b8; font-size:.67rem; }.lf-avatar { width:2.35rem; height:2.35rem; display:grid; place-items:center; border-radius:.8rem; color:#1d4ed8; background:#dbeafe; font-weight:800; font-size:.75rem; }
-    @media (max-width:1023px) { .lf-sidebar { transform:translateX(100%); }.lf-sidebar.lf-mobile-open { transform:translateX(0); } }
+    app-main-layout main { min-width:0; overflow-wrap:anywhere; }
+    .lf-topbar { min-width:0; gap:1rem; }
+    .lf-topbar h2 { overflow-wrap:anywhere; }
+    .lf-user { min-width:0; }
+    .lf-user b { max-width:12rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    @media (max-width:1023px) { .lf-sidebar { transform:translateX(100%); }.lf-sidebar.lf-mobile-open { transform:translateX(0); } .lf-topbar { padding-inline:.9rem; } }
     @media (min-width:1024px) { .lf-sidebar { transform:translateX(0); } }
+    @media (max-width:639px) { .lf-topbar { height:4.25rem; } .lf-topbar > div:last-child { gap:.35rem; } .lf-user b { max-width:7rem; } }
   `],
 })
 export class MainLayoutComponent {
@@ -92,8 +98,8 @@ export class MainLayoutComponent {
   visibleGroups = computed(() => (Object.keys(NAV_GROUPS) as NavGroup[]).filter(group => (this.groupedNav()[group]?.length ?? 0) > 0));
   roleLabel = computed(() => this.user()?.role === 'PlatformOwner' ? 'مالك المنصة' : this.user()?.role === 'PlatformAdmin' ? 'مشرف المنصة' : this.user()?.role || '');
   initials = computed(() => { const name = this.user()?.fullName?.trim() || this.user()?.email || 'LF'; return name.slice(0, 2).toUpperCase(); });
-  @HostListener('window:resize') onResize() { this.isDesktop.set(window.matchMedia('(min-width:1024px)').matches); }
-  @HostListener('document:keydown', ['$event']) onKeydown(event: KeyboardEvent) { if (event.ctrlKey && event.key === '/') { event.preventDefault(); document.querySelector<HTMLInputElement>('.lf-nav-search input')?.focus(); } }
+  @HostListener('window:resize') onResize() { const desktop = window.matchMedia('(min-width:1024px)').matches; this.isDesktop.set(desktop); if (desktop) this.mobileOpen.set(false); }
+  @HostListener('document:keydown', ['$event']) onKeydown(event: KeyboardEvent) { if (event.key === 'Escape' && this.mobileOpen()) { this.mobileOpen.set(false); return; } if (event.ctrlKey && event.key === '/') { event.preventDefault(); document.querySelector<HTMLInputElement>('.lf-nav-search input')?.focus(); } }
   groupLabel(group: NavGroup): string { return NAV_GROUPS[group]; }
   toggleCollapsed(): void { const value = !this.collapsed(); this.collapsed.set(value); localStorage.setItem('lf-sidebar-collapsed', value ? '1' : '0'); }
   printPage(): void { document.title = `${this.pageTitle()} - LogicFit`; window.print(); }

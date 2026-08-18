@@ -140,6 +140,18 @@ states. A failed API request must not render as a successful empty table. Sensit
 database-resource registration may send connection material only to the server and must render
 safe status metadata after persistence.
 
+## 2026-08-18 comprehensive UI/UX baseline (Issue #107)
+
+The shared visual baseline now includes the following tokens in `src/styles.scss`:
+
+- `--font-sans`, `--text-strong`, `--text-subtle`, and semantic success/warning/danger/info colors.
+- `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`, `--control-height`, and `--space-page`.
+- `--shadow-card`, `--shadow-dialog`, and `--content-max-width`.
+
+Native controls and PrimeNG controls use the same minimum control height, radius, font, disabled state, and visible keyboard focus ring. Data tables are wrapped by an overflow-safe surface; dialog content scrolls inside the viewport instead of pushing the page wider. The admin shell uses a mobile drawer below 1024px, closes it with Escape, and resets stale mobile state when returning to desktop.
+
+The responsive QA matrix covers 375, 430, 768, 1024, 1440, and 1920 CSS pixels. The route smoke matrix covered 28 admin routes and verified a 200 application shell or an intentional auth redirect for every route.
+
 ## حالات QA والإجراءات الحساسة — Issue #103
 
 يجب أن تعرض كل شاشة حالات Loading وEmpty وError وRetry وBlocked بوضوح، وألا تحول فشل API إلى قائمة فارغة أو نجاح زائف. أزرار mutations تستخدم label/tooltip وconfirmation عند الحاجة، وتعطل أثناء الطلب. لا تظهر رسائل الخطأ stack trace أو connection material أو مفاتيح إثبات الدفع. مرجع الاختبارات الكامل هو [QA-AGENT-ORCHESTRATION.md](QA-AGENT-ORCHESTRATION.md).
